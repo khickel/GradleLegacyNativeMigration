@@ -1,0 +1,182 @@
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+// Gradle tasks and methods for debugging/inspecting Gradle tasks.
+
+
+
+////////////////////////////////////////////////////////////////
+def dumpObjectToJson(f, k, v, strings, files, atoms) {
+    // if(v != null){ 
+    //     println "TODO:KFH: processing key " + k + ", with value of type " + v.getClass()
+    // } else { 
+    //     println "TODO:KFH: processing key " + k + ", with null value"
+    // }
+    if ((v instanceof String)) {
+        strings.put(k + "/String", v)
+    } else if (v instanceof File) {
+        files.put(k + "/File", v)
+    } else if (v instanceof TaskOutputs) {
+        v.getFiles().eachWithIndex { of,idxx ->
+            files.put(k + "_${idxx}/TaskOutputs/File", of)
+        }
+    // } else if (v instanceof java.util.Collections.UnmodifiableMap.UnmodifiableEntrySet.UnmodifiableEntry) {
+    //     strings.put("Prop: " + k + v.getKey(), v.getValue())
+    } else if (v instanceof TaskInputs) {
+        // Debugging how to log inputs, things like header files can only be resulved during task execution
+        // TODO:KFH: can I put a hook in, like the afterTask in Sysmsg.gradle, to do the dump during task execution?
+        // v.getFiles().eachWithIndex { of,idxx ->
+        //         files.put(k + "_${idxx}", of)
+        //     }
+        // }
+        v.getProperties().eachWithIndex { prop,idxx ->
+            //dumpObjectToJson(f, "Prop: " + k + "_${idxx}", prop, strings, files, atoms)
+            strings.put(k + "/TaskInputs/Property/Key=" + prop.getKey(), prop.getValue())
+        }
+    } else if (v instanceof TaskDependency) {
+        v.getDependencies().eachWithIndex {v2,idxx ->
+            strings.put(k + "_${idxx}/TaskDependency", v2.getName())
+        }
+    } else if (v instanceof Task) { 
+        strings.put(k + "/Task", v.getName())
+    } else if (v instanceof RegularFileProperty) {
+        files.put(k + "/RegularFileProperty", v.getAsFile().get())
+    } else if (v instanceof DirectoryProperty) {
+        files.put(k + "/DirectoryProperty", v.getAsFile().get())
+    } else if (v instanceof Boolean) {
+        atoms.put(k + "/Boolean", v)
+    } else if (v instanceof Integer) {
+        atoms.put(k + "/Integer", v)
+    } else if (v instanceof Configuration) { 
+        if(v.isCanBeResolved()) {
+            strings.put(k + "/Configuration", v.getName() + " in state " + getState())
+        } else {
+            strings.put(k + "/Configuration", v.getName() + " - can't be resolved")
+        }
+    } else if ((v instanceof Object[]) || (v instanceof Iterable)) {
+        // can't query header files of localstate unless the task is running.
+        if(k == 'headerDependencies') { 
+            strings.put(k, "can't be resolved")
+        } else {
+            v.eachWithIndex { v2,idxx ->
+                dumpObjectToJson( f, k + "_${idxx}", v2, strings, files, atoms)
+            }
+        }
+    } else {
+        def cname = "(null)"
+        //if(v != null) {  cname = v.class }
+        //strings.put(k, "unknown instance of type " + cname)
+        strings.put(k, "unknown instance of dump:" + v)
+    }
+}
+
+// Dumps all the tasks and properties to a json file.
+def dumpTaskToJson(Project prj, Task tsk, File bdir, String fname) {
+    def f = new File(bdir, fname)
+    def pw = f.newPrintWriter()
+    pw.println "{"
+    pw.println "  \"${tsk.name}\": {"
+    def strings = [:]
+    def files = [:]
+    def atoms = [:]
+    tsk.properties.each { k, v ->
+        dumpObjectToJson(f, k, v, strings, files, atoms)
+    }
+    strings.each { k, v ->
+        pw.println  "    \"$k\": \"$v\","
+    }
+    files.each { k, File v ->
+        String s = v.path
+        pw.println  "    \"$k\": \"$s\","
+    }
+    def ai = 0
+    def an = atoms.size()
+    atoms.each { k, v ->
+        ai++
+        ai == an ? pw.println("    \"$k\": $v") : pw.println("    \"$k\": $v,")
+    }
+    pw.println '}'
+    pw.flush()
+    pw.close()
+}
+
+// Dumps all the tasks and properties to a json file.
+def dumpProjectTasksToJson(Project prj, File bdir) {
+    //def p = rootProject.projectDir.parentFile.path
+    def f = new File(bdir, 'tasks.json')
+    def pw = f.newPrintWriter()
+    pw.println "{"
+    //def ts = prj.tasks.findAll{ it.name.contains('Release') }
+    def ts = prj.tasks
+    def tn = ts.size()
+    ts.eachWithIndex { t, ti ->
+        pw.println "  \"${t.name}\": {"
+        def strings = [:]
+        def files = [:]
+        def atoms = [:]
+        t.properties.each { k, v ->
+            dumpObjectToJson(f, k, v, strings, files, atoms)
+        }
+        strings.each { k, v ->
+            pw.println  "    \"$k\": \"$v\","
+        }
+        files.each { k, File v ->
+            String s = v.path
+            pw.println  "    \"$k\": \"$s\","
+        }
+        def ai = 0
+        def an = atoms.size()
+        atoms.each { k, v ->
+            ai++
+            ai == an ? pw.println("    \"$k\": $v") : pw.println("    \"$k\": $v,")
+        }
+        tn == ti + 1 ? pw.println('  }') : pw.println('  },')
+    }
+    pw.println '}'
+    pw.flush()
+    pw.close()
+}
+
+// Dumps information about a project and properties to a json file.
+def dumpProjectToJson(Project prj, File bdir) {
+    //def p = rootProject.projectDir.parentFile.path
+    def f = new File(bdir, 'project.json')
+    def pw = f.newPrintWriter()
+    pw.println "{"
+    pw.println "  \"name\": \"${prj.name}\": {"
+    def strings = [:]
+    def files = [:]
+    def atoms = [:]
+    prj.properties.each { k, v ->
+        dumpObjectToJson(f, k, v, strings, files, atoms)
+    }
+    strings.each { k, v ->
+        pw.println  "    \"$k\": \"$v\","
+    }
+    files.each { k, File v ->
+        String s = v.path
+        pw.println  "    \"$k\": \"$s\","
+    }
+    def ai = 0
+    def an = atoms.size()
+    atoms.each { k, v ->
+        ai++
+        ai == an ? pw.println("    \"$k\": $v") : pw.println("    \"$k\": $v,")
+    }
+    pw.println('  },')
+    pw.println '}'
+    pw.flush()
+    pw.close()
+}
+
+
+// We need to "convert" our groovy method(s) to Closures, otherwise they won't be visible in
+// other Gradle files.
+// We wouldn't have to do this if these methods were in the root Gradle file, but this way
+// we can refactor things to keep the root Gradle file cleaner.
+// See https://stackoverflow.com/questions/18715137/extract-common-methods-from-gradle-build-script
+ext {
+    dumpTaskToJson = this.&dumpTaskToJson
+    dumpProjectTasksToJson = this.&dumpProjectTasksToJson
+    dumpProjectToJson = this.&dumpProjectToJson
+}

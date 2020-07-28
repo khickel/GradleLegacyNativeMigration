@@ -1,0 +1,16 @@
+.gradle/
+build/
+\#*\#
+.#*
+*~
+
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+.vs/
+
+*.zip
+*.json
+*.exe
+*.lib

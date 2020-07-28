@@ -1,0 +1,431 @@
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+// Gradle tasks and methods for creating installers, including the staging of exeuctables in sigma-web, s-cgi and similar directories.
+// To use this add this line to the root gradle file:
+//    apply from: 'installUtils.gradle'
+
+
+// Will create (and return) a debug or release aggregate task (e.g. legacyInstaller) in a target project,
+// with the suffix 'Debug' or 'Release'.
+// Then it will walk up the project tree, creating the same aggregate task if needed, and setting dependencies.
+// If the target task already exists, it will just be returned.
+def getOrCreateAggregateTaskForSubproject(Project prj, String taskNamePrefix, String descr, Boolean wantDebug) {
+    String methodName = 'gOCATFS'
+    def taskName = taskNamePrefix + (wantDebug ? 'Debug' : 'Release')
+    def groupName = wantDebug ? 'debugGroup' : 'releaseGroup'
+    def fullDesc = descr + (wantDebug ? ' - Debug' : ' - Release')
+    def stdAggTaskName = wantDebug ? 'debug' : 'release'
+
+    def debugOn = false
+
+    if(debugOn) {
+        println "Debug(${methodName}): getOrCreateAggregateTaskForSubproject: prj=${prj.path}, descr=${descr}, wantDebug=${wantDebug}"
+    }
+
+    // Loop up the path from the passed in project, creating the aggregate task as we go, making it depend on the descendant's aggregate task.
+    def tPrj = prj
+    def childTask = null
+    while(tPrj != null) {
+        // Get the aggregate task at this level, create it if it doesn't exist.
+        def newTask = tPrj.tasks.findByName(taskName)
+        if(newTask == null) {
+            newTask = tPrj.tasks.create(taskName)
+            newTask.group = getRootProject().property(groupName)
+            newTask.description = fullDesc
+            if(debugOn) { println "Debug(${methodName}): Created aggregate project task ${newTask.name} for project ${tPrj.path}, group=" + newTask.group }
+        }
+        
+        // Make the new task at this level depend on the child task (from the previous loop iteration), if there is one.
+        if(childTask){
+            if(debugOn) { println "Debug(${methodName}): Setting aggregate project task named ${tPrj.path}:${newTask.name} to depend on child prj task ${childTask.name} for original input project ${prj.path}"}
+            newTask.dependsOn(childTask)
+        }
+
+        // Make the aggregate task at this level depend on the new task (from the previous loop iteration), if there is one.
+        if(debugOn) { println "Debug(${methodName}): Setting standard aggregate project task named ${tPrj.path}:${stdAggTaskName} to depend on new agg task ${newTask.name} for original input project ${prj.path}"}
+        tPrj.tasks.findByName(stdAggTaskName).dependsOn(newTask)
+
+        // Set up for next loop iteration.
+        tPrj = tPrj.parent
+        childTask = newTask
+    }
+    
+    def rv = prj.tasks.findByName(taskName)
+    if(debugOn) {println "Debug(${methodName}): returning task ${prj.path}:${rv.name}."}
+    return rv
+}
+
+////////////////////////////////////////////////////////////////
+// Add an addProjOutputCopyFilesTask task to any subproject that has an "extra" property with a name matching the value of projMapPropName.
+// The property is a map where the key is the file name that the CppApplication is producing,
+// that is the output of a LinkExecutable task (e.g. util_1.exe),
+// and the value is a File, or List of Files specifying where the executable should be copied.
+//
+// This code is based on this snippet from "thadhouse" on the gradle native slack channel, 2020-07-13.
+// def copyToTask = tasks.register("copyToOutputsInApp", Copy) {
+//     into "$buildDir/outputs"
+// }
+// application.binaries.whenElementFinalized { binary ->
+//     if (binary.name.endsWith('Debug')) {
+//         copyToTask.configure {
+//             it.dependsOn binary.linkTask
+//             it.from binary.linkTask.get().linkedFile
+//         }
+//     }
+// }
+//
+// TODO: This method is too big, I should at least take the code that is duplicated for debug/release and move
+// it into a new method, then call it once for debug and one for release.
+def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, String projMapPropName, String basePath, String descr, Boolean wantTasksInParent) {
+    String methodName = 'aPOCFT'
+    def debugTasks = [:]
+    def releaseTasks = [:]
+    def tgtPrj = wantTasksInParent ? parent : prj
+
+    //def debugOn = false
+    def debugOn = true
+
+    if(debugOn) {
+        println "Debug(${methodName}): Called for project ${prj.path}, parent ${parent? parent.path : 'null parent'}, taskPrefix=${taskPrefix}, projMapPropName=${projMapPropName ?: 'null'}, wantTasksInParent=${wantTasksInParent}"
+    }
+
+    // Create an aggregate debug task in the project, parent and root, this task will reference all the individual debug copy tasks.
+    if(debugOn) {
+        println "Debug(${methodName}): addProjOutputCopyFilesTask calling getOrCreateAggregateTaskForSubproject for prj=${prj.path}, parent=${parent.path}}"
+    }
+    def dbgAggTask = getOrCreateAggregateTaskForSubproject(tgtPrj, taskPrefix, descr, true)
+    def dbgCopyAllTask = tgtPrj.tasks.findByName(dbgAggTask.name + '_CopyAll')
+    if(dbgCopyAllTask == null) {
+        dbgCopyAllTask = tgtPrj.tasks.create(dbgAggTask.name + '_CopyAll')
+    }
+    // This task might have been created from a project that wasn't able to set the
+    // dependency, so we'll always set it, whether we created it or not.
+    if(debugOn) { println "Debug(${methodName}): Setting dbgAggTask task ${dbgAggTask.path} to depend on new prj task ${dbgCopyAllTask.path}."}
+    dbgAggTask.dependsOn(dbgCopyAllTask)
+
+    // Create an aggregate release task in the project, parent and root, this task will reference all the individual release copy tasks.
+    def relAggTask = getOrCreateAggregateTaskForSubproject(tgtPrj, taskPrefix, descr, false)
+    def relCopyAllTask = tgtPrj.tasks.findByName(relAggTask.name + '_CopyAll')
+    if(relCopyAllTask == null) {
+        relCopyAllTask = tgtPrj.tasks.create(relAggTask.name + '_CopyAll')
+    }
+    relAggTask.dependsOn(relCopyAllTask)
+
+    // The subproject contains a line like this mapping a directory key to a filename value:
+    //         ext.projMapPropName = [ (file("c:/temp/target/dir")) : "foo" ]
+    // The filename could be an array of filenames:
+    //         ext.projMapPropName = [ (file("c:/temp/target/dir")) : ["bar", "foo" ]
+    // Or it could be a map containing filenames and options:
+    //         ext.projMapPropName = [ (file("c:/temp/target/dir")) : ["codeSign":true,"fileBasename":"foo" ]]
+    // Or even an array of maps:
+    //         ext.projMapPropName = [ (file("c:/temp/target/dir")) : [
+    //                  ["codeSign":true,"fileBasename":"foo"],
+    //                  ["codeSign":false,"fileBasename":"bar"]
+    //         ]
+    prj.property(projMapPropName).eachWithIndex { path, fileBasename, idx ->
+        // Resolve the passed in (optional) basepath with the path from the map.
+        // Handle the cases where the path from the map is a string and where it's a File.
+        def File targetPath
+        if(basePath == null) {
+            if(path instanceof java.io.File) {
+                targetPath = path
+                if(debugOn) { 
+                    println "Debug(${methodName}): resolved basePath:null and file path:${path.path} to : ${targetPath.path}"
+                }
+            } else {
+                targetPath = file(path)
+                if(debugOn) { 
+                    println "Debug(${methodName}): resolved basePath:null and file string:${path} to : ${targetPath.path}"
+                }
+            }
+        } else {
+            if(path instanceof java.io.File) {
+                targetPath = file(basePath + '/' + path.path)
+                if(debugOn) { 
+                    println "Debug(${methodName}): resolved basePath:${basePath} and file path:${path.path} to : ${targetPath.path}"
+                }
+            } else {
+                targetPath = file(basePath + '/' + path)
+                if(debugOn) { 
+                    println "Debug(${methodName}): resolved basePath:${basePath} and file string:${path} to : ${targetPath.path}"
+                }
+            }
+        }
+
+        if(debugOn) { 
+            println "Debug(${methodName}): handling project ${prj.name}, ${projMapPropName} index ${idx}, target file name=${fileBasename}, target path=${targetPath.path}"
+        }
+
+        ///// Handle the target filename(s), turn them into an array, even if there's only one.
+        def fnameList = []
+        if(fileBasename instanceof java.util.ArrayList) {
+            // We have multiple values, so just set the array to the incoming array.
+            fnameList = fileBasename
+        } else {
+            // We have a single file value, so push it into the array.
+            fnameList.push(fileBasename)
+        }
+        fnameList.eachWithIndex { fname, idx2 ->
+            ///// Check to see if what we think is the file name is actually a map, which may include some option settings.
+            Boolean shouldSign = false
+            if(fname instanceof Map) {
+                def targetMap = fname
+                fname = null
+                
+                if(debugOn) {println "Debug(${methodName}): Handling map instead of file name."}
+                if(targetMap.containsKey('codeSign')) {
+                    shouldSign = targetMap['codeSign']
+                    if(debugOn) {println "Debug(${methodName}): Debug: shouldSign=${shouldSign}"}
+                } else {
+                    if(debugOn) {println "Debug(${methodName}): Debug: shouldSign=false"}
+                }
+                if(targetMap.containsKey('fileBasename')) {
+                    fname = targetMap['fileBasename']
+                    if(debugOn) {println "Debug(${methodName}): fname=${fname} for project ${tgtPrj.path}"}
+                }
+            } else if (fname instanceof String) { 
+                if(debugOn) { println "Debug(${methodName}): fname=${fname} for project ${tgtPrj.path}"}
+            }
+            if(debugOn) {println "Debug(${methodName}): fname after resolution is ${fname}"}
+
+            // Sanity check, the file names in ext.${projMapPropName} should not contain ".exe" or ".dll", as we will add that
+            // below if we're running on windows.
+            if(fname.endsWith('.exe')) {
+                throw new GradleException("Stopping build because the ext.${projMapPropName} setting for subproject ${prj.name} contains .exe as part of the filename.")
+            }
+            if(fname.endsWith('.dll')) {
+                throw new GradleException("Stopping build because the ext.${projMapPropName} setting for subproject ${prj.name} contains .dll as part of the filename.")
+            }
+
+            def targetFilename = fname
+            def isWindows = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem.isWindows();
+
+            if(prj.hasProperty('library')) {
+                if(isWindows){ 
+                    targetFilename += ".dll"
+                } else {
+                    targetFilename += ".so"
+                }
+            } else {
+                if(isWindows) {
+                    targetFilename += ".exe"
+                }
+            }
+
+            //////////////// Debug Tasks
+            // Use the dynamic API for task inputs and outputs to configure a copy task that we won't execute, but it is
+            // used later as an input the the copy method, alowing us to execute a single task that does the copy and the
+            // signtool step.
+            // See https://docs.gradle.org/current/userguide/working_with_files.html#sec:copying_multiple_files_example
+            // search for Example 41. Copying files using the copy() method with up-to-date check
+            def dbgTaskName = "${taskPrefix}DebugCopy_${prj.name}_${idx}_${idx2}"
+            if(debugOn) {println "Debug(${methodName}): about to register debug copy task name ${tgtPrj.path}:${dbgTaskName} for file name ${fname}"}
+
+            // This task will be invoked via the copy method from the next task we define.
+            def newDebugCopyTask = tgtPrj.tasks.register(dbgTaskName + '_CopyOnly', Copy) {
+                rename { return targetFilename } // Name the file as specified, may not actually be a different name, but this works either way.
+                into targetPath.path
+                //outputs.dir(targetPath.path)
+                outputs.file(targetPath.path + "/" + targetFilename)
+                doLast {
+                    if(debugOn) { 
+                        println "Debug(${methodName}): ${it.name} in copyTask, copying debug file named ${targetFilename} to ${targetPath.path}"
+                        dumpTaskToJson(tgtPrj,it, file(tgtPrj.projectDir), "${it.name}_from_copyTask.json")
+                    }
+                }
+            }
+            def newDebugTask = tgtPrj.tasks.register(dbgTaskName) {
+                if(debugOn) { 
+                    println "Debug(${methodName}): Registering debug task named ${tgtPrj.path}:${name} for file named ${targetFilename}, with inputs from ${newDebugCopyTask}, inputs=${inputs.files(newDebugCopyTask)}"
+                }
+                inputs.files(newDebugCopyTask)
+                    .withPropertyName("inputs")
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
+                outputs.file(targetPath.path + "/" + targetFilename)
+                //outputs.dir(targetPath.path)
+                doLast {
+                    if(debugOn) {
+                        println "Debug(${methodName}): ${it.name} in debug copy/sign task, copying file ${targetFilename} to ${targetPath.path} using task ${newDebugCopyTask.name}, inputs.files=${inputs.files}"
+                        inputs.each { inp ->
+                            println "Debug:   input=" + inp
+                        }
+                        dumpTaskToJson(tgtPrj,it, file(tgtPrj.projectDir), "${it.name}_from_generic_task.json")
+                    }
+                    copy {
+                        // TODO:PROBLEM: This doesn't seem to be copying things, see TODO:PROBLEM below in the whenElementFinalized section.
+                        //from newDebugCopyTask
+                        from inputs.files
+                        rename { return targetFilename } // Name the file as specified, may not actually be a different name, but this works either way.
+                        into targetPath.path
+                    }
+                    if(shouldSign) {
+                        if(debugOn) {println "Debug(${methodName}): ${it.name} in newDebugTask register call, should sign is on for file ${targetFilename} to ${targetPath.path}."}
+                        // Imagine that this command was using signtool to actually sign the executable.
+                        // Since that would complicate this example, we'll just use editbin to modify the .exe file, which should have the same effect
+                        // on the .exe contents and date that signing it would (e.g. the file will be different and newer than when it was copied).
+                        exec { commandLine "editbin", "/version:2", "${targetPath.path}/${targetFilename}"}
+                    }
+                }
+            }
+
+            // Map of the copy/sign task to a map with the code sign setting, and the copy task, which will have the input set later based on the build variant.
+            if(debugOn) {println "Debug: pushing task ${newDebugTask.name}, shouldSign=${shouldSign}, copy only task named ${newDebugCopyTask.name} for project=${tgtPrj.path}"}
+            debugTasks[newDebugTask] = [
+                'codeSign':shouldSign,
+                'copyTask':newDebugCopyTask
+            ]
+
+
+            //////////////// Release Tasks
+            
+            def relTaskName = "${taskPrefix}ReleaseCopy_${prj.name}_${idx}_${idx2}"
+            if(debugOn) {println "Debug(${methodName}): about to register release copy task name ${tgtPrj.path}:${relTaskName} for file name ${fname}"}
+            def newReleaseCopyTask = tgtPrj.tasks.register(relTaskName + '_CopyOnly', Copy) {
+                rename { return targetFilename } // Name the file as specified, may not actually be a different name, but this works either way.
+                into targetPath.path
+                //outputs.dir(targetPath.path)
+                outputs.file(targetPath.path + "/" + targetFilename)
+                doLast {
+                    if(debugOn) { 
+                        println "Debug(${methodName}): ${it.name} in copyTask, copying release file named ${targetFilename} to ${targetPath.path}"
+                        dumpTaskToJson(tgtPrj,it, file(tgtPrj.projectDir), "${it.name}_from_copyTask.json")
+                    }
+                }
+            }
+            def newReleaseTask = tgtPrj.tasks.register(relTaskName) {
+                if(debugOn) { 
+                    println "Debug(${methodName}): Registering release task named ${tgtPrj.path}:${name} for file named ${targetFilename}, with inputs from ${newReleaseCopyTask}, inputs=${inputs.files(newReleaseCopyTask)}"
+                }
+                inputs.files(newReleaseCopyTask)
+                    .withPropertyName("inputs")
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
+                outputs.file(targetPath.path + "/" + targetFilename)
+                //outputs.dir(targetPath.path)
+                doLast {
+                    if(debugOn) {
+                        println "Debug(${methodName}): ${it.name} in release copy/sign task, copying file ${targetFilename} to ${targetPath.path} using task ${newReleaseCopyTask.name}"
+                        dumpTaskToJson(tgtPrj,it, file(tgtPrj.projectDir), "${it.name}_from_generic_task.json")
+                    }
+                    // KFH: I think this might be copying everything in the source dir back to itself, and that's why everything is zero length.
+                    // copy {
+                    //     from newDebugCopyTask
+                    //     into targetPath.path
+                    // }
+                    if(shouldSign) {
+                        if(debugOn) {println "Debug(${methodName}): ${it.name} in newReleaseTask register call, should sign is on for file ${targetFilename} to ${targetPath.path}."}
+                        // Imagine that this command was using signtool to actually sign the executable.
+                        // Since that would complicate this example, we'll just use editbin to modify the .exe file, which should have the same effect
+                        // on the .exe contents and date that signing it would (e.g. the file will be different and newer than when it was copied).
+                        exec { commandLine "editbin", "/version:2", "${targetPath.path}/${targetFilename}"}
+                    }
+                }
+            }
+            if(debugOn) {println "Debug: pushing task ${newReleaseTask.name}, shouldSign=${shouldSign}, copy only task named ${newReleaseCopyTask.name} for project=${tgtPrj.path}"}
+            releaseTasks[newReleaseTask] = [
+                'codeSign':shouldSign,
+                'copyTask':newReleaseCopyTask
+            ]
+        }
+    }
+
+    // When each referenced task has been finalized, set the dependencies for the copy tasks that we created, we can't do it before that time.
+    prj.components.main.binaries.whenElementFinalized { binary ->
+        if (binary.name.endsWith('Debug')) {
+            if(debugOn) {println "Debug: about to configure ${debugTasks.size()} debug tasks."}
+            debugTasks.each { et, optionMap ->
+                def copyTask = optionMap['copyTask'] 
+                if(debugOn) {println "Debug: configuring debug task ${et.name}, copytask=${copyTask.name}"}
+                copyTask.configure {
+                    if(debugOn) { 
+                        println "Debug(${methodName}): Updating debug copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
+                            binary.linkTask.get().linkedFile.getAsFile().get().path
+                    }
+                    // TODO:PROBLEM:
+                    // If this line is enabled, then when newDebugCopyTask runs, I get a zero byte file in legacy_installer\Source
+                    // If it is not enabled, I don't get any .exe file in legacy_installer\Source
+                    //it.from binary.linkTask.get().linkedFile
+
+                    inputs.file(binary.linkTask.get().linkedFile)
+
+                    // TODO: if shouldSign is true, then don't do this dependsOn call
+                    it.dependsOn binary.linkTask
+
+                    if(optionMap['codeSign']){
+                        if(debugOn) {println "Debug(${methodName}): TODO:KFH: DoLast should sign for debug task ${tgtPrj.path}:${et.name}"}
+                    }
+                }
+                et.configure {
+                    if(debugOn) {
+                        println "Debug(${methodName}): Updating debug exec task ${tgtPrj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, inputs=${binary.linkTask.get().linkedFile}, file=" + binary.linkTask.get().linkedFile.getAsFile().get().name
+                    }
+                    it.dependsOn binary.linkTask
+                    inputs.file(binary.linkTask.get().linkedFile)
+                }
+
+                if(optionMap['codeSign']){
+                    if(debugOn) {println "Debug(${methodName}): TODO:KFH: in whenElementFinalized: need to do signing for debug task ${tgtPrj.path}:${et.name}"}
+                } else {
+                    if(debugOn) {println "Debug(${methodName}): TODO:KFH: in whenElementFinalized: no code signing needed for debug task ${tgtPrj.path}:${et.name}"}
+                }
+                if(debugOn) {
+                    println "Debug(${methodName}): Updating debug task ${tgtPrj.path}:${dbgCopyAllTask.name} which now also dependsOn ${et.name}"
+                }
+                dbgCopyAllTask.dependsOn(et)
+                tgtPrj.tasks.findByName('debug').dependsOn(dbgAggTask)
+            }
+        }
+        if (binary.name.endsWith('Release')) {
+            if(debugOn) {println "Debug: about to configure ${releaseTasks.size()} debug tasks."}
+            releaseTasks.each { et, optionMap ->
+                def copyTask = optionMap['copyTask'] 
+                if(debugOn) {println "Debug: configuring release task ${et.name}, copytask=${copyTask.name}"}
+                copyTask.configure {
+                    if(debugOn) { 
+                        println "Debug(${methodName}): Updating release copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
+                            binary.linkTask.get().linkedFile.getAsFile().get().name
+                    }
+                    it.from binary.linkTask.get().linkedFile
+                    inputs.file(binary.linkTask.get().linkedFile)
+
+                    // TODO: if shouldSign is true, then don't do this dependsOn call
+                    it.dependsOn binary.linkTask
+
+                    if(optionMap['codeSign']){
+                        println "Debug(${methodName}): TODO:KFH: DoLast should sign for release task ${tgtPrj.path}:${et.name}"
+                    }
+                }
+                et.configure {
+                    if(debugOn) {
+                        println "Debug(${methodName}): Updating release exec task ${tgtPrj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, inputs=${binary.linkTask.get().linkedFile}."
+                        binary.linkTask.get().linkedFile.getAsFile().get().name
+                    }
+
+                    it.dependsOn binary.linkTask
+                    inputs.file(binary.linkTask.get().linkedFile)
+                }
+
+                if(optionMap['codeSign']){
+                    if(debugOn) {println "Debug(${methodName}): TODO:KFH: in whenElementFinalized: need to do signing for release task ${tgtPrj.path}:${et.name}"}
+                } else {
+                    if(debugOn) {println "Debug(${methodName}): TODO:KFH: in whenElementFinalized: no code signing needed for release task ${tgtPrj.path}:${et.name}"}
+                }
+                if(debugOn) {
+                    println "Debug(${methodName}): Updating release task ${tgtPrj.path}:${relCopyAllTask.name} which now also dependsOn ${et.name}"
+                }
+                relCopyAllTask.dependsOn(et)
+                tgtPrj.tasks.findByName('release').dependsOn(relAggTask)
+            }
+        }
+    }
+}
+
+// We need to "convert" our groovy method(s) to Closures, otherwise they won't be visible in
+// other Gradle files.
+// We wouldn't have to do this if these methods were in the root Gradle file, but this way
+// we can refactor things to keep the root Gradle file cleaner.
+// See https://stackoverflow.com/questions/18715137/extract-common-methods-from-gradle-build-script
+ext {
+    getOrCreateAggregateTaskForSubproject = this.&getOrCreateAggregateTaskForSubproject
+    addProjOutputCopyFilesTask = this.&addProjOutputCopyFilesTask
+}

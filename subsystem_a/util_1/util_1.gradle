@@ -1,0 +1,25 @@
+plugins {
+    id 'cpp-application'
+}
+
+// Define a map listing the targetPath,targetFileName for any files that need to be copied to staging area.
+ext.installerFiles = [ (file(project.property('stagingDir'))):'util_1' ]
+ext.legacyInstaller = ['.':['codeSign':true,'fileBasename':'util_1_inst']]
+
+application { app->
+
+    // Set the executable filename
+    baseName = 'util_1'
+    
+    // Add *.cpp to the project
+    source.from file('.')
+
+    // Set the project standard C++ compiler/linker options
+    addDefaultCPPApplicationOptions(project, app)
+
+    dependencies {
+        implementation project(':static_lib')
+    }
+
+}
+

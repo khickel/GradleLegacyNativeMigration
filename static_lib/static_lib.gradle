@@ -1,0 +1,17 @@
+plugins {
+    id 'cpp-library'
+}
+
+apply from: "${rootDir}/commonNativeUtils.gradle"
+
+library { lib->
+    linkage = [Linkage.STATIC]
+
+    binaries.configureEach {
+        def compileTask = compileTask.get()
+        compileTask.source.from fileTree(dir: ".", include: "*.c")
+    }
+    publicHeaders.from file('.')
+    addDefaultCPPLibraryOptions(project, lib)
+   
+}

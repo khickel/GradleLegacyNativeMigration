@@ -1,0 +1,179 @@
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+// Settings and methods for visual studio.
+
+////////////////////////////////////////////////////////////////
+// Set up the default compiler options for a C++ project
+def addDefaultCPPOptions(Project prj, Boolean suppressConsoleDef=false) {
+    prj.tasks.withType(CppCompile).configureEach { task ->
+        task.macros.put("NDEBUG", null)
+
+        task.compilerArgs.addAll toolChain.map { toolChain ->
+            if (toolChain in VisualCpp) {
+                return [
+                    '/D_CRT_SECURE_NO_WARNINGS', '/wd4996',
+                    '/nologo', '/MT', '/W3', '/EHsc',
+                    '/DWIN32',
+                    '/D_WIN32_WINNT=0x0601',
+
+                    // Why NDEBUG, what about debug builds?
+                    '/DNDEBUG',
+                    
+                    // Tell some of the modules in SourceT to use a relative include path for siglib.
+                    '/DUSE_REL_SIGLIB_PATH',
+
+                ]
+            }
+        }
+
+        if(suppressConsoleDef == false) {
+            task.compilerArgs.addAll toolChain.map { toolChain ->
+                if (toolChain in VisualCpp) {
+                    return ['/D_CONSOLE']
+                }
+            }
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////
+def addVSCompilerOption(Project prj, String newOption) {
+    prj.tasks.withType(CppCompile).configureEach { task ->
+        // There must be a simpler way to do this than using map.
+        task.compilerArgs.addAll toolChain.map { toolChain ->
+            if (toolChain in VisualCpp) {
+                return [ newOption ]
+            }
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////
+def AddVSExeLinkOption(Project prj, String newOption) {
+    prj.tasks.withType(LinkExecutable).configureEach{ task->
+        task.linkerArgs.addAll toolChain.map { tc ->
+            if (tc in VisualCpp) {
+                return [
+                    newOption
+                ]
+            }
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////
+def AddVSDllLinkOption(Project prj, String newOption) {
+    prj.tasks.withType(LinkSharedLibrary).configureEach{ task->
+        task.linkerArgs.addAll toolChain.map { tc ->
+            if (tc in VisualCpp) {
+                return [
+                    newOption
+                ]
+            }
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////
+def addDefaultCPPLibraryOptions(Project prj, CppLibrary lib, Boolean suppressConsoleDef=false) {
+
+    lib.targetMachines = [
+        prj.machines.windows.x86
+    ]
+
+    addDefaultCPPOptions(prj, suppressConsoleDef)
+
+}
+
+////////////////////////////////////////////////////////////////
+def addDefaultCPPApplicationOptions(Project prj, CppApplication app, Boolean suppressConsoleDef=false) {
+
+    app.targetMachines = [
+        prj.machines.windows.x86
+    ]
+
+    addDefaultCPPOptions(prj, suppressConsoleDef)
+
+    // Add Windows specific linker options
+    app.binaries.configureEach {
+        if (toolChain instanceof VisualCpp) {
+            linkTask.get().linkerArgs.addAll( [
+                "iphlpapi.lib",
+                "kernel32.lib",
+                "user32.lib",
+                "gdi32.lib",
+                "winspool.lib",
+                "comdlg32.lib",
+                "advapi32.lib",
+                "shell32.lib",
+                "ole32.lib",
+                "oleaut32.lib",
+                "odbc32.lib",
+                "odbccp32.lib",
+                "ws2_32.lib",
+                "wsock32.lib"
+            ])
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////
+def addWindowsResourceFile(Project prj, CppApplication app) {
+    app.binaries.whenElementFinalized { bin ->
+        def compileResources = prj.tasks.register("compileResources${bin.name.capitalize()}", WindowsResourceCompile) {
+            targetPlatform = bin.compileTask.get().targetPlatform
+            toolChain = bin.toolChain
+            source.from prj.fileTree(dir: ".", includes: ["*.rc"])
+            // For some as yet not understood reason, if you just run "rc /v /l 0x409 Version.rc" in a VS command prompt, it works,
+            // but when Gradle runs the command, rc.exe can't find the standard include files, so we have to use the INCLUDE env var.
+            includes.from file(System.getenv('INCLUDE'))
+            compilerArgs.addAll toolChain.map({ NativeToolChain toolChain ->
+                if (toolChain instanceof VisualCpp) {
+                    return [ "/v", "/l", "0x409" ]
+                }
+                return []
+            }).get()
+            it.outputDir = prj.layout.buildDirectory.dir("windows-resources/${bin.name}").get().asFile
+        }
+
+        bin.linkTask.get().configure {
+            dependsOn compileResources
+            source.from compileResources.map({ return prj.fileTree(dir: it.outputDir, includes: ["**/*.res","**/*.obj"]) })
+            linkerArgs.addAll toolChain.map { NativeToolChain toolChain ->
+                if (toolChain instanceof VisualCpp) {
+                    return ["user32.lib"]
+                }
+                return []
+            }
+        }
+    }
+}
+
+
+////////////////////////////////////////////////////////////////
+// For some reason when run under gradle, the compiler isn't locating the AFX stuff by default,
+// although if you just run the same command (get it from gradle build --debug redirected to a file),
+// from the same command prompt, it works. 
+def addAFXOptions(Project prj) {
+    addVSCompilerOption(prj, '/I' + System.getenv('VCToolsInstallDir') + 'atlmfc\\include')
+    AddVSExeLinkOption(prj, "/LIBPATH:" + System.getenv('VCToolsInstallDir') + 'atlmfc\\lib\\x86')
+    AddVSExeLinkOption(prj, "/subsystem:windows")
+}
+
+// We need to "convert" our groovy method(s) to Closures, otherwise they won't be visible in
+// other Gradle files.
+// We wouldn't have to do this if these methods were in the root Gradle file, but this way
+// we can refactor things to keep the root Gradle file cleaner.
+// See https://stackoverflow.com/questions/18715137/extract-common-methods-from-gradle-build-script
+ext {
+    addDefaultCPPOptions = this.&addDefaultCPPOptions
+    addVSCompilerOption = this.&addVSCompilerOption
+    AddVSExeLinkOption = this.&AddVSExeLinkOption
+    AddVSDllLinkOption = this.&AddVSDllLinkOption
+    addDefaultCPPLibraryOptions = this.&addDefaultCPPLibraryOptions
+    addDefaultCPPApplicationOptions = this.&addDefaultCPPApplicationOptions
+    addWindowsResourceFile = this.&addWindowsResourceFile
+    addAFXOptions = this.&addAFXOptions
+    
+}
