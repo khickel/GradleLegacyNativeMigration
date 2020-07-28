@@ -59,7 +59,7 @@ def getOrCreateAggregateTaskForSubproject(Project prj, String taskNamePrefix, St
 ////////////////////////////////////////////////////////////////
 // Add an addProjOutputCopyFilesTask task to any subproject that has an "extra" property with a name matching the value of projMapPropName.
 // The property is a map where the key is the file name that the CppApplication is producing,
-// that is the output of a LinkExecutable task (e.g. util_1.exe),
+// that is the output of a LinkExecutable task.
 // and the value is a File, or List of Files specifying where the executable should be copied.
 //
 // This code is based on this snippet from "thadhouse" on the gradle native slack channel, 2020-07-13.
@@ -83,8 +83,8 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
     def releaseTasks = [:]
     def tgtPrj = wantTasksInParent ? parent : prj
 
-    //def debugOn = false
-    def debugOn = true
+    def debugOn = false
+    //def debugOn = true
 
     if(debugOn) {
         println "Debug(${methodName}): Called for project ${prj.path}, parent ${parent? parent.path : 'null parent'}, taskPrefix=${taskPrefix}, projMapPropName=${projMapPropName ?: 'null'}, wantTasksInParent=${wantTasksInParent}"
@@ -246,10 +246,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                 //outputs.dir(targetPath.path)
                 doLast {
                     if(debugOn) {
-                        println "Debug(${methodName}): ${it.name} in debug copy/sign task, copying file ${targetFilename} to ${targetPath.path} using task ${newDebugCopyTask.name}, inputs.files=${inputs.files}"
-                        inputs.each { inp ->
-                            println "Debug:   input=" + inp
-                        }
+                        println "Debug(${methodName}): ${it.name} in debug copy/sign task, copying file ${targetFilename} to ${targetPath.path} using task ${newDebugCopyTask.name}."
                         dumpTaskToJson(tgtPrj,it, file(tgtPrj.projectDir), "${it.name}_from_generic_task.json")
                     }
                     copy {
@@ -307,11 +304,11 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                         println "Debug(${methodName}): ${it.name} in release copy/sign task, copying file ${targetFilename} to ${targetPath.path} using task ${newReleaseCopyTask.name}"
                         dumpTaskToJson(tgtPrj,it, file(tgtPrj.projectDir), "${it.name}_from_generic_task.json")
                     }
-                    // KFH: I think this might be copying everything in the source dir back to itself, and that's why everything is zero length.
-                    // copy {
-                    //     from newDebugCopyTask
-                    //     into targetPath.path
-                    // }
+                    copy {
+                        from inputs.files
+                        rename { return targetFilename } // Name the file as specified, may not actually be a different name, but this works either way.
+                        into targetPath.path
+                    }
                     if(shouldSign) {
                         if(debugOn) {println "Debug(${methodName}): ${it.name} in newReleaseTask register call, should sign is on for file ${targetFilename} to ${targetPath.path}."}
                         // Imagine that this command was using signtool to actually sign the executable.
@@ -341,19 +338,9 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                         println "Debug(${methodName}): Updating debug copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
                             binary.linkTask.get().linkedFile.getAsFile().get().path
                     }
-                    // TODO:PROBLEM:
-                    // If this line is enabled, then when newDebugCopyTask runs, I get a zero byte file in legacy_installer\Source
-                    // If it is not enabled, I don't get any .exe file in legacy_installer\Source
-                    //it.from binary.linkTask.get().linkedFile
-
                     inputs.file(binary.linkTask.get().linkedFile)
-
                     // TODO: if shouldSign is true, then don't do this dependsOn call
                     it.dependsOn binary.linkTask
-
-                    if(optionMap['codeSign']){
-                        if(debugOn) {println "Debug(${methodName}): TODO:KFH: DoLast should sign for debug task ${tgtPrj.path}:${et.name}"}
-                    }
                 }
                 et.configure {
                     if(debugOn) {
@@ -363,11 +350,6 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                     inputs.file(binary.linkTask.get().linkedFile)
                 }
 
-                if(optionMap['codeSign']){
-                    if(debugOn) {println "Debug(${methodName}): TODO:KFH: in whenElementFinalized: need to do signing for debug task ${tgtPrj.path}:${et.name}"}
-                } else {
-                    if(debugOn) {println "Debug(${methodName}): TODO:KFH: in whenElementFinalized: no code signing needed for debug task ${tgtPrj.path}:${et.name}"}
-                }
                 if(debugOn) {
                     println "Debug(${methodName}): Updating debug task ${tgtPrj.path}:${dbgCopyAllTask.name} which now also dependsOn ${et.name}"
                 }
@@ -385,15 +367,9 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                         println "Debug(${methodName}): Updating release copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
                             binary.linkTask.get().linkedFile.getAsFile().get().name
                     }
-                    it.from binary.linkTask.get().linkedFile
                     inputs.file(binary.linkTask.get().linkedFile)
-
                     // TODO: if shouldSign is true, then don't do this dependsOn call
                     it.dependsOn binary.linkTask
-
-                    if(optionMap['codeSign']){
-                        println "Debug(${methodName}): TODO:KFH: DoLast should sign for release task ${tgtPrj.path}:${et.name}"
-                    }
                 }
                 et.configure {
                     if(debugOn) {
@@ -405,11 +381,6 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                     inputs.file(binary.linkTask.get().linkedFile)
                 }
 
-                if(optionMap['codeSign']){
-                    if(debugOn) {println "Debug(${methodName}): TODO:KFH: in whenElementFinalized: need to do signing for release task ${tgtPrj.path}:${et.name}"}
-                } else {
-                    if(debugOn) {println "Debug(${methodName}): TODO:KFH: in whenElementFinalized: no code signing needed for release task ${tgtPrj.path}:${et.name}"}
-                }
                 if(debugOn) {
                     println "Debug(${methodName}): Updating release task ${tgtPrj.path}:${relCopyAllTask.name} which now also dependsOn ${et.name}"
                 }

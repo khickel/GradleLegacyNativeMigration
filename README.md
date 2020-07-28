@@ -7,3 +7,6 @@ The goal is to be able to swap to a new build system without having to refactor 
 
 There are still rough edges, some things that don't work, and certainly some things that could be improved.
 
+
+ISSUES:
+There seems to be something wrong where after a clean checkout or gradle clean, I have to run "gradlew debug" or "gradlew release" 3-4 times before it stops executing tasks.
