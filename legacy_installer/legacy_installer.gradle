@@ -1,3 +1,4 @@
+def targetFilename = 'legacyInstaller.zip'
 def targetPath = projectDir.path + '/Source'
 def varName = 'legacyInstaller'
 
@@ -18,14 +19,37 @@ getRootProject().allprojects {
 }
 
 task debugBuildInstaller() {
-    // We'll use zip here to simulate some installer, such has install4j or InstallAnywhere or whatever.
+    // We'll use zip here to simulate some installer, such as install4j or InstallAnywhere or whatever.
     // That's why we aren't using the gradle zip facility here.
     // TODO: need a way to make this depend on the file sin Source so that it doesn't run unless those files change.
     //   but better would be if it treated every project that had a "legacyInstaller" property as an input.
+    inputs.files('Source')
     dependsOn(varName + "Debug_CopyAll")
-    outputs.file("legacyInstaller.zip")
+    outputs.files(targetFilename, project.property('stagingDir') + targetFilename)
     doLast {
-        exec { commandLine "zip", "-r", "legacyInstaller.zip", "Source" }
+        exec { commandLine "zip", "-r", targetFilename, "Source" }
+        copy {
+            from targetFilename
+            into project.property('stagingDir')
+        }
     }
 }
 (tasks.findByName(varName + "Debug") ?: tasks.create(varName + "Debug")).dependsOn(debugBuildInstaller)
+
+task releaseBuildInstaller() {
+    // We'll use zip here to simulate some installer, such as install4j or InstallAnywhere or whatever.
+    // That's why we aren't using the gradle zip facility here.
+    // TODO: need a way to make this depend on the file sin Source so that it doesn't run unless those files change.
+    //   but better would be if it treated every project that had a "legacyInstaller" property as an input.
+    inputs.files('Source')
+    dependsOn(varName + "Release_CopyAll")
+    outputs.files(targetFilename, project.property('stagingDir') + targetFilename)
+    doLast {
+        exec { commandLine "zip", "-r", targetFilename, "Source" }
+        copy {
+            from targetFilename
+            into project.property('stagingDir')
+        }
+    }
+}
+(tasks.findByName(varName + "Release") ?: tasks.create(varName + "Release")).dependsOn(debugBuildInstaller)

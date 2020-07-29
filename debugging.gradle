@@ -82,6 +82,12 @@ def dumpTaskToJson(Project prj, Task tsk, File bdir, String fname) {
     tsk.properties.each { k, v ->
         dumpObjectToJson(f, k, v, strings, files, atoms)
     }
+    tsk.inputs.files.eachWithIndex{ inf, idx ->
+        files.put("input_${idx}", inf)
+    }
+    tsk.outputs.files.eachWithIndex{ outf, idx ->
+        files.put("output_${idx}", outf)
+    }
     strings.each { k, v ->
         pw.println  "    \"$k\": \"$v\","
     }

@@ -3,15 +3,15 @@ plugins {
 }
 
 // Define a map listing the targetPath,targetFileName for any files that need to be copied to staging area.
-ext.installerFiles = [ (file(project.property('stagingDir'))):'util_1' ]
+ext.installerFiles = [ (file(project.property('stagingDir'))):'server_1' ]
 
 // Files created by this subproject that need to be part of the legacy_installer build.
-ext.legacyInstaller = ['.':['codeSign':true,'fileBasename':'util_1_renamed']]
+ext.legacyInstaller = ['.':['codeSign':true,'fileBasename':'server_1']]
 
 application { app->
 
     // Set the executable filename
-    baseName = 'util_1'
+    baseName = 'server_1'
     
     // Add *.cpp to the project
     source.from file('.')

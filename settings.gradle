@@ -2,6 +2,7 @@ rootProject.name = 'LegacyNativeExample'
 
 include 'static_lib'
 include 'subsystem_a:util_1'
+include 'subsystem_b:server_1'
 
 include 'legacy_installer'
 

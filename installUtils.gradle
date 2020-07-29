@@ -250,8 +250,6 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                         dumpTaskToJson(tgtPrj,it, file(tgtPrj.projectDir), "${it.name}_from_generic_task.json")
                     }
                     copy {
-                        // TODO:PROBLEM: This doesn't seem to be copying things, see TODO:PROBLEM below in the whenElementFinalized section.
-                        //from newDebugCopyTask
                         from inputs.files
                         rename { return targetFilename } // Name the file as specified, may not actually be a different name, but this works either way.
                         into targetPath.path
@@ -339,7 +337,6 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                             binary.linkTask.get().linkedFile.getAsFile().get().path
                     }
                     inputs.file(binary.linkTask.get().linkedFile)
-                    // TODO: if shouldSign is true, then don't do this dependsOn call
                     it.dependsOn binary.linkTask
                 }
                 et.configure {
@@ -368,7 +365,6 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                             binary.linkTask.get().linkedFile.getAsFile().get().name
                     }
                     inputs.file(binary.linkTask.get().linkedFile)
-                    // TODO: if shouldSign is true, then don't do this dependsOn call
                     it.dependsOn binary.linkTask
                 }
                 et.configure {
