@@ -1,4 +1,7 @@
 #include <stdio.h>
+
+#include <kernelspecs.h>
+
 #include "lib_one.h"
 
 int main(int argc, char *argv[]) {
