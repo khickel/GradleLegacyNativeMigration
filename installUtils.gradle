@@ -246,6 +246,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                 inputs.files(newDebugCopyTask)
                     .withPropertyName("inputs")
                     .withPathSensitivity(PathSensitivity.RELATIVE)
+
                 outputs.file(targetPath.path + "/" + targetFilename)
 
                 doLast {
@@ -264,10 +265,6 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                         // Since that would complicate this example, we'll just use editbin to modify the .exe file, which should have the same effect
                         // on the .exe contents and date that signing it would (e.g. the file will be different and newer than when it was copied).
                         exec { commandLine "editbin", "/version:2", "${targetPath.path}/${targetFilename}"}
-
-                        // changing the version number didn't trigger the same not up-to-date cycle that I saw with signtool,
-                        // so let's try replacing the file contents completely.
-                        //exec { commandLine "cp", "${tgtPrj.projectDir}\\legacy_installer.gradle", "${targetPath.path}\\${targetFilename}" }
                     }
                 }
             }
