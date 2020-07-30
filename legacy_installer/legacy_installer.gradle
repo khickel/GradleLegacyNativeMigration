@@ -1,7 +1,10 @@
-def targetFilename = 'legacyInstaller.zip'
 def targetPath = projectDir.path + '/Source'
 def varName = 'legacyInstaller'
+def targetFilename = varName + '.zip'
 
+tasks.create(varName + 'Debug')
+tasks.create(varName + 'Release')
+    
 // Find all subprojects that have a "legacyInstaller" property and set them up to copy the built executables to the staging area for the installer creation.
 def thisProj = project
 getRootProject().allprojects {
@@ -23,7 +26,7 @@ task debugBuildInstaller() {
     // That's why we aren't using the gradle zip facility here.
     // TODO: need a way to make this depend on the file sin Source so that it doesn't run unless those files change.
     //   but better would be if it treated every project that had a "legacyInstaller" property as an input.
-    inputs.files('Source')
+    inputs.files('Source/server_1.exe', 'Source/util_1_renamed.exe')
     dependsOn(varName + "Debug_CopyAll")
     outputs.files(targetFilename, project.property('stagingDir') + targetFilename)
     doLast {
@@ -46,6 +49,7 @@ task releaseBuildInstaller() {
     outputs.files(targetFilename, project.property('stagingDir') + targetFilename)
     doLast {
         exec { commandLine "zip", "-r", targetFilename, "Source" }
+        exec { commandLine "zip", targetFilename, "legacy_installer.gradle" }
         copy {
             from targetFilename
             into project.property('stagingDir')
