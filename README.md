@@ -7,6 +7,7 @@ The goal is to be able to swap to a new build system without having to refactor 
 
 There are still rough edges, some things that don't work, and certainly some things that could be improved.
 
+There are two .bat files in scripts that I use to avoid having to create gradlew.bat stubs in every child directory, someone else might find them to be useful.
 
 ISSUES:
 
@@ -17,3 +18,10 @@ ISSUES:
 Using method Project.afterEvaluate(Closure) when the project is already evaluated has been deprecated. This will fail with an error in Gradle 7.0. The configuration given is ignored because the project has already been evaluated. To apply this configuration, remove afterEvaluate.
 
 * I need to add an optional target that demonstrates the issue where the build fails because the native Gradle plugin forces /TP on the C/C++ compiler command line.
+
+* Add a gradle file that doesn't produce a binary, but has a text file it wants to include in someones installer.
+
+* Add example that creates a .h file for the application. Ask how to properly make the compile task depend on the creation of the .h file (it seems to work, but is it reliable).
+
+* Add example and text for a manual test whjere stageDebug doesn't recopy the target file if it was manually deleted, unless it had to rebuild the input file.
+
