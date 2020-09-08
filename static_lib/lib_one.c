@@ -1,6 +1,8 @@
 #include <stdio.h>
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
   int lib_one_func_one(int i, char *descr) {
     int j;
@@ -10,4 +12,7 @@ extern "C" {
     return 0;
   }
 
+#ifdef __cplusplus
 }
+#endif
+
