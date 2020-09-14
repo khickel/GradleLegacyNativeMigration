@@ -13,5 +13,7 @@ library { lib->
     }
     publicHeaders.from file('.')
     addDefaultCPPLibraryOptions(project, lib)
+    // TODO-KFH temp change to try to figure out what is bringing in DriverSpec.h
+    addVSCompilerOption(project, '/showIncludes')
    
 }

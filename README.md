@@ -11,10 +11,16 @@ There are two .bat files in scripts that I use to avoid having to create gradlew
 
 ISSUES:
 
-* There seems to be something wrong where after a clean checkout or gradle clean, I have to run "gradlew debug" or "gradlew release" 3-4 times before it stops executing tasks.
-** I need to add an example showing the issue that happens because Gradle uses a case-sensitive compare for the include file names, even on windows.  There are issues where the Microsoft Windows SDK uses camel case in an include statement, but the actual file on disk is all in lower case.
-* The afterEvaluate call in build.gradle causes the deprecation error below, I'm not sure how to best resolve that.
+* After a clean checkout or gradle clean, I have to run "gradlew debug" or "gradlew release" several times before it stops executing tasks, because Gradle
+uses a case-sensitive compare for the include file names, even on windows.
+There are issues where the Microsoft Windows SDK uses camel case in an include statement, but the actual file on disk is all in lower case.
+To see this, remove the .gradle directory, then run "gradlew debug", then run "gradle debug --info", in the output you will see messages like the one below. In a more complex project, you may have to run gradle 7 or 8 times before it stops building things.
+Task ':subsystem_b:server_1:compileDebugCpp' is not up-to-date because:
+  Input property 'headerDependencies' file D:\BMCTools\Gradle\GradleLegacyNativeMigration\static_lib\lib_one.h has been removed.
+  Input property 'headerDependencies' file D:\BMCTools\Gradle\GradleLegacyNativeMigration\static_lib\lib_One.h has been added.
+Note that sometimes the second time it won't say that it executed any tasks, but if you look at the info output, you'll see that it though it was not up to date.
 
+* The afterEvaluate call in build.gradle causes the deprecation error below, I'm not sure how to best resolve that.
 Using method Project.afterEvaluate(Closure) when the project is already evaluated has been deprecated. This will fail with an error in Gradle 7.0. The configuration given is ignored because the project has already been evaluated. To apply this configuration, remove afterEvaluate.
 
 * I need to add an optional target that demonstrates the issue where the build fails because the native Gradle plugin forces /TP on the C/C++ compiler command line.
@@ -23,5 +29,5 @@ Using method Project.afterEvaluate(Closure) when the project is already evaluate
 
 * Add example that creates a .h file for the application. Ask how to properly make the compile task depend on the creation of the .h file (it seems to work, but is it reliable).
 
-* Add example and text for a manual test whjere stageDebug doesn't recopy the target file if it was manually deleted, unless it had to rebuild the input file.
+* Add example and text for a manual test where stageDebug doesn't recopy the target file if it was manually deleted, unless it had to rebuild the input file.
 
