@@ -6,7 +6,8 @@ plugins {
 ext.installerFiles = [ (file(project.property('stagingDir'))):'util_1' ]
 
 // Files created by this subproject that need to be part of the legacy_installer build.
-ext.legacyInstaller = ['.':['codeSign':true,'fileBasename':'util_1_renamed']]
+ext.legacyInstaller = ['.':[['codeSign':true,'fileBasename':'util_1_renamed'],
+                            ['addExeOrDllSuffix':false, 'fileBasename':'doc.txt', 'outputFilename':'Documentation.txt']]]
 
 application { app->
 

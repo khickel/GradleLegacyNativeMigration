@@ -32,7 +32,5 @@ If /TP was not specified then any user that relied on that behavior could
 simply add /TP from their .gradle file.
 > src\platform-native\org\gradle\nativeplatform\toolchain\internal\msvcpp\CppCompiler.java
 
-* TODO Add a gradle file that doesn't produce a binary, but has a text file it wants to include in another project's installer.
-
 * TODO Add example for a manual test where stageDebug doesn't recopy the target file if it was manually deleted, unless it had to rebuild the input file. I haven't yet been able to recreate this in this stripped down example.
 

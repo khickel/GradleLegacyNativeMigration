@@ -24,7 +24,7 @@ getRootProject().allprojects {
 task debugBuildInstaller() {
     // We'll use zip here to simulate some installer, such as install4j or InstallAnywhere or whatever.
     // That's why we aren't using the gradle zip facility here.
-    // TODO: need a way to make this depend on the file sin Source so that it doesn't run unless those files change.
+    // TODO: need a way to make this depend on the files in the Source directory, so that it doesn't run unless those files change.
     //   but better would be if it treated every project that had a "legacyInstaller" property as an input.
     inputs.files('Source/server_1.exe', 'Source/util_1_renamed.exe')
     dependsOn(varName + "Debug_CopyAll")
@@ -42,7 +42,7 @@ task debugBuildInstaller() {
 task releaseBuildInstaller() {
     // We'll use zip here to simulate some installer, such as install4j or InstallAnywhere or whatever.
     // That's why we aren't using the gradle zip facility here.
-    // TODO: need a way to make this depend on the file sin Source so that it doesn't run unless those files change.
+    // TODO: need a way to make this depend on the files in the Source directory so that it doesn't run unless those files change.
     //   but better would be if it treated every project that had a "legacyInstaller" property as an input.
     inputs.files('Source')
     dependsOn(varName + "Release_CopyAll")
