@@ -3,7 +3,7 @@
 
 This is an attempt to create an example of migrating an existing C/C++ project from makefiles to Gradle, and dealing with all the non-Gradle-way things that are required.
 
-The goal is to be able to swap to a new build system without having to refactor everything else at the same time, once that is done, then it becomes easir to move the project to a newer style layout (if desired).
+The goal is to be able to swap to a new build system without having to refactor everything else at the same time, once that is done, then it becomes easier to move the project to a newer style layout (if desired).
 
 There are still rough edges, some things that don't work, and certainly some things that could be improved.
 
@@ -25,9 +25,7 @@ Note that sometimes the second time it won't say that it executed any tasks, but
 
 * I need to add an optional target that demonstrates the issue where the build fails because the native Gradle plugin forces /TP on the C/C++ compiler command line.
 
-* Add a gradle file that doesn't produce a binary, but has a text file it wants to include in someones installer.
+* Add a gradle file that doesn't produce a binary, but has a text file it wants to include in another project's installer.
 
-* Add example that creates a .h file for the application. Ask how to properly make the compile task depend on the creation of the .h file (it seems to work, but is it reliable).
-
-* Add example and text for a manual test where stageDebug doesn't recopy the target file if it was manually deleted, unless it had to rebuild the input file.
+* Add example for a manual test where stageDebug doesn't recopy the target file if it was manually deleted, unless it had to rebuild the input file.
 
