@@ -15,13 +15,13 @@ ISSUES:
 uses a case-sensitive compare for the include file names, even on windows.
 There are issues where the Microsoft Windows SDK uses camel case in an include statement, but the actual file on disk is all in lower case.
 To see this, remove the .gradle directory, then run "gradlew debug", then run "gradle debug --info", in the output you will see messages like the one below. In a more complex project, you may have to run gradle 7 or 8 times before it stops building things.
-Task ':subsystem_b:server_1:compileDebugCpp' is not up-to-date because:
-  Input property 'headerDependencies' file D:\BMCTools\Gradle\GradleLegacyNativeMigration\static_lib\lib_one.h has been removed.
-  Input property 'headerDependencies' file D:\BMCTools\Gradle\GradleLegacyNativeMigration\static_lib\lib_One.h has been added.
 Note that sometimes the second time it won't say that it executed any tasks, but if you look at the info output, you'll see that it though it was not up to date.
+>Task ':subsystem_b:server_1:compileDebugCpp' is not up-to-date because:
+>  Input property 'headerDependencies' file D:\BMCTools\Gradle\GradleLegacyNativeMigration\static_lib\lib_one.h has been removed.
+>  Input property 'headerDependencies' file D:\BMCTools\Gradle\GradleLegacyNativeMigration\static_lib\lib_One.h has been added.
 
 * The afterEvaluate call in build.gradle causes the deprecation error below, I'm not sure how to best resolve that.
-Using method Project.afterEvaluate(Closure) when the project is already evaluated has been deprecated. This will fail with an error in Gradle 7.0. The configuration given is ignored because the project has already been evaluated. To apply this configuration, remove afterEvaluate.
+>Using method Project.afterEvaluate(Closure) when the project is already evaluated has been deprecated. This will fail with an error in Gradle 7.0. The configuration given is ignored because the project has already been evaluated. To apply this configuration, remove afterEvaluate.
 
 * I need to add an optional target that demonstrates the issue where the build fails because the native Gradle plugin forces /TP on the C/C++ compiler command line.
 
