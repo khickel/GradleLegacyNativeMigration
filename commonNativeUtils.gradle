@@ -7,18 +7,27 @@
 // Set up the default compiler options for a C++ project
 def addDefaultCPPOptions(Project prj, Boolean suppressConsoleDef=false) {
     prj.tasks.withType(CppCompile).configureEach { task ->
-        task.macros.put("NDEBUG", null)
+        // TODO - make this depend upon the target
+        //task.macros.put("NDEBUG", null)
 
         task.compilerArgs.addAll toolChain.map { toolChain ->
             if (toolChain in VisualCpp) {
                 return [
                     '/D_CRT_SECURE_NO_WARNINGS', '/wd4996',
-                    '/nologo', '/MT', '/W3', '/EHsc',
+                    '/nologo', 
+
+                    // TODO for non-debug use:
+                    //'/MT',
+                    // for debug, use:
+                    '/MTd',
+                    
+                    '/W3', '/WX', '/EHsc',
                     '/DWIN32',
                     '/D_WIN32_WINNT=0x0601',
 
-                    // Why NDEBUG, what about debug builds?
-                    '/DNDEBUG',
+                    // TODO - make this depend upon the target, debug or release
+                    //'/DNDEBUG',
+                    '/DEBUG', '/D_DEBUG',
                     
                     // Tell some of the modules in SourceT to use a relative include path for siglib.
                     '/DUSE_REL_SIGLIB_PATH',
@@ -119,12 +128,12 @@ def addDefaultCPPApplicationOptions(Project prj, CppApplication app, Boolean sup
 }
 
 ////////////////////////////////////////////////////////////////
-def addWindowsResourceFile(Project prj, CppApplication app) {
+def addWindowsResourceFile(Project prj, CppApplication app, String dir=".") {
     app.binaries.whenElementFinalized { bin ->
         def compileResources = prj.tasks.register("compileResources${bin.name.capitalize()}", WindowsResourceCompile) {
             targetPlatform = bin.compileTask.get().targetPlatform
             toolChain = bin.toolChain
-            source.from prj.fileTree(dir: ".", includes: ["*.rc"])
+            source.from prj.fileTree(dir: "${dir}", includes: ["*.rc"])
             // For some as yet not understood reason, if you just run "rc /v /l 0x409 Version.rc" in a VS command prompt, it works,
             // but when Gradle runs the command, rc.exe can't find the standard include files, so we have to use the INCLUDE env var.
             includes.from file(System.getenv('INCLUDE'))
