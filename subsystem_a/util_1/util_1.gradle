@@ -15,6 +15,22 @@ application { app->
     
     // Add *.cpp to the project
     source.from file('.')
+    binaries.configureEach {
+        def compileTask = compileTask.get()
+        // Gradle adds /TP to every visual studio C or C++ compilation command, this seems wrong,
+        // since by default, visual studio determines it based on the file extension, and
+        // there is no way to turn off /TP once it is on the command line.
+        // Once /TP or /TC is specified on the command line, there is no way to revert to the
+        // default mode.
+        // For my project, when there is a new Gradle release, I download the source,
+        // then replace the line 'return "/TP";' with 'return "";'.
+        // If /TP was not specified then any user that relied on that behavior could
+        // simply add /TP from their .gradle file.
+        // src\platform-native\org\gradle\nativeplatform\toolchain\internal\msvcpp\CppCompiler.java
+
+        // To see the (contrived) failure, uncomment the line below.
+        //compileTask.source.from fileTree(dir: ".", include: "*.c")
+    }
 
     // Set the project standard C++ compiler/linker options
     addDefaultCPPApplicationOptions(project, app)
