@@ -23,9 +23,16 @@ Note that sometimes the second time it won't say that it executed any tasks, but
 * The afterEvaluate call in build.gradle causes the deprecation error below, I'm not sure how to best resolve that.
 >Using method Project.afterEvaluate(Closure) when the project is already evaluated has been deprecated. This will fail with an error in Gradle 7.0. The configuration given is ignored because the project has already been evaluated. To apply this configuration, remove afterEvaluate.
 
-* I need to add an optional target that demonstrates the issue where the build fails because the native Gradle plugin forces /TP on the C/C++ compiler command line.
+* Gradle adds /TP to every visual studio C or C++ compilation command, this seems to be incorrect or  at least undesireable.
+By default, visual studio determines it based on the file extension, but once /TP or /TC is specified on the
+command line, there is no way to revert back to the default behavior.
+For my project, when there is a new Gradle release, I download the source,
+then edit the flie listed below, replacing the line in  'return "/TP";' with 'return "";'.
+If /TP was not specified then any user that relied on that behavior could
+simply add /TP from their .gradle file.
+> src\platform-native\org\gradle\nativeplatform\toolchain\internal\msvcpp\CppCompiler.java
 
-* Add a gradle file that doesn't produce a binary, but has a text file it wants to include in another project's installer.
+* TODO Add a gradle file that doesn't produce a binary, but has a text file it wants to include in another project's installer.
 
-* Add example for a manual test where stageDebug doesn't recopy the target file if it was manually deleted, unless it had to rebuild the input file.
+* TODO Add example for a manual test where stageDebug doesn't recopy the target file if it was manually deleted, unless it had to rebuild the input file.
 
