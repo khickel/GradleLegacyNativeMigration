@@ -34,3 +34,5 @@ simply add /TP from their .gradle file.
 
 * TODO Add example for a manual test where stageDebug doesn't recopy the target file if it was manually deleted, unless it had to rebuild the input file. I haven't yet been able to recreate this in this stripped down example.
 
+* TODO Come up with a way to make code analysis in Visual Studio work.  Currently you can do it by commenting in '/analyze' and
+commenting out '/WX' in commonNativeUtils.gradle, before running the code analysis, but it would be better to somehow make that automatic.

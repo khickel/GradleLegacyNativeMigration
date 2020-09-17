@@ -21,9 +21,15 @@ def addDefaultCPPOptions(Project prj, Boolean suppressConsoleDef=false) {
                     // for debug, use:
                     '/MTd',
                     
-                    '/W3', '/WX', '/EHsc',
+                    '/EHsc',
                     '/DWIN32',
                     '/D_WIN32_WINNT=0x0601',
+
+                    '/W3',
+
+                    // For running the Visual Studio Code Analysis, comment this line in, and the /WX line out.
+                    //'/analyze',
+                    '/WX', 
 
                     // TODO - make this depend upon the target, debug or release
                     //'/DNDEBUG',
