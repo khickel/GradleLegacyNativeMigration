@@ -12,6 +12,21 @@ extern "C" {
 #endif
 
 
+  // From https://docs.microsoft.com/en-us/cpp/code-quality/demo-sample?view=vs-2019
+  // this is an issue that only the analyzer will find (build or intellisense).
+  HRESULT retHandle()
+  {
+    return S_OK;
+  }
+
+
+  char* buggy_func_for_analyzer(int i) {
+    if (retHandle()) {
+      printf("Hello.\n");
+    }
+    return 0;
+  }
+
   int lib_one_func_one(int i, char *descr) {
     int j;
     for(j=0; j < i; j++) {
@@ -28,7 +43,7 @@ extern "C" {
     return 0;
   }
 
-#ifdef __cplusplus
+ #ifdef __cplusplus
 }
 #endif
 

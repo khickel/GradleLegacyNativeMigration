@@ -23,6 +23,9 @@ Note that sometimes the second time it won't say that it executed any tasks, but
 * The afterEvaluate call in build.gradle causes the deprecation error below, I'm not sure how to best resolve that.
 >Using method Project.afterEvaluate(Closure) when the project is already evaluated has been deprecated. This will fail with an error in Gradle 7.0. The configuration given is ignored because the project has already been evaluated. To apply this configuration, remove afterEvaluate.
 
+* In order to make code analysis in Visual Studio work you can comment int the line with '/analyze' in commonNativeUtils.gradle, then do a
+rebuild of the solution, it would be better to somehow make that automatic or controlled by a gradle parm.
+
 * Gradle adds /TP to every visual studio C or C++ compilation command, this seems to be incorrect or  at least undesireable.
 By default, visual studio determines it based on the file extension, but once /TP or /TC is specified on the
 command line, there is no way to revert back to the default behavior.
@@ -32,7 +35,7 @@ If /TP was not specified then any user that relied on that behavior could
 simply add /TP from their .gradle file.
 > src\platform-native\org\gradle\nativeplatform\toolchain\internal\msvcpp\CppCompiler.java
 
+* TODO When we add .c files to the solution the way that we are, they don't end up under Source Files for the project in the Solution Explorer, try to fix that.
+
 * TODO Add example for a manual test where stageDebug doesn't recopy the target file if it was manually deleted, unless it had to rebuild the input file. I haven't yet been able to recreate this in this stripped down example.
 
-* TODO Come up with a way to make code analysis in Visual Studio work.  Currently you can do it by commenting in '/analyze' and
-commenting out '/WX' in commonNativeUtils.gradle, before running the code analysis, but it would be better to somehow make that automatic.

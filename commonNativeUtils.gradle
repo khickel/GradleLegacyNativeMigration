@@ -25,11 +25,23 @@ def addDefaultCPPOptions(Project prj, Boolean suppressConsoleDef=false) {
                     '/DWIN32',
                     '/D_WIN32_WINNT=0x0601',
 
-                    '/W3',
+                    '/W3', '/WX',
 
-                    // For running the Visual Studio Code Analysis, comment this line in, and the /WX line out.
+                    // We'd like to be able to do a build time analysis, intellisense will work,
+                    // but you have to open every source file in the IDE to get that to scan it all, which is impractical.
+                    // Since Gradle only sends compilation errors to stdout, not warnings, we either need to someone get the entire
+                    // compiler output to stdout, or cause all warnings to be errors.
+                    
+                    // Comment this line back in to get all analysis warnings in the VS error list panel, but turning this on for an
+                    // existing codebase will cause a lot of issues that need to be fixed (unless you turn it on
+                    // only on demand) and may prevent other projects from being built (based on dependencies), so leave it off normally.
+                    // Ideally turn this on by some command line switch, VS doesn't seem to let us control the analyze command as it does
+                    // for debug or release.
                     //'/analyze',
-                    '/WX', 
+
+                    // TODO: There is also this solution at https://stackoverflow.com/questions/44126969/gradle-compiler-output-when-building-c-c-code/44691786#44691786.
+                    // It sends the compiler output from the build\tmp directory to gradle stdout.
+
 
                     // TODO - make this depend upon the target, debug or release
                     //'/DNDEBUG',
@@ -174,6 +186,37 @@ def addAFXOptions(Project prj) {
     addVSCompilerOption(prj, '/I' + System.getenv('VCToolsInstallDir') + 'atlmfc\\include')
     AddVSExeLinkOption(prj, "/LIBPATH:" + System.getenv('VCToolsInstallDir') + 'atlmfc\\lib\\x86')
     AddVSExeLinkOption(prj, "/subsystem:windows")
+}
+
+////////////////////////////////////////////////////////////////
+// Tasks to show compiler options and output
+// from https://stackoverflow.com/questions/44126969/gradle-compiler-output-when-building-c-c-code/44691786#44691786
+task showCompilerOptions {
+   doLast {
+      println '\n-----------------------------------------------------\n'
+      println 'Compiler options:'
+      FileTree tree = fileTree('build').include('**/options.txt')
+      // Iterate over the contents of a tree
+      tree.each {File file ->
+          println 'Content of file ' + file + ':\n'
+          println file.text
+          println '------\n'
+      }
+   }
+}
+task showCompilerOutput {
+   dependsOn showCompilerOptions
+   doLast {
+      println '\n-----------------------------------------------------\n'
+      println 'Compiler output:'
+      FileTree tree = fileTree('build').include('**/output.txt')
+      // Iterate over the contents of a tree
+      tree.each {File file ->
+          println 'Content of file ' + file + ':\n'
+          println file.text
+          println '------\n'
+      }
+   }
 }
 
 // We need to "convert" our groovy method(s) to Closures, otherwise they won't be visible in
