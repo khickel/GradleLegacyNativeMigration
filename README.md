@@ -20,6 +20,8 @@ Note that sometimes the second time it won't say that it executed any tasks, but
 >  Input property 'headerDependencies' file D:\BMCTools\Gradle\GradleLegacyNativeMigration\static_lib\lib_one.h has been removed.
 >  Input property 'headerDependencies' file D:\BMCTools\Gradle\GradleLegacyNativeMigration\static_lib\lib_One.h has been added.
 ```
+This is related to the recently closed ticket https://github.com/gradle/gradle/issues/7930
+
 
 * The afterEvaluate call in build.gradle causes the deprecation error below, I'm not sure how to best resolve that.
 >Using method Project.afterEvaluate(Closure) when the project is already evaluated has been deprecated. This will fail with an error in Gradle 7.0. The configuration given is ignored because the project has already been evaluated. To apply this configuration, remove afterEvaluate.
