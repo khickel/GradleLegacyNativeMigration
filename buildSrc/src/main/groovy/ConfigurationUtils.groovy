@@ -74,8 +74,10 @@ final class ConfigurationUtils {
         return { NativeSourceCompile task ->
             if (variant.buildVariant.hasAxisOf(buildTypeFactory.named('release'))) {
                 task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/DNDEBUG')))
+                task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/MT')))
             } else if (variant.buildVariant.hasAxisOf(buildTypeFactory.named('debug'))) {
                 task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/DDEBUG', '/D_DEBUG')))
+                task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/MTd')))
             }
 
             def configuration = new NativeConfiguration()
@@ -84,11 +86,6 @@ final class ConfigurationUtils {
             task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp([
                     '/D_CRT_SECURE_NO_WARNINGS', '/wd4996',
                     '/nologo',
-
-                    // TODO for non-debug use:
-                    //'/MT',
-                    // for debug, use:
-                    '/MTd',
 
                     '/EHsc',
                     '/DWIN32',
