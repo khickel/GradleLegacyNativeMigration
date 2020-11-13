@@ -1,5 +1,3 @@
-import dev.nokee.platform.nativebase.ExecutableBinary
-
 import static ConfigurationUtils.withDefaultApplicationConfiguration
 import static ConfigurationUtils.withDefaultLibraryConfiguration
 
