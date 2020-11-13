@@ -53,7 +53,7 @@ application { app->
 
 // Until we release the higher abstraction plugins, it's best to use an "internal" project that build the c language.
 project('c') {
-//    layout.buildDirectory = parent.layout.buildDirectory.dir('subprojects/c')
+    layout.buildDirectory = parent.layout.buildDirectory.dir('subprojects/c')
     apply plugin: 'dev.nokee.c-library'
     library(withDefaultLibraryConfiguration())
     library {
