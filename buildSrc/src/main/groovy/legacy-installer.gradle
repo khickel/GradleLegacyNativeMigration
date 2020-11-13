@@ -1,0 +1,75 @@
+import javax.inject.Inject
+
+abstract class BuildInstaller extends DefaultTask {
+    @InputFiles
+    abstract ConfigurableFileCollection getRuntimeLibraries()
+
+    @InputFiles
+    abstract ConfigurableFileCollection getExecutables()
+
+    @OutputFile
+    abstract RegularFileProperty getOutputFile()
+
+    @Inject
+    protected abstract ExecOperations getExecOperations()
+
+    @Inject
+    protected abstract FileSystemOperations getFileOperations()
+
+    @TaskAction
+    private void doBuild() {
+        def stagingDirectory = new File(temporaryDir, 'staging-dir')
+        fileOperations.sync {
+            it.from(runtimeLibraries) { into('libs') }
+            it.from(executables) { into('bin') }
+            it.into(stagingDirectory)
+        }
+        execOperations.exec {
+            it.commandLine("zip", "-r", outputFile.get().asFile.absolutePath, stagingDirectory.absolutePath)
+        }
+    }
+}
+
+configurations {
+    installer {
+        canBeConsumed = false
+        canBeResolved = false
+    }
+}
+
+abstract class LegacyInstallerExtension {
+    abstract SetProperty<String> getTargetBuildTypes()
+}
+
+def legacyInstaller = extensions.create('legacyInstaller', LegacyInstallerExtension)
+
+afterEvaluate {
+    legacyInstaller.targetBuildTypes.get().each { buildType ->
+        def installerRuntimeLibraries = configurations.create("${buildType}InstallerRuntimeLibraries") {
+            canBeConsumed = false
+            canBeResolved = true
+            extendsFrom configurations.installer
+            attributes {
+                it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, 'legacy-installer-libraries'))
+                it.attribute(Attribute.of('legacy-installer.buildType', String), buildType)
+            }
+        }
+
+        def installerExecutables = configurations.create("${buildType}InstallerExecutables") {
+            canBeConsumed = false
+            canBeResolved = true
+            extendsFrom configurations.installer
+            attributes {
+                it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, 'legacy-installer-binaries'))
+                it.attribute(Attribute.of('legacy-installer.buildType', String), buildType)
+            }
+        }
+
+        tasks.register("buildInstaller${buildType.capitalize()}", BuildInstaller) { task ->
+            task.group = 'installer'
+            task.runtimeLibraries.from(installerRuntimeLibraries)
+            task.executables.from(installerExecutables)
+            task.outputFile = layout.buildDirectory.file("distributions/${buildType}/legacyInstaller.zip")
+        }
+    }
+}

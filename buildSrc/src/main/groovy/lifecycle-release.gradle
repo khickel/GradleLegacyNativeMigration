@@ -1,0 +1,4 @@
+tasks.register('release') {
+    group('Legacy Native Migration Example Release')
+    description('Run all tasks to do a release build')
+}

@@ -1,19 +1,22 @@
+import static ConfigurationUtils.withDefaultLibraryConfiguration
+
 plugins {
-    id 'cpp-library'
+    id 'dev.nokee.c-library'
 }
 
-apply from: "${rootDir}/commonNativeUtils.gradle"
-
+library(withDefaultLibraryConfiguration())
 library { lib->
-    linkage = [Linkage.STATIC]
+    targetLinkages = [linkages.static]
 
-    binaries.configureEach {
-        def compileTask = compileTask.get()
-        compileTask.source.from fileTree(dir: ".", include: "*.c")
-    }
-    publicHeaders.from file('.')
-    addDefaultCPPLibraryOptions(project, lib)
+    cSources.from(fileTree(dir: ".", include: "*.c"))
+    publicHeaders.from(projectDir)
+
     // TODO-KFH temp change to try to figure out what is bringing in DriverSpec.h
-    addVSCompilerOption(project, '/showIncludes')
-   
+    // TODO(nokeedev): Figuring out where a header comes from should be made easy with Nokee by exposing the data it already acquire during compilation
+    //    This is a common question in the native ecosystem.
+//    binaries.configureEach {
+//        compileTasks.configureEach {
+//            compilerArgs.add('/showIncludes')
+//        }
+//    }
 }

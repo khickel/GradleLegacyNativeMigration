@@ -1,0 +1,8 @@
+abstract class CodeSignExtension {
+    abstract DirectoryProperty getCertificateDirectory()
+}
+
+extensions.create('codeSign', CodeSignExtension)
+
+// TODO(nokeedev): Code signing should be an additional artifact added to each variant via a plugin
+//  Some approximation can be done in different manner but the clean solution is an additional artifact

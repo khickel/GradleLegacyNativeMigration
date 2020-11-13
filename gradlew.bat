@@ -86,7 +86,7 @@ set CLASSPATH=%APP_HOME%\gradle\wrapper\gradle-wrapper.jar
 
 
 @rem Execute Gradle
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" org.gradle.wrapper.GradleWrapperMain --init-script "%APP_HOME%\gradle\nokee.init.gradle" -DuseNokeeVersionFromWrapper=0.5.0-dfbba94d %CMD_LINE_ARGS%
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" org.gradle.wrapper.GradleWrapperMain --init-script "%APP_HOME%\gradle\nokee.init.gradle" -DuseNokeeVersionFromWrapper=0.5.0-e8164778 %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell

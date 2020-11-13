@@ -1,105 +1,31 @@
 plugins {
     // https://github.com/dorongold/gradle-task-tree
     id "com.dorongold.task-tree" version "1.5"
+    id 'usage'
 }
 
-apply from: "${rootDir}/installUtils.gradle"
-apply from: "${rootDir}/commonNativeUtils.gradle"
-apply from: "${rootDir}/debugging.gradle"
+allprojects {
+    apply plugin: 'lifecycle-debug'
+    apply plugin: 'lifecycle-release'
+    apply plugin: 'dev.nokee.visual-studio-ide'
 
+    pluginManager.withPlugin('code-sign') {
+        codeSign.certificateDirectory = rootProject.layout.buildDirectory.dir('Certs')
+    }
+}
 
-ext { 
-    stagingDir = "${projectDir}/staging/"
-
-    // Names for our task groups
-    debugGroup = "Legacy Native Migration Example Debug"
-    releaseGroup = "Legacy Native Migration Example Release"
+ext {
 
     // Code signing info
     certDir = "${buildDir}/Certs/"
 }
 
-// Default task if none specified on the command line, tell the user how to run things.
-task usage {
-    doLast {
-        println ""
-        println "Usage: "
-        println "You can run gradlew with one of the following tasks as an argument:"
-        println "  debug - do a full debug build."
-        println "  release - do a full release build."
-        println ""
-        println "You can run the same command in any subdirectory to target only that dir and whatever it depends on."
-        println "You can run gradlew tasks to see the list of known tasks."
-        println "You can add \" taskTree --no-repeat\" in any directory to get a tree dump of the task dependencies."
-        println ""
-    }
-}
-
 // Common configuration for all projects including the top level.
 allprojects {
-    apply plugin: 'visual-studio'
-
-    defaultTasks 'usage'
-
-    // Create tasks to "do everything" for debug and release builds.
-    // sub projects and methods will set up dependencies.
-    it.tasks.create('debug') {
-        group(debugGroup)
-        description('Run all tasks to do a debug build')
-    }
-    it.tasks.create('release') {
-        group(releaseGroup)
-        description('Run all tasks to do a release build')
-    }
-
-    ////////////////////////////////////////////////////////////////
-    // Add the .c files to the Visual Studio project (.c files aren't handled by the native Gradle plugins )
-    // Based on https://docs.gradle.org/current/dsl/org.gradle.ide.visualstudio.VisualStudioProject.html
-
-    // Daniel from Nokeedev says I might be better off like this (but what I have here seems to work, so we'll go with that for now):
-    // The model block can be a bit troublesome as there is a transformation applied to it.
-    // You can also create a RuleSource plugin which you can then apply to all projects.
-    // Here is an example of a RuleSource plugin:
-    //  https://docs.gradle.org/current/userguide/software_model.html#example_applying_a_rule_source_plugin
-
-    model {
-        visualStudio {
-            projects.all { prj->
-                // Trying this, based on the page at https://mrhaki.blogspot.com/2012/09/gradle-goodness-customize-idea-project.html. 
-                prj.projectFile.withXml { xmlProvider ->
-                    def xmlNodes = xmlProvider.asNode()
-
-                    // This finds all descendents of the root that are of type ItemGroup
-                    xmlNodes.ItemGroup.findAll { ig ->
-                        ig.@Label == "Sources"
-                    }.each { ig ->
-                        // Add all the sources, preferably from the project.
-                        tasks.withType(CppCompile).configureEach { task ->
-                            task.source.getFiles().each { f ->
-                                // If the file is not already listed, then add it.
-                                if(ig.'ClCompile'.find{ it.'@Include' == f.getName()} == null) {
-                                    ig.appendNode('ClCompile', [Include: f.getName()])
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Find all subprojects that have an installerFiles property and set them up to copy the built executables to the staging area for the installer.
-    afterEvaluate { prj ->
-        if(prj.hasProperty('installerFiles')) {
-            addProjOutputCopyFilesTask(prj, prj.parent, 'stage', 'installerFiles', null, "Stage build output to a local testing directory", false)
-       }
-    }
-
-}
-
-
-subprojects {
-    it.tasks.create('usage') {
-        dependsOn(":usage")
-    }
+//    // Find all subprojects that have an installerFiles property and set them up to copy the built executables to the staging area for the installer.
+//    afterEvaluate { prj ->
+//        if(prj.hasProperty('installerFiles')) {
+//            addProjOutputCopyFilesTask(prj, prj.parent, 'stage', 'installerFiles', null, "Stage build output to a local testing directory", false)
+//       }
+//    }
 }

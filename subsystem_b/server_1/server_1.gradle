@@ -1,27 +1,23 @@
+import static ConfigurationUtils.withDefaultApplicationConfiguration
+
 plugins {
-    id 'cpp-application'
+    id 'dev.nokee.cpp-application'
+    id 'legacy-installable'
+    id 'code-sign'
 }
 
-// Define a map listing the targetPath,targetFileName for any files that need to be copied to staging area.
-ext.installerFiles = [ (file(project.property('stagingDir'))):'server_1' ]
-
-// Files created by this subproject that need to be part of the legacy_installer build.
-ext.legacyInstaller = ['.':['codeSign':true,'fileBasename':'server_1']]
-
+application(withDefaultApplicationConfiguration())
 application { app->
 
+    // TODO(nokeedev): Support base name on the extension
     // Set the executable filename
-    baseName = 'server_1'
-    
-    // Add *.cpp to the project
-    source.from file('.')
+//    baseName = 'server_1'
 
-    // Set the project standard C++ compiler/linker options
-    addDefaultCPPApplicationOptions(project, app)
+    // Add *.cpp to the project
+    cppSources.from(fileTree(dir: projectDir, include: '*.cpp'))
 
     dependencies {
         implementation project(':static_lib')
     }
-
 }
 
