@@ -13,13 +13,3 @@ allprojects {
         codeSign.certificateDirectory = rootProject.layout.buildDirectory.dir('Certs')
     }
 }
-
-// Common configuration for all projects including the top level.
-allprojects {
-//    // Find all subprojects that have an installerFiles property and set them up to copy the built executables to the staging area for the installer.
-//    afterEvaluate { prj ->
-//        if(prj.hasProperty('installerFiles')) {
-//            addProjOutputCopyFilesTask(prj, prj.parent, 'stage', 'installerFiles', null, "Stage build output to a local testing directory", false)
-//       }
-//    }
-}
