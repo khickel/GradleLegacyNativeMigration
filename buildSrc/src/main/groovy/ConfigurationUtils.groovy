@@ -15,6 +15,7 @@ import dev.nokee.utils.ActionUtils
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
+import org.gradle.api.Task
 import org.gradle.api.Transformer
 import org.gradle.api.specs.Spec
 import org.gradle.nativeplatform.toolchain.NativeToolChain
@@ -31,12 +32,13 @@ final class ConfigurationUtils {
 
                 variants.configureEach(NativeApplication) { variant ->
                     binaries.configureEach(ExecutableBinary) { binary ->
-                        compileTasks.configureEach(CppCompile, withDefaultCompileFlags(application.buildTypes, variant, action))
-                        compileTasks.configureEach(CCompile, withDefaultCompileFlags(application.buildTypes, variant, action))
+                        binary.compileTasks.configureEach(CppCompile, withDefaultCompileFlags(application.buildTypes, variant, action))
+                        binary.compileTasks.configureEach(CCompile, withDefaultCompileFlags(application.buildTypes, variant, action))
+                        binary.linkTask.configure(withDefaultLinkFlags(application.buildTypes, variant))
                     }
                 }
                 binaries.configureEach(ExecutableBinary) { binary ->
-                    linkTask.configure(defaultWindowsLibraries())
+                    binary.linkTask.configure(defaultWindowsLibraries())
                 }
             }
         }
@@ -52,6 +54,9 @@ final class ConfigurationUtils {
                     binaries.withType(NativeBinary).configureEach(nativeLibraries()) { binary ->
                         binary.compileTasks.configureEach(CppCompile, withDefaultCompileFlags(library.buildTypes, variant, action))
                         binary.compileTasks.configureEach(CCompile, withDefaultCompileFlags(library.buildTypes, variant, action))
+                    }
+                    binaries.configureEach(SharedLibraryBinary) { binary ->
+                        binary.linkTask.configure(withDefaultLinkFlags(library.buildTypes, variant))
                     }
                 }
             }
@@ -78,6 +83,7 @@ final class ConfigurationUtils {
             } else if (variant.buildVariant.hasAxisOf(buildTypeFactory.named('debug'))) {
                 task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/DDEBUG', '/D_DEBUG')))
                 task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/MTd')))
+                task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/debug', '/ZI', '/ FS')))
             }
 
             def configuration = new NativeConfiguration()
@@ -115,6 +121,14 @@ final class ConfigurationUtils {
 
             if (configuration.consoleDef == NativeConfiguration.ConsoleDef.DEFINED) {
                 task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/D_CONSOLE')))
+            }
+        } as Action<NativeSourceCompile>
+    }
+
+    private static Action<? super Task> withDefaultLinkFlags(TargetBuildTypeFactory buildTypeFactory, Variant variant) {
+        return { task ->
+            if (variant.buildVariant.hasAxisOf(buildTypeFactory.named('debug'))) {
+                task.linkerArgs.addAll(task.toolChain.map(whenVisualCpp('/debug')))
             }
         } as Action<NativeSourceCompile>
     }
