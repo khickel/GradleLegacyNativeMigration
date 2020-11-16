@@ -55,6 +55,7 @@ project('c') {
     apply plugin: 'dev.nokee.c-library'
     library(withDefaultLibraryConfiguration())
     library {
+        targetLinkages = [linkages.static]
         cSources.from(fileTree(dir: parent.projectDir, include: '*.c'))
         dependencies {
             implementation project(':static_lib')
