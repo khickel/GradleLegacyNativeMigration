@@ -1,0 +1,4 @@
+tasks.register('debug') {
+    group('Legacy Native Migration Example Debug')
+    description('Run all tasks to do a debug build')
+}
