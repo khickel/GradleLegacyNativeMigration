@@ -6,7 +6,6 @@ initscript {
 
     if (atLeastGradle('6.2.1')) {
         repositories {
-            // PLACEHOLDER: in repositories
             maven { url = 'https://dl.bintray.com/nokeedev/distributions-initialization' }
             mavenLocal {
                 content {
