@@ -1,11 +1,15 @@
 import static ConfigurationUtils.withDefaultApplicationConfiguration
-import static ConfigurationUtils.withDefaultLibraryConfiguration
 
 plugins {
     id 'legacy-installable'
-    id 'dev.nokee.cpp-application'
+    id 'dev.nokee.native-application'
+    id 'dev.nokee.cpp-language'
+    id 'dev.nokee.c-language'
     id 'code-sign'
 }
+
+import dev.nokee.language.c.CHeaderSet
+import dev.nokee.language.cpp.CppHeaderSet
 
 // Set the project standard C++ compiler/linker options
 application(withDefaultApplicationConfiguration())
@@ -15,56 +19,15 @@ application { app->
 //    // Set the executable filename
 //    baseName = 'util_1'
     
-    // Add *.cpp to the project
-    cppSources.from(fileTree(dir: '.', include: '*.cpp'))
-    privateHeaders.from(projectDir)
+    // Add *.cpp/*.c to the project
+    sources {
+        cpp { from(fileTree(dir: '.', include: '*.cpp')) }
+        c { from(fileTree(dir: '.', include: '*.c')) }
+        configureEach(CppHeaderSet) { from(projectDir) }
+        configureEach(CHeaderSet) { from(projectDir) }
+    }
 
     dependencies {
         implementation project(':static_lib')
     }
 }
-
-///////////////////////////////////////////////////////////////////////////////
-// TODO(nokeedev): Provide generic dev.nokee.native-application and dev.nokee.native-library for multi-language support
-//   The plugin dev.nokee.cpp-application and the like have two of the three dimension decided, that is language and entrypoint.
-//   The runtime is left undecided allowing users to build the application for any runtime.
-//   Mixing multiple languages has pitfall that most build tool ignores.
-//   The next step is to provide plugins that doesn't make a decision on the language to compile.
-//   As less dimensions are decided, the configuration becomes more verbose.
-//   Mixing C/C++ language into an application, I imagine the build script would look like this:
-//plugins {
-//    id 'dev.nokee.native-application'  // native application entrypoint
-//    id 'dev.nokee.cpp-language'        // C++ implementation language
-//    id 'dev.nokee.c-language'          // C implementation language
-//}
-//application {
-//    // Note that we have to use the source set view as the extension is provided by the native-application plugin which doesn't know the implementation language.
-//    sources {
-//        cpp {
-//            from(fileTree(dir: projectDir, include: '*.cpp'))
-//        }
-//        c {
-//            from(fileTree(dir: projectDir, include: '*.c'))
-//        }
-//    }
-//}
-
-// Until we release the higher abstraction plugins, it's best to use an "internal" project that build the c language.
-project('c') {
-    layout.buildDirectory = parent.layout.buildDirectory.dir('subprojects/c')
-    apply plugin: 'dev.nokee.c-library'
-    library(withDefaultLibraryConfiguration())
-    library {
-        targetLinkages = [linkages.static]
-        cSources.from(fileTree(dir: parent.projectDir, include: '*.c'))
-        dependencies {
-            implementation project(':static_lib')
-        }
-    }
-}
-application {
-    dependencies {
-        implementation project('c')
-    }
-}
-///////////////////////////////////////////////////////////////////////////////
