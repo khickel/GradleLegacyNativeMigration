@@ -9,6 +9,7 @@ plugins {
 }
 
 library(withDefaultLibraryConfiguration())
+//library(withOpenSSLLibraryConfiguration())
 library { lib->
     targetLinkages = [linkages.static]
 
