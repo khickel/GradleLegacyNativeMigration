@@ -1,15 +1,23 @@
+import dev.nokee.language.cpp.CppHeaderSet
+import dev.nokee.language.c.CHeaderSet
 import static ConfigurationUtils.withDefaultLibraryConfiguration
 
 plugins {
-    id 'dev.nokee.c-library'
+    id 'dev.nokee.native-library'
+    id 'dev.nokee.cpp-language'
+    id 'dev.nokee.c-language'
 }
 
 library(withDefaultLibraryConfiguration())
 library { lib->
     targetLinkages = [linkages.static]
 
-    cSources.from(fileTree(dir: ".", include: "*.c"))
-    publicHeaders.from(projectDir)
+    sources {
+        cpp { from(fileTree(dir: '.', include: '*.cpp')) }
+        c { from(fileTree(dir: '.', include: '*.c')) }
+        configureEach(CppHeaderSet) { from(projectDir) }
+        configureEach(CHeaderSet) { from(projectDir) }
+    }
 
     // TODO-KFH temp change to try to figure out what is bringing in DriverSpec.h
     // TODO(nokeedev): Figuring out where a header comes from should be made easy with Nokee by exposing the data it already acquire during compilation
