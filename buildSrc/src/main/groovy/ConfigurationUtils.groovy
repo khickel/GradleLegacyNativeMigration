@@ -134,6 +134,49 @@ final class ConfigurationUtils {
     }
 
     /**
+     * Add an external OpenSSL library, located by the environment variable LIB_OPENSSL_X86, to a library subproject.
+     *
+     */
+    static Closure withOpenSSLLibraryConfiguration(Action<NativeConfiguration> action = ActionUtils.doNothing()) {
+        return { library ->
+            library.with {
+                targetMachines = [machines.windows.x86]
+                targetBuildTypes = [buildTypes.named('debug'), buildTypes.named('release')]
+
+                variants.configureEach(NativeLibrary) { variant ->
+                    binaries.withType(NativeBinary).configureEach(nativeLibraries()) { binary ->
+                        binary.compileTasks.configureEach(CppCompile, withOpenSSLCompileFlags(library.buildTypes, variant, action))
+                        binary.compileTasks.configureEach(CCompile, withOpenSSLCompileFlags(library.buildTypes, variant, action))
+                    }
+                    binaries.configureEach(SharedLibraryBinary) { binary ->
+                        binary.linkTask.configure(withOpenSSLLinkFlags(library.buildTypes, variant))
+                    }
+                }
+            }
+        }
+    }
+
+    @CompileStatic
+    private static Action<NativeSourceCompile> withOpenSSLCompileFlags(TargetBuildTypeFactory buildTypeFactory, Variant variant, Action<NativeConfiguration> action) {
+        return { NativeSourceCompile task ->
+            task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp([
+                "/I" + System.getenv('LIB_OPENSSL_X86') + '\\include'
+            ])))
+        } as Action<NativeSourceCompile>
+        }
+
+    private static Action<? super Task> withOpenSSLLinkFlags(TargetBuildTypeFactory buildTypeFactory, Variant variant) {
+        return { task ->
+            task.linkerArgs.addAll(task.toolChain.map(whenVisualCpp([
+                '/LIBPATH:' + System.getenv('LIB_OPENSSL_X86') + '\\lib',
+                'libcrypto.lib',
+                'libssl.lib',
+                'crypt32.lib'
+            ])))
+        } as Action<NativeSourceCompile>
+    }
+
+    /**
      * Configures the default Windows libraries as linker arguments.
      *
      * @return a configuration action for {@link LinkExecutable} task, never null.
