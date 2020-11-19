@@ -8,5 +8,5 @@ repositories {
 }
 
 dependencies {
-    implementation platform("dev.nokee:nokee-gradle-plugins:0.5.0-54187d4b")
+    implementation platform("dev.nokee:nokee-gradle-plugins:0.5.0-3201097f")
 }
