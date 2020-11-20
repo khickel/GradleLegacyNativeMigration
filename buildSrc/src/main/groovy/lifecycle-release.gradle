@@ -1,4 +1,35 @@
-tasks.register('release') {
+def release = tasks.register('release') {
     group('Legacy Native Migration Example Release')
     description('Run all tasks to do a release build')
 }
+
+import dev.nokee.platform.base.ComponentContainer
+import dev.nokee.platform.nativebase.internal.DefaultTargetBuildTypeFactory
+
+// TODO(nokeedev): Should allow users to react when the Nokee model plugins are applied instead of afterEvaluate
+afterEvaluate {
+    // TODO(nokeedev): ComponentContainer should be default imported
+    def components = extensions.findByType(ComponentContainer)
+    if (components != null) {
+        components.whenElementKnown { knownComponent ->
+            release.configure {
+                dependsOn(knownComponent.flatMap {
+                    // TODO(nokeedev): Variants should be be forwarding the "buildability" to the development binary (this avoid the additional flatMap to the development Binary).
+                    it.variants.filter {
+                        // TODO(nokeedev): TargetBuildTypeFactory should be accessible via a project extension (e.g. buildTypes)
+                        //    So should the machines and linkages -> note that machines conflict with Core Gradle plugins failing to give a good error message
+                        it.buildVariant.hasAxisOf(DefaultTargetBuildTypeFactory.INSTANCE.named('release'))
+                    }.flatMap { variant -> provider { variant*.developmentBinary } } })
+            }
+        }
+    }
+}
+
+// TODO(nokeedev): The following should be the target for the above configuration
+//pluginManager.withPlugin('dev.nokee.component-base') {
+//    extensions.getByType(ComponentContainer).whenElementKnown { knownComponent ->
+//        release.configure {
+//            dependsOn(knownComponent.flatMap { it.variants.filter { it.buildVariant.hasAxisOf(buildTypes.named('release')) }})
+//        }
+//    }
+//}
