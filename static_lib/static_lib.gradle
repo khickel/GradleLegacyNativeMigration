@@ -1,11 +1,16 @@
 import dev.nokee.language.cpp.CppHeaderSet
 import dev.nokee.language.c.CHeaderSet
 import static ConfigurationUtils.withDefaultLibraryConfiguration
+import static RepositoryUtils.systemOpenSsl
 
 plugins {
     id 'dev.nokee.native-library'
     id 'dev.nokee.cpp-language'
     id 'dev.nokee.c-language'
+}
+
+repositories {
+    maven(systemOpenSsl(project))
 }
 
 library(withDefaultLibraryConfiguration())
@@ -18,6 +23,11 @@ library { lib->
         c { from(fileTree(dir: '.', include: '*.c')) }
         configureEach(CppHeaderSet) { from(projectDir) }
         configureEach(CHeaderSet) { from(projectDir) }
+    }
+
+    dependencies {
+        implementation 'system.OpenSSL:libcrypto:1.1.1h'
+        implementation 'system.OpenSSL:libssl:1.1.1h'
     }
 
     // TODO-KFH temp change to try to figure out what is bringing in DriverSpec.h
