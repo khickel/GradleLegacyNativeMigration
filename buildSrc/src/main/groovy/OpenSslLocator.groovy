@@ -1,6 +1,8 @@
 import groovy.transform.CompileStatic
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.file.Directory
+import org.gradle.api.logging.Logger
+import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Provider
 
 import java.util.concurrent.Callable
@@ -16,6 +18,7 @@ import java.util.regex.Pattern
  * In this example, we generate a cache per-subproject but it should really be single cache for the entire project.
  */
 final class OpenSslLocator implements Callable<String> {
+    private static final Logger LOGGER = Logging.getLogger(OpenSslLocator)
     private final String group = 'system.OpenSSL'
     private String versionCache = null
     private final Provider<Directory> cachingDirectory
@@ -106,13 +109,18 @@ final class OpenSslLocator implements Callable<String> {
 
     private String getVersion() {
         if (versionCache == null) {
-            def versionPattern = Pattern.compile('\\d+\\.\\d+\\.\\d+[a-z]?')
-            def matches = versionPattern.matcher(new File(getOpenSslLocation(), 'changes.txt').text)
-            if (matches.find() && matches.find()) {
-                versionCache = matches.group()
+            def changesFile = new File(getOpenSslLocation(), 'changes.txt')
+            if (changesFile.exists()) {
+                def versionPattern = Pattern.compile('\\d+\\.\\d+\\.\\d+[a-z]?')
+                def matches = versionPattern.matcher(changesFile.text)
+                if (matches.find() && matches.find()) {
+                    versionCache = matches.group()
+                } else {
+                    // TODO: Do not throw exception, instead don't generate cache
+                    throw new IllegalStateException("Could not find version")
+                }
             } else {
-                // TODO: Do not throw exception, instead don't generate cache
-                throw new IllegalStateException("Could not find version")
+                versionCache = "1.1.1g" // hardcoded
             }
         }
 
@@ -121,13 +129,19 @@ final class OpenSslLocator implements Callable<String> {
 
     private File targetFile(String path) {
         def result = new File(getOpenSslLocation(), path)
-        assert result.exists()
+        if (!result.exists()) {
+            throw new RuntimeException("Target file '${result.absolutePath}' does not exists".toString())
+        }
         return result
     }
 
     @Override
     String call() throws Exception {
-        buildCacheIfAbsent()
+        try {
+            buildCacheIfAbsent()
+        } catch (Throwable ex) {
+            LOGGER.warn("Open SSL dependency cache could not be built because of an exception: ${ex.message}")
+        }
         return cachingDirectory.get().asFile.absolutePath
     }
 
