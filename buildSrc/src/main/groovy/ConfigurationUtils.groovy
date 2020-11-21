@@ -81,7 +81,7 @@ final class ConfigurationUtils {
                 task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/DNDEBUG')))
                 task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/MT')))
             } else if (variant.buildVariant.hasAxisOf(buildTypeFactory.named('debug'))) {
-                task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/DDEBUG', '/D_DEBUG')))
+                task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/D_DEBUG')))
                 task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/MTd')))
                 task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/DEBUG', '/ZI', '/FS')))
             }
@@ -169,6 +169,49 @@ final class ConfigurationUtils {
         return { task ->
             task.linkerArgs.addAll(task.toolChain.map(whenVisualCpp([
                 '/LIBPATH:' + System.getenv('LIB_OPENSSL_X86') + '\\lib',
+                'libcrypto.lib',
+                'libssl.lib',
+                'crypt32.lib'
+            ])))
+        } as Action<NativeSourceCompile>
+    }
+
+    /**
+     * Add an external Boost library, located by the environment variable LIB_BOOST_X86, to a library subproject.
+     *
+     */
+    static Closure withBoostLibraryConfiguration(Action<NativeConfiguration> action = ActionUtils.doNothing()) {
+        return { library ->
+            library.with {
+                targetMachines = [machines.windows.x86]
+                targetBuildTypes = [buildTypes.named('debug'), buildTypes.named('release')]
+
+                variants.configureEach(NativeLibrary) { variant ->
+                    binaries.withType(NativeBinary).configureEach(nativeLibraries()) { binary ->
+                        binary.compileTasks.configureEach(CppCompile, withBoostLCompileFlags(library.buildTypes, variant, action))
+                        binary.compileTasks.configureEach(CCompile, withBoostCompileFlags(library.buildTypes, variant, action))
+                    }
+                    binaries.configureEach(SharedLibraryBinary) { binary ->
+                        binary.linkTask.configure(withOpenSSLLinkFlags(library.buildTypes, variant))
+                    }
+                }
+            }
+        }
+    }
+
+    @CompileStatic
+    private static Action<NativeSourceCompile> withBoostCompileFlags(TargetBuildTypeFactory buildTypeFactory, Variant variant, Action<NativeConfiguration> action) {
+        return { NativeSourceCompile task ->
+            task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp([
+                "/I" + System.getenv('LIB_BOOST_X86') + '\\include'
+            ])))
+        } as Action<NativeSourceCompile>
+        }
+
+    private static Action<? super Task> withBoostLinkFlags(TargetBuildTypeFactory buildTypeFactory, Variant variant) {
+        return { task ->
+            task.linkerArgs.addAll(task.toolChain.map(whenVisualCpp([
+                '/LIBPATH:' + System.getenv('LIB_BOOST_X86') + '\\lib',
                 'libcrypto.lib',
                 'libssl.lib',
                 'crypt32.lib'
