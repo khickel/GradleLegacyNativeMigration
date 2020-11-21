@@ -302,11 +302,16 @@ final class ConfigurationUtils {
      */
     static Closure addVSLinkerOption(String... newOptions) {
         return { component ->
-            component.binaries.configureEach {
+            component.binaries.configureEach(sharedLibraryOrExecutable()) {
                 linkTask.configure {
                     linkerArgs.addAll(toolChain.map(whenVisualCpp(newOptions)))
                 }
             }
         }
+    }
+
+    @CompileStatic
+    private static Spec<Binary> sharedLibraryOrExecutable() {
+        return { binary -> binary instanceof SharedLibraryBinary || binary instanceof ExecutableBinary } as Spec<Binary>
     }
 }
