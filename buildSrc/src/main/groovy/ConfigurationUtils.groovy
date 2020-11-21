@@ -188,11 +188,11 @@ final class ConfigurationUtils {
 
                 variants.configureEach(NativeLibrary) { variant ->
                     binaries.withType(NativeBinary).configureEach(nativeLibraries()) { binary ->
-                        binary.compileTasks.configureEach(CppCompile, withBoostLCompileFlags(library.buildTypes, variant, action))
+                        binary.compileTasks.configureEach(CppCompile, withBoostCompileFlags(library.buildTypes, variant, action))
                         binary.compileTasks.configureEach(CCompile, withBoostCompileFlags(library.buildTypes, variant, action))
                     }
                     binaries.configureEach(SharedLibraryBinary) { binary ->
-                        binary.linkTask.configure(withOpenSSLLinkFlags(library.buildTypes, variant))
+                        binary.linkTask.configure(withBoostLinkFlags(library.buildTypes, variant))
                     }
                 }
             }
