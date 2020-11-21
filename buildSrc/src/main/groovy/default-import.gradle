@@ -1,0 +1,6 @@
+ext {
+    addVSLinkerOption = ConfigurationUtils.&addVSLinkerOption
+    addVSCompilerOption = ConfigurationUtils.&addVSCompilerOption
+    withDefaultLibraryConfiguration = ConfigurationUtils.&withDefaultLibraryConfiguration
+    withDefaultApplicationConfiguration = ConfigurationUtils.&withDefaultApplicationConfiguration
+}
