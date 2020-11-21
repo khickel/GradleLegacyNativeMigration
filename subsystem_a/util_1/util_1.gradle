@@ -1,5 +1,3 @@
-import static ConfigurationUtils.withDefaultApplicationConfiguration
-
 plugins {
     id 'legacy-installable'
     id 'dev.nokee.native-application'
