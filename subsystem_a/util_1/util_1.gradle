@@ -1,4 +1,4 @@
-import static ConfigurationUtils.withDefaultApplicationConfiguration
+import static ConfigurationUtils.*
 
 plugins {
     id 'legacy-installable'
@@ -31,7 +31,14 @@ application { app->
         configureEach(CHeaderSet) { from(projectDir) }
     }
 
-    addVSLinkerOption("/subsystem:windows").call(app)
+    // Example of adding a project specific linker command line option.
+    // This should cause the following output in build\tmp\linkDebug\output.txt:
+    //   Pass 1: Interval #1, time = 0.094s
+    //     Wait PDB close: Total time = 0.000s
+    //     Wait type merge: Total time = 0.000s
+    //   Pass 2: Interval #2, time = 0.125s
+    //   Final: Total time = 0.219s
+    addVSLinkerOption("/TIME")(app)
 
     dependencies {
         implementation project(':static_lib')
