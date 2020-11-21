@@ -6,6 +6,10 @@ plugins {
     id 'code-sign'
 }
 
+repositories {
+    maven(RepositoryUtils.systemOpenSsl(project))
+}
+
 application(withDefaultApplicationConfiguration())
 application { app->
 
