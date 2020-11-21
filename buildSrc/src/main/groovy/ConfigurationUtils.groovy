@@ -234,4 +234,36 @@ final class ConfigurationUtils {
             return []
         } as Transformer<List<T>, NativeToolChain>
     }
+
+    /**
+     * Adds VS compiler options for all languages.
+     *
+     * @param newOptions  the new options to add
+     * @return a configuration closure to execute in the application or library extension
+     */
+    static Closure addVSCompilerOption(String... newOptions) {
+        return { component ->
+            component.binaries.configureEach {
+                compileTasks.configureEach { // Note: configures all compiler
+                    compilerArgs.addAll(whenVisualCpp(newOptions))
+                }
+            }
+        }
+    }
+
+    /**
+     * Adds VS linker options.
+     *
+     * @param newOptions  the new options to add
+     * @return a configuration closure to execute in the application or library extension
+     */
+    static Closure addVSLinkerOption(String... newOptions) {
+        return { component ->
+            component.binaries.configureEach {
+                linkTask.configure {
+                    linkerArgs.addAll(whenVisualCpp(newOptions))
+                }
+            }
+        }
+    }
 }
