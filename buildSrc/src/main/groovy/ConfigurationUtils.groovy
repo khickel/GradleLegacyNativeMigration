@@ -245,7 +245,7 @@ final class ConfigurationUtils {
         return { component ->
             component.binaries.configureEach {
                 compileTasks.configureEach { // Note: configures all compiler
-                    compilerArgs.addAll(whenVisualCpp(newOptions))
+                    compilerArgs.addAll(toolChain.map(whenVisualCpp(newOptions)))
                 }
             }
         }
@@ -261,7 +261,7 @@ final class ConfigurationUtils {
         return { component ->
             component.binaries.configureEach {
                 linkTask.configure {
-                    linkerArgs.addAll(whenVisualCpp(newOptions))
+                    linkerArgs.addAll(toolChain.map(whenVisualCpp(newOptions)))
                 }
             }
         }
