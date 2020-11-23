@@ -1,0 +1,32 @@
+plugins {
+    id 'cpp-application'
+    id 'windows-resources'
+}
+
+// Define a map listing the targetPath,targetFileName for any files that need to be copied to staging area.
+ext.installerFiles = [ (file(project.property('stagingDir'))):'win_mfc_a' ]
+
+application { app->
+
+    // Set the executable filename
+    baseName = 'win_mfc_a'
+
+    binaries.configureEach {
+        def compileTask = compileTask.get()
+        compileTask.source.from fileTree(dir: ".", include: "*.cpp")
+    }
+
+    // Set the project standard C++ compiler/linker options
+    addDefaultCPPApplicationOptions(project, app, true)
+    addVSCompilerOption(project, "/D_WINDOWS")
+    addVSCompilerOption(project, "/D_MBCS")
+    addVSCompilerOption(project, "/DStandard")
+
+
+    // Add *.rc from this subproject directory to the link.
+    addWindowsResourceFile(project, app)
+
+    // This project uses AFX, so add the required flags.
+    addAFXOptions(project)
+    
+}
