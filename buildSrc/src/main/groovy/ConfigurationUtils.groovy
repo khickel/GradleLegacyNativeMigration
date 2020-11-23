@@ -20,6 +20,8 @@ import org.gradle.api.Transformer
 import org.gradle.api.specs.Spec
 import org.gradle.nativeplatform.toolchain.NativeToolChain
 import org.gradle.nativeplatform.toolchain.VisualCpp
+import org.gradle.language.rc.tasks.WindowsResourceCompile
+import org.gradle.api.model.ObjectFactory
 
 final class ConfigurationUtils {
     private ConfigurationUtils() {}
@@ -134,92 +136,6 @@ final class ConfigurationUtils {
     }
 
     /**
-     * Add an external OpenSSL library, located by the environment variable LIB_OPENSSL_X86, to a library subproject.
-     *
-     */
-    static Closure withOpenSSLLibraryConfiguration(Action<NativeConfiguration> action = ActionUtils.doNothing()) {
-        return { library ->
-            library.with {
-                targetMachines = [machines.windows.x86]
-                targetBuildTypes = [buildTypes.named('debug'), buildTypes.named('release')]
-
-                variants.configureEach(NativeLibrary) { variant ->
-                    binaries.withType(NativeBinary).configureEach(nativeLibraries()) { binary ->
-                        binary.compileTasks.configureEach(CppCompile, withOpenSSLCompileFlags(library.buildTypes, variant, action))
-                        binary.compileTasks.configureEach(CCompile, withOpenSSLCompileFlags(library.buildTypes, variant, action))
-                    }
-                    binaries.configureEach(SharedLibraryBinary) { binary ->
-                        binary.linkTask.configure(withOpenSSLLinkFlags(library.buildTypes, variant))
-                    }
-                }
-            }
-        }
-    }
-
-    @CompileStatic
-    private static Action<NativeSourceCompile> withOpenSSLCompileFlags(TargetBuildTypeFactory buildTypeFactory, Variant variant, Action<NativeConfiguration> action) {
-        return { NativeSourceCompile task ->
-            task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp([
-                "/I" + System.getenv('LIB_OPENSSL_X86') + '\\include'
-            ])))
-        } as Action<NativeSourceCompile>
-        }
-
-    private static Action<? super Task> withOpenSSLLinkFlags(TargetBuildTypeFactory buildTypeFactory, Variant variant) {
-        return { task ->
-            task.linkerArgs.addAll(task.toolChain.map(whenVisualCpp([
-                '/LIBPATH:' + System.getenv('LIB_OPENSSL_X86') + '\\lib',
-                'libcrypto.lib',
-                'libssl.lib',
-                'crypt32.lib'
-            ])))
-        } as Action<NativeSourceCompile>
-    }
-
-    /**
-     * Add an external Boost library, located by the environment variable LIB_BOOST_X86, to a library subproject.
-     *
-     */
-    static Closure withBoostLibraryConfiguration(Action<NativeConfiguration> action = ActionUtils.doNothing()) {
-        return { library ->
-            library.with {
-                targetMachines = [machines.windows.x86]
-                targetBuildTypes = [buildTypes.named('debug'), buildTypes.named('release')]
-
-                variants.configureEach(NativeLibrary) { variant ->
-                    binaries.withType(NativeBinary).configureEach(nativeLibraries()) { binary ->
-                        binary.compileTasks.configureEach(CppCompile, withBoostCompileFlags(library.buildTypes, variant, action))
-                        binary.compileTasks.configureEach(CCompile, withBoostCompileFlags(library.buildTypes, variant, action))
-                    }
-                    binaries.configureEach(SharedLibraryBinary) { binary ->
-                        binary.linkTask.configure(withBoostLinkFlags(library.buildTypes, variant))
-                    }
-                }
-            }
-        }
-    }
-
-    @CompileStatic
-    private static Action<NativeSourceCompile> withBoostCompileFlags(TargetBuildTypeFactory buildTypeFactory, Variant variant, Action<NativeConfiguration> action) {
-        return { NativeSourceCompile task ->
-            task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp([
-                "/I" + System.getenv('LIB_BOOST_X86') + '\\include'
-            ])))
-        } as Action<NativeSourceCompile>
-        }
-
-    private static Action<? super Task> withBoostLinkFlags(TargetBuildTypeFactory buildTypeFactory, Variant variant) {
-        return { task ->
-            task.linkerArgs.addAll(task.toolChain.map(whenVisualCpp([
-                '/LIBPATH:' + System.getenv('LIB_BOOST_X86') + '\\lib',
-                'libcrypto.lib',
-                'libssl.lib',
-                'crypt32.lib'
-            ])))
-        } as Action<NativeSourceCompile>
-    }
-
-    /**
      * Configures the default Windows libraries as linker arguments.
      *
      * @return a configuration action for {@link LinkExecutable} task, never null.
@@ -314,4 +230,179 @@ final class ConfigurationUtils {
     private static Spec<Binary> sharedLibraryOrExecutable() {
         return { binary -> binary instanceof SharedLibraryBinary || binary instanceof ExecutableBinary } as Spec<Binary>
     }
+
+    /**
+     * Adds Compiler and Linker options to use Boost.
+     *
+     * @return a configuration closure to execute in the application or library extension
+     */
+    static Closure buildWithBoost() {
+        return { component ->
+            component.binaries.configureEach {
+                compileTasks.configureEach { // Note: configures all compiler
+                    compilerArgs.addAll(toolChain.map(whenVisualCpp([
+                        '/DBOOST_NETWORK_ENABLE_HTTPS',
+
+                        "/I" + System.getenv('LIB_BOOST_X86'),
+                        // TODO:NOKEE: make this work from the root project ext var.
+                        //"/I${getRootProject().property(libBoostIncludePath)}"
+
+                        // daniel:nokee:  21 minutes ago
+                        // I'm not 100% sure but I think this would work in Groovy:
+                        // static Closure buildWithOpenSSL(String pathToOpenSslIncludes = rootProject.property('libOpenSSLIncludePath')) {
+                        //         return { component -> addVSCompileOption("/I${pathToOpenSslIncludes}") }
+                        // }
+                        // The alternative would be using 2 methods:
+                        // static Closure buildWithOpenSSL(String pathToOpenSslIncludes) {
+                        //         return { component -> addVSCompileOption("/I${pathToOpenSslIncludes}") }
+                        // }
+                        // static String openSslIncludePath(Project project) {
+                        //     return project.rootProject.property('libOpenSSLIncludePath')
+                        // }
+                        // Then you can use it like this:
+                        // library(buildWithOpenSSL(openSslIncludePath(project)))
+
+                        // The reason getRootProject() doesn't work in the closure is a bit confusing
+                        // but basically in the build.gradle file, the Groovy delegate is the Project instance.
+                        // This means that is the method isn't define anywhere in the current scope it''s going to go
+                        // look at the delegate object to find the method.
+                        // In this case the getRootProject is available on the Project instance.
+                        // Inside the buildWithOpenSsl method, the delegate isn't set to Project so there is no
+                        // way to find and call the method. My assumption is the default parameter value is
+                        // evaluated inside the caller context which should find the method but that is just a wild assumption,
+                        // I would have to try it to confirm.
+
+                        // Kelly Hickel  2 minutes ago
+                        // I can't make the getRootProject work, I'll add a comment and maybe come back to it later, it's a pretty minor "issue"
+                        // daniel:nokee:  1 minute ago
+                        // If you use the 2 methods example, that should work without issues.
+
+                        // Kelly Hickel: or just pass project as an arg and let it call get property and so on.
+
+                        // daniel:nokee:  2 minutes ago
+                        // You could use Java system properties.
+                        // You can pass them via -Dkey=value  or you can use gradle.properties using sysProp.key=value
+
+                        // Kelly Hickel  < 1 minute ago
+                        // hmm.  that's useful too.
+                        // I can just use the env vars, but I already have the gradle project set to 
+                        // figure out the include and lib paths and fail with a useful error if they aren't
+                        // there (one that is or should be relevant to any of our developers that
+                        // should be building this code), so I didn't want to lose that.
+                        // probably better to just move to the repository based one you laid out, but that's not something I want to deal with at the moment.
+
+                        // Kelly Hickel  < 1 minute ago
+                        // the env vars are what I'm doing now, and that's OK for the moment.
+                    ])))
+                }
+            }
+            component.binaries.configureEach(sharedLibraryOrExecutable()) {
+                linkTask.configure {
+                    linkerArgs.addAll(toolChain.map(whenVisualCpp([
+                        //"/LIBPATH:${getRootProject().property(libBoostLibPath)}",
+                        // TODO:NOKEE: make this work from the root project ext var.
+                        '/LIBPATH:' + System.getenv('LIB_BOOST_X86') + '\\lib32-msvc-14.2'
+                    ])))
+                }
+            }
+        }
+    }
+
+    /**
+     * Adds Compiler and Linker options to use OpenSSL.
+     *
+     * @return a configuration closure to execute in the application or library extension
+     */
+    static Closure buildWithOpenSSL() {
+        return { component ->
+            component.binaries.configureEach {
+                compileTasks.configureEach { // Note: configures all compiler
+                    compilerArgs.addAll(toolChain.map(whenVisualCpp([
+                        // TODO:NOKEE: make this work from the root project ext var.
+                        '/I' + System.getenv('LIB_OPENSSL_X86') + '\\include'
+                        //"/I${getRootProject().property(libOpenSSLIncludePath)}"
+                    ])))
+                }
+            }
+            component.binaries.configureEach(sharedLibraryOrExecutable()) {
+                linkTask.configure {
+                    linkerArgs.addAll(toolChain.map(whenVisualCpp([
+                        // TODO:NOKEE: make this work from the root project ext var.
+                        //'/LIBPATH:${getRootProject().property(libOpenSSLLibPath)}',
+                        '/LIBPATH:' + System.getenv('LIB_OPENSSL_X86') + '\\lib',
+
+                        'libcrypto.lib',
+                        'libssl.lib',
+                        'crypt32.lib'
+                    ])))
+                }
+            }
+        }
+    }
+
+    /**
+     * Adds Compiler and Linker options to build with Windows resource files.
+     *
+     * @return a configuration closure to execute in the application or library extension
+     */
+    static Closure addWindowsResourceFile(ObjectFactory of, String taskNamePrefix, String dirPath = '.', String filePattern='*.rc') {
+        return { component ->
+            def idx = 0
+            component.binaries.configureEach { bin->
+                idx++
+                def taskName = taskNamePrefix + "_${idx}"
+                def compileResources = tasks.register(taskName, WindowsResourceCompile) {
+                    source.from(of.fileTree().setDir(dirPath).include(filePattern))
+                    
+                    // For some as yet not understood reason, if you just run "rc /v /l 0x409 Version.rc" in a VS command prompt, it works,
+                    // but when Gradle runs the command, rc.exe can't find the standard include files, so we have to use the INCLUDE env var.
+                    includes.from(System.getenv('INCLUDE'))
+
+                    compilerArgs.addAll("/v", "/l", "0x409")
+                }
+
+                if(bin instanceof SharedLibraryBinary || bin instanceof ExecutableBinary) {
+                    linkTask.configure {
+                        // This next line throws the error:
+                        // * What went wrong:
+                        // Execution failed for task ':SourceT:Winsend:WinSendResources_1'.
+                        // > Cannot query the value of this property because it has no value available.
+                        dependsOn compileResources
+                        source.from(of.fileTree().setDir(dirPath).include('**/*.res'))
+                        linkerArgs.addAll("user32.lib")
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Adds Compiler and Linker options to build an AFX application
+     *
+     * @return a configuration closure to execute in the application or library extension
+     */
+    static Closure buildWithAFX() {
+        return { component ->
+            component.binaries.configureEach {
+                compileTasks.configureEach { // Note: configures all compiler
+                    compilerArgs.addAll(toolChain.map(whenVisualCpp([
+                        '/I' + System.getenv('VCToolsInstallDir') + 'atlmfc\\include'
+                    ])))
+                }
+            }
+            component.binaries.configureEach(sharedLibraryOrExecutable()) {
+                linkTask.configure {
+                    linkerArgs.addAll(toolChain.map(whenVisualCpp([
+                        '/LIBPATH:' + System.getenv('VCToolsInstallDir') + 'atlmfc\\lib\\x86',
+                        '/subsystem:windows'
+                    ])))
+                }
+            }
+            // I tried this way, but it didn't work, these options were not part of the build commands.
+            // addVSCompilerOption('/I' + System.getenv('VCToolsInstallDir') + 'atlmfc\\include')
+            // addVSLinkerOption('/LIBPATH:"' + System.getenv('VCToolsInstallDir') + 'atlmfc\\lib\\x86"')
+            // addVSLinkerOption('/subsystem:windows')
+        }
+    }
+
 }
