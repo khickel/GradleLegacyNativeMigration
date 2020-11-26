@@ -16,7 +16,8 @@ ext {
     releaseGroup = "Legacy Native Migration Example Release"
 
     // Code signing info
-    certDir = "${buildDir}/Certs/"
+    codeSignCert = "${rootDir}/MySPC.pfx"
+    codeSignPassword = "passwordx"
 }
 
 // Default task if none specified on the command line, tell the user how to run things.

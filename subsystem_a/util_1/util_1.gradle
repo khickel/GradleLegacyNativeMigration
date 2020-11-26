@@ -3,11 +3,19 @@ plugins {
 }
 
 // Define a map listing the targetPath,targetFileName for any files that need to be copied to staging area.
-ext.installerFiles = [ (file(project.property('stagingDir'))):'util_1' ]
+//TODO-KFH reinstate this:
+//ext.installerFiles = [ (file(project.property('stagingDir'))):'util_1' ]
 
 // Files created by this subproject that need to be part of the legacy_installer build.
-ext.legacyInstaller = ['.':[['codeSign':true,'fileBasename':'util_1_renamed'],
-                            ['addExeOrDllSuffix':false, 'fileBasename':'doc.txt', 'outputFilename':'Documentation.txt']]]
+ext.legacyInstaller = ['.':[
+    // Adding a built file, source filename defaults to util_1.exe because that is the baseName of this sub-project.
+    ['codeSign':true,'fileBasename':'util_1_renamed'],
+
+    // Adding a non-built file to the installer.
+    ['addExeOrDllSuffix':false,
+     'fileBasename':'../doc.txt',
+     'outputFilename':'Documentation.txt']
+]]
 
 application { app->
 
