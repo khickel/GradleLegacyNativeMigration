@@ -4,6 +4,11 @@ plugins {
     id 'usage'
 }
 
+ext { 
+    debugGroup = "GLM Debug"
+    releaseGroup = "GLM Release"
+}
+
 allprojects {
     apply plugin: 'lifecycle-debug'
     apply plugin: 'lifecycle-release'

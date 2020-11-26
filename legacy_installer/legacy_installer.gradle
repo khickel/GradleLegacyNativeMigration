@@ -10,3 +10,51 @@ dependencies {
 legacyInstaller {
     targetBuildTypes = ['debug', 'release']
 }
+
+def targetPath = projectDir.path + '/Source'
+apply plugin: 'zip_based_installer'
+apply from: "${rootDir}/installUtils.gradle"
+
+ext {
+    installerFileName = "leg_inst.exe"
+    installerFilePath = file("./${installerFileName}").path
+    productName = "GLM"
+    productDescription = "Gradle native example"
+    programDescription = "GLM"
+    defaultPath = "C:\\GLM"
+    runProgram = "util_1.exe"
+    serviceName = "GLM"
+    ZPKG = "pkg.zip"
+}
+
+def createPkgZipTask = tasks.register("createPkgZip", Exec) {
+        inputs.files(
+            "${targetPath}/wintools/CO-fmon.exe",
+            "${targetPath}/wintools/CO-fmon.cnf-inst",
+            "${targetPath}/wintools/CO-install.exe",
+            "${targetPath}/wintools/CO-uninst.exe",
+            "${targetPath}/wintools/CO-wsvc.exe",
+            "${targetPath}/wintools/LICENSE.txt",
+            "${targetPath}/wintools/mfc40.dll",
+            "${targetPath}/wintools/rmfconf.exe",
+        )
+
+        outputs.files(ZPKG)
+        delete ZPKG  // If the file already exists, the 7za command fails.
+        workingDir targetPath
+        commandLine "d:\\BMCTools\\cygwin\\lib\\p7zip\\7za.exe", "a", "-r", "${ZPKG}", "wintools/*"
+}
+
+def instTaskMap = createZipInstallerTasks(project,
+                                          installerFileName, installerFilePath,
+                                          productName, productDescription,
+                                          programDescription, defaultPath,
+                                          serviceName, runProgram,
+                                          createPkgZip, targetPath, "**/*",
+                                          false)
+def debugInstallerTask = instTaskMap['debugInstallerTask']
+tasks.findByName('debug').dependsOn(debugInstallerTask)
+def releaseInstallerTask = instTaskMap['releaseInstallerTask']
+tasks.findByName('release').dependsOn(releaseInstallerTask)
+
+

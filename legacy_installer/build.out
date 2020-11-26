@@ -1,0 +1,92 @@
+Checking VS160COMNTOOLS env var which is D:\BMCTools\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\.
+Checking if VsDevCmd.bat has been run.
+Running gradlew with this command: D:\BMCTools\Gradle\GradleLegacyNativeMigration\gradlew.bat debug
+Build ':' use Nokee version '0.5.0-43daa054'.
+> Task :buildSrc:extractPluginRequests UP-TO-DATE
+> Task :buildSrc:generatePluginAdapters UP-TO-DATE
+> Task :buildSrc:compileJava UP-TO-DATE
+> Task :buildSrc:compileGroovy UP-TO-DATE
+> Task :buildSrc:compileGroovyPlugins UP-TO-DATE
+> Task :buildSrc:pluginDescriptors UP-TO-DATE
+> Task :buildSrc:processResources UP-TO-DATE
+> Task :buildSrc:classes UP-TO-DATE
+> Task :buildSrc:jar UP-TO-DATE
+> Task :buildSrc:assemble UP-TO-DATE
+> Task :buildSrc:pluginUnderTestMetadata UP-TO-DATE
+> Task :buildSrc:compileTestJava NO-SOURCE
+> Task :buildSrc:compileTestGroovy NO-SOURCE
+> Task :buildSrc:processTestResources NO-SOURCE
+> Task :buildSrc:testClasses UP-TO-DATE
+> Task :buildSrc:test NO-SOURCE
+> Task :buildSrc:validatePlugins UP-TO-DATE
+> Task :buildSrc:check UP-TO-DATE
+> Task :buildSrc:build UP-TO-DATE
+
+> Configure project :legacy_installer
+KFH: in zip_based_installer for project legacy_installer
+
+> Configure project :subsystem_a:util_1
+KFH: project named util_1 has entries for zip_based_installer for project legacy_installer.
+Debug(aPOCFT): Called for project :subsystem_a:util_1, parent :subsystem_a, taskPrefix=stage, projMapPropName=legacy_installerxxx, wantTasksInParent=false
+Debug(aPOCFT): addProjOutputCopyFilesTask calling getOrCreateAggregateTaskForSubproject for prj=:subsystem_a:util_1, parent=:subsystem_a}
+Debug(gOCATFS): getOrCreateAggregateTaskForSubproject: prj=:subsystem_a:util_1, descr=Do a build of BMC AMI Defender, wantDebug=true
+Debug(gOCATFS): Created aggregate project task stageDebug for project :subsystem_a:util_1, group=GLM Debug
+Debug(gOCATFS): Setting standard aggregate project task named :subsystem_a:util_1:debug to depend on new agg task stageDebug for original input project :subsystem_a:util_1
+Debug(gOCATFS): Created aggregate project task stageDebug for project :subsystem_a, group=GLM Debug
+Debug(gOCATFS): Setting aggregate project task named :subsystem_a:stageDebug to depend on child prj task stageDebug for original input project :subsystem_a:util_1
+Debug(gOCATFS): Setting standard aggregate project task named :subsystem_a:debug to depend on new agg task stageDebug for original input project :subsystem_a:util_1
+Debug(gOCATFS): Created aggregate project task stageDebug for project :, group=GLM Debug
+Debug(gOCATFS): Setting aggregate project task named ::stageDebug to depend on child prj task stageDebug for original input project :subsystem_a:util_1
+Debug(gOCATFS): Setting standard aggregate project task named ::debug to depend on new agg task stageDebug for original input project :subsystem_a:util_1
+Debug(gOCATFS): returning task :subsystem_a:util_1:stageDebug.
+Debug(aPOCFT): Setting dbgAggTask task :subsystem_a:util_1:stageDebug to depend on new prj task :subsystem_a:util_1:stageDebug_CopyAll.
+Debug(gOCATFS): getOrCreateAggregateTaskForSubproject: prj=:subsystem_a:util_1, descr=Do a build of BMC AMI Defender, wantDebug=false
+Debug(gOCATFS): Created aggregate project task stageRelease for project :subsystem_a:util_1, group=GLM Release
+Debug(gOCATFS): Setting standard aggregate project task named :subsystem_a:util_1:release to depend on new agg task stageRelease for original input project :subsystem_a:util_1
+Debug(gOCATFS): Created aggregate project task stageRelease for project :subsystem_a, group=GLM Release
+Debug(gOCATFS): Setting aggregate project task named :subsystem_a:stageRelease to depend on child prj task stageRelease for original input project :subsystem_a:util_1
+Debug(gOCATFS): Setting standard aggregate project task named :subsystem_a:release to depend on new agg task stageRelease for original input project :subsystem_a:util_1
+Debug(gOCATFS): Created aggregate project task stageRelease for project :, group=GLM Release
+Debug(gOCATFS): Setting aggregate project task named ::stageRelease to depend on child prj task stageRelease for original input project :subsystem_a:util_1
+Debug(gOCATFS): Setting standard aggregate project task named ::release to depend on new agg task stageRelease for original input project :subsystem_a:util_1
+Debug(gOCATFS): returning task :subsystem_a:util_1:stageRelease.
+KFH: Checking for property named zip_based_installer in project util_1
+KFH: Have components
+KFH: component known.
+KFH: flatmap(provider(?))
+
+> Configure project :subsystem_a:util_1:c
+KFH: project named c has entries for zip_based_installer for project legacy_installer.
+Debug(aPOCFT): Called for project :subsystem_a:util_1:c, parent :subsystem_a:util_1, taskPrefix=stage, projMapPropName=legacy_installerxxx, wantTasksInParent=false
+Debug(aPOCFT): addProjOutputCopyFilesTask calling getOrCreateAggregateTaskForSubproject for prj=:subsystem_a:util_1:c, parent=:subsystem_a:util_1}
+Debug(gOCATFS): getOrCreateAggregateTaskForSubproject: prj=:subsystem_a:util_1:c, descr=Do a build of BMC AMI Defender, wantDebug=true
+Debug(gOCATFS): Created aggregate project task stageDebug for project :subsystem_a:util_1:c, group=GLM Debug
+Debug(gOCATFS): Setting standard aggregate project task named :subsystem_a:util_1:c:debug to depend on new agg task stageDebug for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): Setting aggregate project task named :subsystem_a:util_1:stageDebug to depend on child prj task stageDebug for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): Setting standard aggregate project task named :subsystem_a:util_1:debug to depend on new agg task stageDebug for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): Setting aggregate project task named :subsystem_a:stageDebug to depend on child prj task stageDebug for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): Setting standard aggregate project task named :subsystem_a:debug to depend on new agg task stageDebug for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): Setting aggregate project task named ::stageDebug to depend on child prj task stageDebug for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): Setting standard aggregate project task named ::debug to depend on new agg task stageDebug for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): returning task :subsystem_a:util_1:c:stageDebug.
+Debug(aPOCFT): Setting dbgAggTask task :subsystem_a:util_1:c:stageDebug to depend on new prj task :subsystem_a:util_1:c:stageDebug_CopyAll.
+Debug(gOCATFS): getOrCreateAggregateTaskForSubproject: prj=:subsystem_a:util_1:c, descr=Do a build of BMC AMI Defender, wantDebug=false
+Debug(gOCATFS): Created aggregate project task stageRelease for project :subsystem_a:util_1:c, group=GLM Release
+Debug(gOCATFS): Setting standard aggregate project task named :subsystem_a:util_1:c:release to depend on new agg task stageRelease for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): Setting aggregate project task named :subsystem_a:util_1:stageRelease to depend on child prj task stageRelease for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): Setting standard aggregate project task named :subsystem_a:util_1:release to depend on new agg task stageRelease for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): Setting aggregate project task named :subsystem_a:stageRelease to depend on child prj task stageRelease for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): Setting standard aggregate project task named :subsystem_a:release to depend on new agg task stageRelease for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): Setting aggregate project task named ::stageRelease to depend on child prj task stageRelease for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): Setting standard aggregate project task named ::release to depend on new agg task stageRelease for original input project :subsystem_a:util_1:c
+Debug(gOCATFS): returning task :subsystem_a:util_1:c:stageRelease.
+KFH: Checking for property named zip_based_installer in project c
+KFH: unable to get components
+
+> Task :legacy_installer:createParmsHForInstaller UP-TO-DATE
+> Task :legacy_installer:createPkgZip FAILED
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 7.0.
+Use '--warning-mode all' to show the individual deprecation warnings.
+See https://docs.gradle.org/6.5.1/userguide/command_line_interface.html#sec:command_line_warnings
+1 actionable task: 1 executed

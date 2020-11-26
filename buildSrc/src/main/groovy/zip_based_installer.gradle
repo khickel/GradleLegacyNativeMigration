@@ -1,14 +1,237 @@
+def debug = tasks.getByName('debug')
+if(debug == null) {
+    debug = tasks.register('debug')
+    group('Legacy Native Migration Example Debug')
+    description('Run all tasks to do a debug build')
+}
+
+import dev.nokee.platform.base.ComponentContainer
+import dev.nokee.platform.nativebase.internal.DefaultTargetBuildTypeFactory
+
+
 ////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////
+def dumpObjectToJson(f, k, v, strings, files, atoms) {
+    // if(v != null){ 
+    //     println "TODO:KFH: processing key " + k + ", with value of type " + v.getClass()
+    // } else { 
+    //     println "TODO:KFH: processing key " + k + ", with null value"
+    // }
+    if ((v instanceof String)) {
+        strings.put(k + "/String", v)
+    } else if (v instanceof File) {
+        files.put(k + "/File", v)
+    } else if (v instanceof TaskOutputs) {
+        v.getFiles().eachWithIndex { of,idxx ->
+            files.put(k + "_${idxx}/TaskOutputs/File", of)
+        }
+    // } else if (v instanceof java.util.Collections.UnmodifiableMap.UnmodifiableEntrySet.UnmodifiableEntry) {
+    //     strings.put("Prop: " + k + v.getKey(), v.getValue())
+    } else if (v instanceof TaskInputs) {
+        // Debugging how to log inputs, things like header files can only be resulved during task execution
+        // TODO:KFH: can I put a hook in, like the afterTask in Sysmsg.gradle, to do the dump during task execution?
+        // v.getFiles().eachWithIndex { of,idxx ->
+        //         files.put(k + "_${idxx}", of)
+        //     }
+        // }
+        v.getProperties().eachWithIndex { prop,idxx ->
+            //dumpObjectToJson(f, "Prop: " + k + "_${idxx}", prop, strings, files, atoms)
+            strings.put(k + "/TaskInputs/Property/Key=" + prop.getKey(), prop.getValue())
+        }
+    } else if (v instanceof TaskDependency) {
+        v.getDependencies().eachWithIndex {v2,idxx ->
+            strings.put(k + "_${idxx}/TaskDependency", v2.getName())
+        }
+    } else if (v instanceof Task) { 
+        strings.put(k + "/Task", v.getName())
+    } else if (v instanceof RegularFileProperty) {
+        files.put(k + "/RegularFileProperty", v.getAsFile().get())
+    } else if (v instanceof DirectoryProperty) {
+        files.put(k + "/DirectoryProperty", v.getAsFile().get())
+    } else if (v instanceof Boolean) {
+        atoms.put(k + "/Boolean", v)
+    } else if (v instanceof Integer) {
+        atoms.put(k + "/Integer", v)
+    } else if (v instanceof Configuration) { 
+        if(v.isCanBeResolved()) {
+            strings.put(k + "/Configuration", v.getName() + " in state " + getState())
+        } else {
+            strings.put(k + "/Configuration", v.getName() + " - can't be resolved")
+        }
+    } else if ((v instanceof Object[]) || (v instanceof Iterable)) {
+        // can't query header files of localstate unless the task is running.
+        if(k == 'headerDependencies') { 
+            strings.put(k, "can't be resolved")
+        } else {
+            v.eachWithIndex { v2,idxx ->
+                dumpObjectToJson( f, k + "_${idxx}", v2, strings, files, atoms)
+            }
+        }
+    } else {
+        def cname = "(null)"
+        //if(v != null) {  cname = v.class }
+        //strings.put(k, "unknown instance of type " + cname)
+        strings.put(k, "unknown instance of dump:" + v)
+    }
+}
+
+// Dumps all the tasks and properties to a json file.
+def dumpTaskToJson(Project prj, Task tsk, File bdir, String fname) {
+    def f = new File(bdir, fname)
+    def pw = f.newPrintWriter()
+    pw.println "{"
+    pw.println "  \"${tsk.name}\": {"
+    def strings = [:]
+    def files = [:]
+    def atoms = [:]
+    tsk.properties.each { k, v ->
+        dumpObjectToJson(f, k, v, strings, files, atoms)
+    }
+    tsk.inputs.files.eachWithIndex{ inf, idx ->
+        files.put("input_${idx}", inf)
+    }
+    tsk.outputs.files.eachWithIndex{ outf, idx ->
+        files.put("output_${idx}", outf)
+    }
+    strings.each { k, v ->
+        pw.println  "    \"$k\": \"$v\","
+    }
+    files.each { k, File v ->
+        String s = v.path
+        pw.println  "    \"$k\": \"$s\","
+    }
+    def ai = 0
+    def an = atoms.size()
+    atoms.each { k, v ->
+        ai++
+        ai == an ? pw.println("    \"$k\": $v") : pw.println("    \"$k\": $v,")
+    }
+    pw.println '}'
+    pw.flush()
+    pw.close()
+}
+
+// Dumps all the tasks and properties to a json file.
+def dumpProjectTasksToJson(Project prj, File bdir) {
+    //def p = rootProject.projectDir.parentFile.path
+    def f = new File(bdir, 'tasks.json')
+    def pw = f.newPrintWriter()
+    pw.println "{"
+    //def ts = prj.tasks.findAll{ it.name.contains('Release') }
+    def ts = prj.tasks
+    def tn = ts.size()
+    ts.eachWithIndex { t, ti ->
+        pw.println "  \"${t.name}\": {"
+        def strings = [:]
+        def files = [:]
+        def atoms = [:]
+        t.properties.each { k, v ->
+            dumpObjectToJson(f, k, v, strings, files, atoms)
+        }
+        strings.each { k, v ->
+            pw.println  "    \"$k\": \"$v\","
+        }
+        files.each { k, File v ->
+            String s = v.path
+            pw.println  "    \"$k\": \"$s\","
+        }
+        def ai = 0
+        def an = atoms.size()
+        atoms.each { k, v ->
+            ai++
+            ai == an ? pw.println("    \"$k\": $v") : pw.println("    \"$k\": $v,")
+        }
+        tn == ti + 1 ? pw.println('  }') : pw.println('  },')
+    }
+    pw.println '}'
+    pw.flush()
+    pw.close()
+}
+
+// Dumps information about a project and properties to a json file.
+def dumpProjectToJson(Project prj, File bdir) {
+    //def p = rootProject.projectDir.parentFile.path
+    def f = new File(bdir, 'project.json')
+    def pw = f.newPrintWriter()
+    pw.println "{"
+    pw.println "  \"name\": \"${prj.name}\": {"
+    def strings = [:]
+    def files = [:]
+    def atoms = [:]
+    prj.properties.each { k, v ->
+        dumpObjectToJson(f, k, v, strings, files, atoms)
+    }
+    strings.each { k, v ->
+        pw.println  "    \"$k\": \"$v\","
+    }
+    files.each { k, File v ->
+        String s = v.path
+        pw.println  "    \"$k\": \"$s\","
+    }
+    def ai = 0
+    def an = atoms.size()
+    atoms.each { k, v ->
+        ai++
+        ai == an ? pw.println("    \"$k\": $v") : pw.println("    \"$k\": $v,")
+    }
+    pw.println('  },')
+    pw.println '}'
+    pw.flush()
+    pw.close()
+}
+
+
+
+
+
 ////////////////////////////////////////////////////////////////
 // Gradle tasks and methods for creating installers, including the staging of exeuctables in sigma-web, s-cgi and similar directories.
 // To use this add this line to the root gradle file:
 //    apply from: 'installUtils.gradle'
 
+// TODO:
+// Need to handle shared libraries, such as SourceC/libeay32.
+
 def getDebugState(Project prj) {
-    // May be enchanced to enable debugging for certain project names.
-    def rv = false;
-    return rv
+    def debugOn = true//false
+    if((prj.hasProperty("debug_by_name")) && (prj.debug_by_name)) {
+        if(prj != null) {
+            if(prj.name.contains("WiX")) {
+                debugOn = true
+            }
+            if(prj.name.contains("agent")) {
+                debugOn = true
+            }
+            if(prj.name.contains("SCinstall")) {
+                debugOn = true
+            }
+            if(prj.name.contains("SCSetup")) {
+                debugOn = true
+            }
+            if(prj.name.contains("MSISetup")) {
+                debugOn = true
+            }
+            if(prj.name.contains("Winsend")) {
+                debugOn = true
+            }
+            if(prj.name.contains("Sysmsg")) {
+                debugOn = true
+            }
+            if(prj.name.contains("Winsend")) {
+                debugOn = true
+            }
+            if(prj.name.contains("Fmon")) {
+                debugOn = true
+            }
+            if(prj.name.contains("Rfmconf")) {
+                debugOn = true
+            }
+            if(prj.name.contains("fi-agent")) {
+                debugOn = true
+            } 
+       }
+    }
+
+    return debugOn
 }
 
 // Will create (and return) a debug or release aggregate task (e.g. legacyInstaller) in a target project,
@@ -103,6 +326,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
     if(dbgCopyAllTask == null) {
         dbgCopyAllTask = tgtPrj.tasks.create(dbgAggTask.name + '_CopyAll')
     }
+
     // This task might have been created from a project that wasn't able to set the
     // dependency, so we'll always set it, whether we created it or not.
     if(debugOn) { println "Debug(${methodName}): Setting dbgAggTask task ${dbgAggTask.path} to depend on new prj task ${dbgCopyAllTask.path}."}
@@ -127,7 +351,8 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
     //                  ["codeSign":true,"fileBasename":"foo"],
     //                  ["codeSign":false,"fileBasename":"bar"]
     //         ]
-    prj.property(projMapPropName).eachWithIndex { path, fileBasename, idx ->
+    println "KFH: Checking for property named zip_based_installer in project ${prj.name}"
+    prj.property('zip_based_installer')[projMapPropName].eachWithIndex { path, fileBasename, idx ->
         // Resolve the passed in (optional) basepath with the path from the map.
         // Handle the cases where the path from the map is a string and where it's a File.
         def File targetPath
@@ -223,6 +448,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                     throw new GradleException("Stopping build because the ext.${projMapPropName} setting for subproject ${prj.name} contains .dll as part of the filename.")
                 }
 
+
                 if(prj.hasProperty('library')) {
                     if(isWindows){ 
                         targetFilename += ".dll"
@@ -250,6 +476,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
 
             // This task will be invoked via the copy method from the next task we define.
             def newDebugCopyTask = tgtPrj.tasks.register(dbgTaskName + '_CopyOnly', Copy) {
+
                 rename { return outputFilename } // Name the file as specified, may not actually be a different name, but this works either way.
 
                 // This causes the exec task to have the Source directory as an input, which isn't good.
@@ -257,6 +484,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
 
                 // I don't think this is needed.
                 //outputs.file(targetPath.path + "/" + targetFilename)
+
                 setDescription("Copy file ${src_path}/${targetFilename} to path ${targetPath.path}.")
                 doLast {
                     if(debugOn) { 
@@ -267,8 +495,9 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
             }
             def newDebugTask = tgtPrj.tasks.register(dbgTaskName) {
                 if(addExeOrDllSuffix) {
-                    if(debugOn) { 
+                    if(debugOn) {
                         println "Debug(${methodName}): Registering debug task named ${tgtPrj.path}:${name} for file named ${targetFilename}, with inputs from ${newDebugCopyTask}, inputs=${inputs.files(newDebugCopyTask)}"
+
                         String ifiles = ""
                         it.inputs.files.each { f ->
                             ifiles += ",${f.path} "
@@ -287,12 +516,12 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                     }
                     inputs.file("${src_path}/${targetFilename}")
                 }
+                
                 outputs.file(targetPath.path + "/" + outputFilename)
 
                 doLast {
                     if(debugOn) {
-                        println "Debug(${methodName}): ${it.name} in debug copy/sign task, copying file ${targetFilename} " +
-                            "to ${targetPath.path}/${outputFilename} using task ${newDebugCopyTask.name}."
+                        println "Debug(${methodName}): ${it.name} in debug copy/sign task, copying file ${targetFilename} to ${targetPath.path} using task ${newDebugCopyTask.name}."
                         dumpTaskToJson(tgtPrj,it, file(tgtPrj.projectDir), "${it.name}_from_generic_task_3.json")
                     }
                     copy {
@@ -317,7 +546,6 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
 
 
             //////////////// Release Tasks
-            
             def relTaskName = "${taskPrefix}ReleaseCopy_${prj.name}_${idx}_${idx2}"
             if(debugOn) {println "Debug(${methodName}): about to register release copy task name ${tgtPrj.path}:${relTaskName} for file name ${fname}"}
             def newReleaseCopyTask = tgtPrj.tasks.register(relTaskName + '_CopyOnly', Copy) {
@@ -351,10 +579,11 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                     }
                     inputs.file("${src_path}/${targetFilename}")
                 }
+
                 outputs.file(targetPath.path + "/" + outputFilename)
 
                 doLast {
-                    if(debugOn) {
+                    if(debugOn) { 
                         println "Debug(${methodName}): ${it.name} in release copy/sign task, copying file ${targetFilename} to ${targetPath.path} using task ${newReleaseCopyTask.name}"
                         dumpTaskToJson(tgtPrj,it, file(tgtPrj.projectDir), "${it.name}_from_generic_task_1.json")
                     }
@@ -363,7 +592,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                         rename { return outputFilename } // Name the file as specified, may not actually be a different name, but this works either way.
                         into targetPath.path
                     }
-                    if(shouldSign) {
+                    if(shouldSign){
                         if(debugOn) {println "Debug(${methodName}): ${it.name} in newReleaseTask register call, should sign is on for file ${targetFilename} to ${targetPath.path}."}
                         exec { commandLine 'signtool', 'sign', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
                               '/p', getRootProject().property('codeSignPassword'), "${targetPath.path}/${targetFilename}" }
@@ -380,191 +609,130 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
     }
 
     // When each referenced task has been finalized, set the dependencies for the copy tasks that we created, we can't do it before that time.
-    prj.components.main.binaries.whenElementFinalized { binary ->
-        if (binary.name.endsWith('Debug')) {
-            if(debugOn) {println "Debug(${methodName}): about to configure ${debugTasks.size()} debug tasks."}
-            debugTasks.each { et, optionMap ->
-                def copyTask = optionMap['copyTask'] 
-                // TODO-Kelly
-                // This doesn't quite work, we need to skip adding the linker task dependency if
-                // addExeOrDllSuffix was false, but we don't have access to those values here.
-                // Because of this, the util_1 project ends up with two inputs, so instead
-                // of Documentation.txt having the contents of doc.txt, it ends up 
-                // having the contents of util_1.exe.
-                // def addExeOrDllSuffix = optionMap['addExeOrDllSuffix']
-                // if(addExeOrDllSuffix) {...}
-                if(debugOn) { println "Debug: configuring debug task ${et.name}, copytask=${copyTask.name}" }
-                copyTask.configure {
-                    if(debugOn) { 
-                        println "Debug(${methodName}): Updating debug copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
-                            binary.linkTask.get().linkedFile.getAsFile().get().path
-                        String ifiles = ""
-                        it.inputs.files.each { f ->
-                            ifiles += ",${f.path} "
-                        }
-                        println "Debug(${methodName}): CopyTask inputs before adding linked file: ${ifiles}"
-                    }
-                    inputs.file(binary.linkTask.get().linkedFile)
-                    it.dependsOn binary.linkTask
-                }
-                et.configure {
-                    if(debugOn) {
-                        println "Debug(${methodName}): Updating debug exec task ${tgtPrj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, inputs=${binary.linkTask.get().linkedFile}, file=" + binary.linkTask.get().linkedFile.getAsFile().get().name
-                    }
-                    it.dependsOn binary.linkTask
-                    inputs.file(binary.linkTask.get().linkedFile)
-                }
-
-                if(debugOn) {
-                    println "Debug(${methodName}): Updating debug task ${tgtPrj.path}:${dbgCopyAllTask.name} which now also dependsOn ${et.name}"
-                }
-                dbgCopyAllTask.dependsOn(et)
-                tgtPrj.tasks.findByName('debug').dependsOn(dbgAggTask)
+    def components = prj.extensions.findByType(ComponentContainer)
+    if (components != null) {
+        println "KFH: Have components"
+        components.whenElementKnown { knownComponent ->
+            println "KFH: component known."
+            def strings = [:]
+            def files = [:]
+            def atoms = [:]
+            knownComponent.properties.each {  k,v->
+                dumpObjectToJson(file("d:/bmcdata/temp/dump.json"), k, v, strings, files, atoms)
+            }
+            debug.configure {
+                println "KFH: " + knownComponent.flatMap {
+                    // TODO(nokeedev): Variants should be be forwarding the "buildability" to the development binary (this avoid the additional flatMap to the development Binary).
+                    it.variants.filter {
+                        // TODO(nokeedev): TargetBuildTypeFactory should be accessible via a project extension (e.g. buildTypes)
+                        //    So should the machines and linkages -> note that machines conflict with Core Gradle plugins failing to give a good error message
+                        it.buildVariant.hasAxisOf(DefaultTargetBuildTypeFactory.INSTANCE.named('debug'))
+                    }.flatMap { variant -> provider { variant*.developmentBinary } } }
             }
         }
-        if (binary.name.endsWith('Release')) {
-            if(debugOn) {println "Debug: about to configure ${releaseTasks.size()} debug tasks."}
-            releaseTasks.each { et, optionMap ->
-                def copyTask = optionMap['copyTask'] 
-                if(debugOn) {println "Debug: configuring release task ${et.name}, copytask=${copyTask.name}"}
-                copyTask.configure {
-                    if(debugOn) { 
-                        println "Debug(${methodName}): Updating release copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
-                            binary.linkTask.get().linkedFile.getAsFile().get().name
-                    }
-                    inputs.file(binary.linkTask.get().linkedFile)
-                    it.dependsOn binary.linkTask
-                }
-                et.configure {
-                    if(debugOn) {
-                        println "Debug(${methodName}): Updating release exec task ${tgtPrj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, inputs=${binary.linkTask.get().linkedFile}."
-                        binary.linkTask.get().linkedFile.getAsFile().get().name
-                    }
-
-                    it.dependsOn binary.linkTask
-                    inputs.file(binary.linkTask.get().linkedFile)
-                }
-
-                if(debugOn) {
-                    println "Debug(${methodName}): Updating release task ${tgtPrj.path}:${relCopyAllTask.name} which now also dependsOn ${et.name}"
-                }
-                relCopyAllTask.dependsOn(et)
-                tgtPrj.tasks.findByName('release').dependsOn(relAggTask)
-            }
-        }
+    } else {
+        println "KFH: unable to get components"
     }
+
+//TODO-this bit needs to swap over like afterEvaluate at the end of this file.
+    // prj.components.main.binaries.whenElementFinalized { binary ->
+    //     if (binary.name.endsWith('Debug')) {
+    //         if(debugOn) {println "Debug(${methodName}): about to configure ${debugTasks.size()} debug tasks."}
+    //         debugTasks.each { et, optionMap ->
+    //             def copyTask = optionMap['copyTask'] 
+    //             if(debugOn) {println "Debug: configuring debug task ${et.name}, copytask=${copyTask.name}"}
+    //             copyTask.configure {
+    //                 if(debugOn) { 
+    //                     println "Debug(${methodName}): Updating debug copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
+    //                         binary.linkTask.get().linkedFile.getAsFile().get().path
+
+    //                     String ifiles = ""
+    //                     it.inputs.files.each { f ->
+    //                         ifiles += ",${f.path} "
+    //                     }
+    //                     println "Debug(${methodName}): CopyTask inputs before adding linked file: ${ifiles}"
+    //                 }
+    //                 inputs.file(binary.linkTask.get().linkedFile)
+    //                 it.dependsOn binary.linkTask
+    //             }
+    //             et.configure {
+    //                 if(debugOn) {
+    //                     println "Debug(${methodName}): Updating debug exec task ${tgtPrj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, inputs=${binary.linkTask.get().linkedFile}, file=" + binary.linkTask.get().linkedFile.getAsFile().get().name
+    //                 }
+    //                 it.dependsOn binary.linkTask
+    //                 inputs.file(binary.linkTask.get().linkedFile)
+    //             }
+
+    //             if(debugOn) {
+    //                 println "Debug(${methodName}): Updating debug task ${tgtPrj.path}:${dbgCopyAllTask.name} which now also dependsOn ${et.name}"
+    //             }
+    //             dbgCopyAllTask.dependsOn(et)
+    //             tgtPrj.tasks.findByName('debug').dependsOn(dbgAggTask)
+    //         }
+    //     }
+    //     if (binary.name.endsWith('Release')) {
+    //         if(debugOn) {println "Debug: about to configure ${releaseTasks.size()} debug tasks."}
+    //         releaseTasks.each { et, optionMap ->
+    //             def copyTask = optionMap['copyTask'] 
+    //             if(debugOn) {println "Debug: configuring release task ${et.name}, copytask=${copyTask.name}"}
+    //             copyTask.configure {
+    //                 if(debugOn) { 
+    //                     println "Debug(${methodName}): Updating release copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
+    //                         binary.linkTask.get().linkedFile.getAsFile().get().name
+    //                 }
+    //                 inputs.file(binary.linkTask.get().linkedFile)
+    //                 it.dependsOn binary.linkTask
+    //             }
+    //             et.configure {
+    //                 if(debugOn) {
+    //                     println "Debug(${methodName}): Updating release exec task ${tgtPrj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, inputs=${binary.linkTask.get().linkedFile}."
+    //                     binary.linkTask.get().linkedFile.getAsFile().get().name
+    //                 }
+
+    //                 it.dependsOn binary.linkTask
+    //                 inputs.file(binary.linkTask.get().linkedFile)
+    //             }
+
+    //             if(debugOn) {
+    //                 println "Debug(${methodName}): Updating release task ${tgtPrj.path}:${relCopyAllTask.name} which now also dependsOn ${et.name}"
+    //             }
+
+    //             relCopyAllTask.dependsOn(et)
+    //             tgtPrj.tasks.findByName('release').dependsOn(relAggTask)
+    //         }
+    //     }
+    // }
 }
 
-////////////////////////////////////////////////////////////////
-// Creates a $ZIPINST.bat style installer, returns maps with the created tasks.
-def createZipInstallerTasks(Project prj,
-                            String installerFileName, String installerFilePath,
-                            String productName, String productDescription,
-                            String programDescription, String defaultPath,
-                            String serviceName, String runProgram,
-                            Task toDependOn, String inputPath, String inputIncludeSpec,
-                            Boolean silentInstaller
-) {
-
-    def rv = [:]
-    def instTaskNameSuffix = 'Installer'
-    if(silentInstaller) {
-        instTaskNameSuffix = 'SilentInstaller'
-    }
-    def createParmsHeader = prj.tasks.register("createParmsHFor${instTaskNameSuffix}") {
-        outputs.file "${prj.projectDir}/parms.h"
-        file("${prj.projectDir}/parms.h").text = """
-#define PROGRAM_DESCR    \"${programDescription}\"
-#define DEFAULT_PATH     \"${defaultPath}\"
-#define SERVICE_NAME     \"${serviceName}\"
-#define RUN_PROGRAM      \"${runProgram}\"
-"""
-    }
-
-    // TODO: Can I move the application in here too? probably not but would be nice, which means I need to pass in the path, or just assume it's here.
-
-    def ZNST = file("${prj.buildDir}/ZipInst.exe").path
-    def BDRY = file("${prj.buildDir}/../BOUNDARY.txt").path
-    def ZSFX = file("${prj.buildDir}/../unzipsfx.exe").path
-    def CSETUP = file("${prj.buildDir}/../CSetup.exe").path
-    def ZPKG = file("${prj.buildDir}/pkg.zip").path
-
-
-    // TODO: should I move the zip in here too? have to get the dependencies right.
-    // For the moment I'm not doing it because (using command_center.gradle as an example),
-    // the CCI_stage task then wouldn't have anything to use as an output, so gradle
-    // would always run the task, which isn't desireable.
-    
-    // Task to create the installer itself - debug
-    def debugInstallerTask = prj.tasks.register("createDebug${instTaskNameSuffix}") {
-        dependsOn(createParmsHeader)
-        dependsOn(toDependOn)
-        inputs.files(
-            ZNST,
-            BDRY,
-            ZSFX,
-            fileTree(dir:inputPath, include: inputIncludeSpec)
-        )
-        outputs.files(installerFilePath)
-        doLast {
-            def instFile = file(installerFilePath)
-            def instFileDir = instFile.getAbsoluteFile().getParent()
-            exec {
-                workingDir "${inputPath}"
-                if(silentInstaller) {
-                    commandLine "cmd", "/C", "copy", "/b", "${ZNST}+${BDRY}+${ZSFX}+${ZPKG}", instFile.getPath()
-                } else {
-                    commandLine "cmd", "/C", "copy", "/b", "${ZNST}+${BDRY}+${ZSFX}+${ZPKG}", instFile.getPath()
+def calling_prj = project
+// TODO(nokeedev): Should allow users to react when the Nokee model plugins are applied instead of afterEvaluate
+println "KFH: in zip_based_installer for project ${calling_prj.name}"
+afterEvaluate {
+    getRootProject().allprojects { all_proj_ref ->
+        afterEvaluate { prj->
+            if(prj.hasProperty('zip_based_installer')) {
+                println "KFH: project named ${prj.name} has entries for zip_based_installer for project ${calling_prj.name}."
+                // from old corresrc.gradle
+                addProjOutputCopyFilesTask(prj, prj.parent, 'stage', calling_prj.name + 'xxx', null, "Do a build of BMC AMI Defender", false)
+            } else {
+                //println "KFH: project named ${prj.name} does not have zip_based_installer properties.."
+            }
+            
+            // TODO(nokeedev): ComponentContainer should be default imported
+            def components = extensions.findByType(ComponentContainer)
+            if (components != null) {
+                components.whenElementKnown { knownComponent ->
+                    // debug.configure {
+                    //     dependsOn(knownComponent.flatMap {
+                    //         // TODO(nokeedev): Variants should be be forwarding the "buildability" to the development binary (this avoid the additional flatMap to the development Binary).
+                    //         it.variants.filter {
+                    //             // TODO(nokeedev): TargetBuildTypeFactory should be accessible via a project extension (e.g. buildTypes)
+                    //             //    So should the machines and linkages -> note that machines conflict with Core Gradle plugins failing to give a good error message
+                    //             it.buildVariant.hasAxisOf(DefaultTargetBuildTypeFactory.INSTANCE.named('debug'))
+                    //         }.flatMap { variant -> provider { variant*.developmentBinary } } })
+                    // }
                 }
             }
-            exec {
-                workingDir instFile.getParentFile()
-                commandLine "signtool", "sign", "/v", "/f", "${project.property('certDir')}BmcAmiCCS.pfx",
-                    "/p", "bmcdefender", "/t", codeSignTimestampURL, instFile.name
-            }
         }
     }
-    tasks.findByName('debug').dependsOn(debugInstallerTask)
-    rv['debugInstallerTask'] = debugInstallerTask
-
-    // Task to create the installer itself - release
-    def releaseInstallerTask = prj.tasks.create("createRelease${instTaskNameSuffix}") {
-        dependsOn(createParmsHeader)
-        dependsOn(toDependOn)
-        inputs.files(
-            ZNST,
-            BDRY,
-            ZSFX,
-            fileTree(dir:inputPath, include: inputIncludeSpec)
-        )
-        outputs.files(installerFilePath)
-        doLast {
-            def instFile = file(installerFilePath)
-            def instFileDir = instFile.getAbsoluteFile().getParent()
-            exec {
-                workingDir "${inputPath}"
-                commandLine "cmd", "/C", "copy", "/b", "${ZNST}+${BDRY}+${ZSFX}+${ZPKG}", instFile.getPath()
-            }
-            exec {
-                workingDir instFile.getParentFile()
-                commandLine "signtool", "sign", "/v", "/f", "${project.property('certDir')}BmcAmiCCS.pfx",
-                    "/p", "bmcdefender", "/t", codeSignTimestampURL, instFile.name
-            }
-        }
-    }
-    tasks.findByName('release').dependsOn(releaseInstallerTask)
-    rv['releaseInstallerTask'] = releaseInstallerTask
-
-    return rv
-}
-
-// We need to "convert" our groovy method(s) to Closures, otherwise they won't be visible in
-// other Gradle files.
-// We wouldn't have to do this if these methods were in the root Gradle file, but this way
-// we can refactor things to keep the root Gradle file cleaner.
-// See https://stackoverflow.com/questions/18715137/extract-common-methods-from-gradle-build-script
-ext {
-    getOrCreateAggregateTaskForSubproject = this.&getOrCreateAggregateTaskForSubproject
-    addProjOutputCopyFilesTask = this.&addProjOutputCopyFilesTask
-    createZipInstallerTasks = this.&createZipInstallerTasks
 }

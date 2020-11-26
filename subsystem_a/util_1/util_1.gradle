@@ -29,6 +29,19 @@ ext.legacyInstaller = ['.':[
      'outputFilename':'Documentation.txt']
 ]]
 
+ext.zip_based_installer = [
+    'legacy_installer' : [
+        'Source':[
+            // Adding a built file, source filename defaults to util_1.exe because that is the baseName of this sub-project.
+            ['codeSign':true,'fileBasename':'util_1_renamed'],
+
+            // Adding a non-built file to the installer.
+            ['addExeOrDllSuffix':false,
+             'fileBasename':'../doc.txt',
+             'outputFilename':'Documentation.txt']    ]
+    ]
+]
+
 // Set the project standard C++ compiler/linker options
 application(withDefaultApplicationConfiguration())
 application { app->
