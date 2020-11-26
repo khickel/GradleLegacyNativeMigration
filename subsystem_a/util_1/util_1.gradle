@@ -13,6 +13,22 @@ repositories {
 import dev.nokee.language.c.CHeaderSet
 import dev.nokee.language.cpp.CppHeaderSet
 
+
+// Define a map listing the targetPath,targetFileName for any files that need to be copied to staging area.
+//TODO-KFH reinstate this:
+//ext.installerFiles = [ (file(project.property('stagingDir'))):'util_1' ]
+
+// Files created by this subproject that need to be part of the legacy_installer build.
+ext.legacyInstaller = ['.':[
+    // Adding a built file, source filename defaults to util_1.exe because that is the baseName of this sub-project.
+    ['codeSign':true,'fileBasename':'util_1_renamed'],
+
+    // Adding a non-built file to the installer.
+    ['addExeOrDllSuffix':false,
+     'fileBasename':'../doc.txt',
+     'outputFilename':'Documentation.txt']
+]]
+
 // Set the project standard C++ compiler/linker options
 application(withDefaultApplicationConfiguration())
 application { app->

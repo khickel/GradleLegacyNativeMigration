@@ -38,6 +38,9 @@ If /TP was not specified then any user that relied on that behavior could
 simply add /TP from their .gradle file.
 > src\platform-native\org\gradle\nativeplatform\toolchain\internal\msvcpp\CppCompiler.java
 
+* Code signing note. These examples use a generated self signing cert to sign the code. The cert was created with this script: https://stackoverflow.com/questions/53771022/how-to-create-and-install-x-509-self-signed-certificates-in-windows-10-without-u
+It should go without saying, but this is not a secure certificate or CA, and they should not be used for anything else. Further, this project does not claim to demonstrate a secure way to sign anything, for any purpose.
+
 * TODO When we add .c files to the solution the way that we are, they don't end up under Source Files for the project in the Solution Explorer, try to fix that.
 
 * TODO Add example for a manual test where stageDebug doesn't recopy the target file if it was manually deleted, unless it had to rebuild the input file. I haven't yet been able to recreate this in this stripped down example.
