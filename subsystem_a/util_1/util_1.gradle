@@ -45,8 +45,6 @@ application { app->
         configureEach(CHeaderSet) { from(projectDir) }
     }
 
-    addVSLinkerOption("/subsystem:windows").call(app)
-
     dependencies {
         implementation project(':static_lib')
     }
