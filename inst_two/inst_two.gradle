@@ -1,0 +1,2 @@
+apply plugin: 'zip_based_installer'
+

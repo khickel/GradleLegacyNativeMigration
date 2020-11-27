@@ -1,10 +1,11 @@
 rootProject.name = 'LegacyNativeExample'
 
 include 'static_lib'
-include 'subsystem_a:util_1', 'subsystem_a:util_1:c'
+include 'subsystem_a:util_1'
 include 'subsystem_b:server_1'
 
-include 'legacy_installer'
+include 'inst_two'
+//include 'legacy_installer'
 
 // To avoid every gradle file being named 'build.gradle', this bit of code
 // will tell gradle to look for PROJNAME.gradle.

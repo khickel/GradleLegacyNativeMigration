@@ -30,7 +30,7 @@ ext.legacyInstaller = ['.':[
 ]]
 
 ext.zip_based_installer = [
-    'legacy_installer' : [
+    'inst_two' : [
         'Source':[
             // Adding a built file, source filename defaults to util_1.exe because that is the baseName of this sub-project.
             ['codeSign':true,'fileBasename':'util_1_renamed'],

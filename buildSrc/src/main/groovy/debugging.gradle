@@ -68,9 +68,6 @@ def dumpObjectToJson(f, k, v, strings, files, atoms) {
         }
     } else {
         def cname = "(null)"
-        //if(v != null) {  cname = v.class }
-        //strings.put(k, "unknown instance of type " + cname)
-        strings.put(k, "unknown instance of dump:" + v)
         Method[] methods = v.class.getMethods();
         boolean hasGetName = false;
         boolean hasToString = false;
@@ -83,11 +80,12 @@ def dumpObjectToJson(f, k, v, strings, files, atoms) {
             }
         }
         if(hasGetName) {
-            println "dumpObjectToJson: No dump routine for object of name " + v.getName() + ", toString=" + v.toString()
+            strings.put(k, "No dump routine for object named " + v.getName() + ", toString=" + v.toString())
         } else {
             if(hasToString) {
-                println "dumpObjectToJson: No dump routine for object with no name, toString=" + v.toString()
+                strings.put(k, "No dump routine for object with no name, toString=" + v.toString())
             } else {
+                strings.put(k, "No dump routine for object with no name, and no toString method: " + v)
                 println "dumpObjectToJson: No dump routine for object with neither getName nor toString methods, public method list follows:"
                 for(int i = 0; i < methods.length; i++) {
                     println "    " + methods[i]
