@@ -513,7 +513,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
     }
     // Not sure this is right, just trying to hook something up.
     // these next two lines seem to do the same thing.....
-    debug.dependsOn(dbgCopyAllTask)
+    //debug.dependsOn(dbgCopyAllTask)
     debug.dependsOn(dbgAggTask)
 
     
