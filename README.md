@@ -17,8 +17,8 @@ There are issues where the Microsoft Windows SDK uses camel case in an include s
 To see this, remove the .gradle directory, then run "gradlew debug", then run "gradle debug --info", in the output you will see messages like the one below. In a more complex project, you may have to run gradle 7 or 8 times before it stops building things.
 Note that sometimes the second time it won't say that it executed any tasks, but if you look at the info output, you'll see that gradle thought that the subproject  was not up to date.
 ```>Task ':subsystem_b:server_1:compileDebugCpp' is not up-to-date because:
->  Input property 'headerDependencies' file D:\BMCTools\Gradle\GradleLegacyNativeMigration\static_lib\lib_one.h has been removed.
->  Input property 'headerDependencies' file D:\BMCTools\Gradle\GradleLegacyNativeMigration\static_lib\lib_One.h has been added.
+>  Input property 'headerDependencies' file D:\GradleLegacyNativeMigration\static_lib\lib_one.h has been removed.
+>  Input property 'headerDependencies' file D:\GradleLegacyNativeMigration\static_lib\lib_One.h has been added.
 ```
 This is related to the recently closed ticket https://github.com/gradle/gradle/issues/7930
 
