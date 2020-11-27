@@ -7,7 +7,7 @@
 
 def getDebugState(Project prj) {
     // May be enchanced to enable debugging for certain project names.
-    def rv = false;
+    def rv = false
     return rv
 }
 
@@ -519,8 +519,8 @@ def createZipInstallerTasks(Project prj,
             }
             exec {
                 workingDir instFile.getParentFile()
-                commandLine "signtool", "sign", "/v", "/f", "${project.property('certDir')}BmcAmiCCS.pfx",
-                    "/p", "bmcdefender", "/t", codeSignTimestampURL, instFile.name
+                commandLine "signtool", "sign", "/v", "/f", "$foo.pfx",
+                    "/p", "foo", "/t", codeSignTimestampURL, instFile.name
             }
         }
     }
@@ -547,8 +547,8 @@ def createZipInstallerTasks(Project prj,
             }
             exec {
                 workingDir instFile.getParentFile()
-                commandLine "signtool", "sign", "/v", "/f", "${project.property('certDir')}BmcAmiCCS.pfx",
-                    "/p", "bmcdefender", "/t", codeSignTimestampURL, instFile.name
+                commandLine "signtool", "sign", "/v", "/f", "foo.pfx",
+                    "/p", "foo", "/t", codeSignTimestampURL, instFile.name
             }
         }
     }
