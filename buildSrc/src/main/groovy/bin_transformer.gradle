@@ -1,0 +1,31 @@
+import dev.nokee.platform.nativebase.ExecutableBinary
+import dev.nokee.platform.base.Variant
+plugins {
+	id 'dev.nokee.cpp-application'
+	id 'dev.nokee.xcode-ide'
+}
+application {
+    targetBuildTypes = [buildTypes.named('debug'), buildTypes.named('release')]
+}
+Spec<Variant> forDebug() {
+    return { Variant variant ->
+        return variant.buildVariant.hasAxisOf(application.buildTypes.named('debug'))
+    }
+}
+Transformer<Iterable<Provider<RegularFile>>, Set<Variant>> toOutputFiles() {
+    return transformEachVariant(toOutputFile())
+}
+Transformer<Iterable<Provider<Directory>>, Set<Variant>> toObjectFiles() {
+    return transformEachVariant(toObjectAllFiles())
+}
+Transformer<Iterable<Provider<RegularFile>>, Set<Variant>> transformEachVariant(Transformer<Provider<RegularFile>, Variant> transformer) {
+    return { elements ->
+        return elements.collect { Variant t -> transformer.transform(t) }
+    }
+}
+Transformer<Provider<RegularFile>, Variant> toOutputFile() {
+    return { Variant variant -> variant.binaries.withType(ExecutableBinary).map { it.linkTask.get().linkedFile } }
+}
+Transformer<Provider<Directory>, Variant> toObjectAllFiles() {
+    return { Variant variant -> variant.binaries.withType(ExecutableBinary).map { it.compileTasks.get().first().objectFileDir } }
+}

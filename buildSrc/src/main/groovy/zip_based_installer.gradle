@@ -2,6 +2,8 @@ plugins {
     id 'debugging'
 }
 
+// TODO:KFH bring in the code that throws an error if the copy doesn't happen because the source file doesn't exist.
+
 // TODO:KFH for the moment, just doing debug tasks, not release.
 ext {
     releaseTasksEnabled = false
@@ -370,6 +372,9 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                         rename { return outputFilename } // Name the file as specified, may not actually be a different name, but this works either way.
                         into targetPath.path
                     }
+                    // TODO-KFH off for now, until I have copying working.
+                    shouldSign=false;
+                    println "KFH: not signing...."
                     if(shouldSign) {
                         if(debugOn) {println "Debug(${methodName}): ${it.name} in newDebugTask register call, should sign is on for file ${targetFilename} to ${targetPath.path}."}
                         exec { commandLine 'signtool', 'sign', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
@@ -457,50 +462,51 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
 
     /// TODO:KFH testing to try and figure out how to iterate over the binaries in the nokee environment.
     afterEvaluate {
-    def components = prj.extensions.findByType(ComponentContainer)
-    if (components != null) {
-        println "KFH: Have components"
-        components.whenElementKnown { knownComponent ->
-            println "KFH: component known."
-            knownComponent.flatMap {
-            }.flatMap { variant -> provider { variant*.developmentBinary } }.get().each {
-                it.binaries.map { it.linkTask /*or createTask*/.flatMap { it.linkedFile /*or outputFile */ } }.get().each { f->
-                    println "KFH: found linked file named ${f.name}"
+        println "KFH: Checking for component container...."
+        def components = prj.extensions.findByType(ComponentContainer)
+        if (components != null) {
+            println "KFH: Have components"
+            components.whenElementKnown { knownComponent ->
+                println "KFH: component known."
+                knownComponent.flatMap {
+                }.flatMap { variant -> provider { variant*.developmentBinary } }.get().each {
+                    it.binaries.map { it.linkTask /*or createTask*/.flatMap { it.linkedFile /*or outputFile */ } }.get().each { f->
+                        println "KFH: found linked file named ${f.name}"
+                    }
                 }
+
+                
+
+                //         def strings = [:]
+                //         def files = [:]
+                //         def atoms = [:]
+                //         if(0) {
+                //             knownComponent.properties.each {  k,v->
+                //                 println "KFH: dumping known component with key ${type}:"
+                //                 if((v instanceof java.lang.Class)) {
+                //                     println "KFH: v is of type classs"
+                //                     v.properties.each { k2,v2 -> println "KFH:    k2=${k2}, v2=${v2}" }
+                //                 } else {
+                //                     dumpObjectToJson(file("dump.json"), k, v, strings, files, atoms)
+                //                 }
+                //             }
+                //         }
+                //         //debug.configure {
+                //         println "KFH-2: "
+                //         knownComponent.flatMap {
+                //                 // TODO(nokeedev): Variants should be be forwarding the "buildability" to the development binary (this avoid the additional flatMap to the development Binary).
+                //                 it.variants.filter {
+                //                     // TODO(nokeedev): TargetBuildTypeFactory should be accessible via a project extension (e.g. buildTypes)
+                //                     //    So should the machines and linkages -> note that machines conflict with Core Gradle plugins failing to give a good error message
+                //                     it.buildVariant.hasAxisOf(DefaultTargetBuildTypeFactory.INSTANCE.named('debug'))
+                //             }.flatMap { variant -> provider { variant*.developmentBinary } }.forEach {
+                //                 println "KFH: type of it is " + it.getName()
+                //             } }
+                //     //}
             }
-
-    
-
-    //         def strings = [:]
-    //         def files = [:]
-    //         def atoms = [:]
-    //         if(0) {
-    //             knownComponent.properties.each {  k,v->
-    //                 println "KFH: dumping known component with key ${type}:"
-    //                 if((v instanceof java.lang.Class)) {
-    //                     println "KFH: v is of type classs"
-    //                     v.properties.each { k2,v2 -> println "KFH:    k2=${k2}, v2=${v2}" }
-    //                 } else {
-    //                     dumpObjectToJson(file("dump.json"), k, v, strings, files, atoms)
-    //                 }
-    //             }
-    //         }
-    //         //debug.configure {
-    //         println "KFH-2: "
-    //         knownComponent.flatMap {
-    //                 // TODO(nokeedev): Variants should be be forwarding the "buildability" to the development binary (this avoid the additional flatMap to the development Binary).
-    //                 it.variants.filter {
-    //                     // TODO(nokeedev): TargetBuildTypeFactory should be accessible via a project extension (e.g. buildTypes)
-    //                     //    So should the machines and linkages -> note that machines conflict with Core Gradle plugins failing to give a good error message
-    //                     it.buildVariant.hasAxisOf(DefaultTargetBuildTypeFactory.INSTANCE.named('debug'))
-    //             }.flatMap { variant -> provider { variant*.developmentBinary } }.forEach {
-    //                 println "KFH: type of it is " + it.getName()
-    //             } }
-    //     //}
+        } else {
+            println "KFH: unable to get components"
         }
-    } else {
-        println "KFH: unable to get components"
-    }
     }
 
 //TODO-this bit needs to swap over like afterEvaluate at the end of this file.
