@@ -1,5 +1,6 @@
 plugins {
     id 'debugging'
+    id 'bin_transformer'
 }
 
 // TODO:KFH bring in the code that throws an error if the copy doesn't happen because the source file doesn't exist.
@@ -461,25 +462,45 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
     // When each referenced task has been finalized, set the dependencies for the copy tasks that we created, we can't do it before that time.
 
     /// TODO:KFH testing to try and figure out how to iterate over the binaries in the nokee environment.
-    afterEvaluate {
+//    afterEvaluate {
         println "KFH: Checking for component container...."
         def components = prj.extensions.findByType(ComponentContainer)
         if (components != null) {
             println "KFH: Have components"
             components.whenElementKnown { knownComponent ->
-                println "KFH: component known."
-                knownComponent.flatMap {
-                }.flatMap { variant -> provider { variant*.developmentBinary } }.get().each {
-                    it.binaries.map { it.linkTask /*or createTask*/.flatMap { it.linkedFile /*or outputFile */ } }.get().each { f->
-                        println "KFH: found linked file named ${f.name}"
+            def strings = [:]
+            def files = [:]
+            def atoms = [:]
+
+            println "KFH: component known."
+            
+            // Trying with bin_transformer.gradle code from Daniel....
+            //println "KFH: output of toObjectFiles:" + knownComponent.variants.filter(forDebug()).map(toObjectFiles())
+            if(1) {
+                def i = 0
+                knownComponent.properties.each {  k,v->
+                    println "KFH: dumping known component with key ${type}:"
+                    if((v instanceof java.lang.Class)) {
+                        println "KFH: v is of type classs"
+                        //v.properties.each { k2,v2 -> println "KFH:    k2=${k2}, v2=${v2}" }
+                        dumpObjectToJson(file("dump_${i}.json"), k, v, strings, files, atoms)
+                    } else {
+                        dumpObjectToJson(file("dump_${i}.json"), k, v, strings, files, atoms)
                     }
+                    i++
                 }
+            }
+
+            // First attempt to thry and access nokee's idea of project binaries.
+            // knownComponent.flatMap {
+            // }.flatMap { variant -> provider { variant*.developmentBinary } }.get().each {
+            //     it.binaries.map { it.linkTask /*or createTask*/.flatMap { it.linkedFile /*or outputFile */ } }.get().each { f->
+            //         println "KFH: found linked file named ${f.name}"
+            //     }
+            // }
 
                 
 
-                //         def strings = [:]
-                //         def files = [:]
-                //         def atoms = [:]
                 //         if(0) {
                 //             knownComponent.properties.each {  k,v->
                 //                 println "KFH: dumping known component with key ${type}:"
@@ -507,7 +528,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
         } else {
             println "KFH: unable to get components"
         }
-    }
+//    }
 
 //TODO-this bit needs to swap over like afterEvaluate at the end of this file.
 // For the moment, just hook up the debug task dependencies.

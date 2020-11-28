@@ -4,9 +4,11 @@ plugins {
 	id 'dev.nokee.cpp-application'
 	id 'dev.nokee.xcode-ide'
 }
-application {
-    targetBuildTypes = [buildTypes.named('debug'), buildTypes.named('release')]
-}
+
+// application {
+//     targetBuildTypes = [buildTypes.named('debug'), buildTypes.named('release')]
+// }
+
 Spec<Variant> forDebug() {
     return { Variant variant ->
         return variant.buildVariant.hasAxisOf(application.buildTypes.named('debug'))
