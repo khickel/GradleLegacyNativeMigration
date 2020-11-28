@@ -461,7 +461,9 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
 
     // When each referenced task has been finalized, set the dependencies for the copy tasks that we created, we can't do it before that time.
 
-    /// TODO:KFH testing to try and figure out how to iterate over the binaries in the nokee environment.
+    /// TODO:KFH testing to try and figure out how to iterate over the binaries (well, the tasks really) in the nokee environment.
+    ///  The idea is that for file produced by a task, we want to use the output of that task as an input to the copy task, and
+    ///  create a dependancy.....
 //    afterEvaluate {
         println "KFH: Checking for component container...."
         def components = prj.extensions.findByType(ComponentContainer)
