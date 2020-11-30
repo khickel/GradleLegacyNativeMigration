@@ -312,7 +312,8 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
             if(debugOn) {println "Debug: pushing debug task ${newDebugTask.name}, shouldSign=${shouldSign}, copy only task named ${newDebugCopyTask.name}, file ${targetFilename}, outputFilename ${outputFilename}, targetPath ${targetPath.path} for project=${tgtPrj.path}"}
             debugTasks[newDebugTask] = [
                 'codeSign':shouldSign,
-                'copyTask':newDebugCopyTask
+                'copyTask':newDebugCopyTask,
+                'addExeOrDllSuffix':addExeOrDllSuffix
             ]
 
 
@@ -374,7 +375,8 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
             if(debugOn) {println "Debug: pushing release task ${newReleaseTask.name}, shouldSign=${shouldSign}, copy only task named ${newReleaseCopyTask.name}, file ${targetFilename}, outputFilename ${outputFilename}, targetPath ${targetPath.path} for project=${tgtPrj.path}"}
             releaseTasks[newReleaseTask] = [
                 'codeSign':shouldSign,
-                'copyTask':newReleaseCopyTask
+                'copyTask':newReleaseCopyTask,
+                'addExeOrDllSuffix':addExeOrDllSuffix
             ]
         }
     }
@@ -385,36 +387,30 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
             if(debugOn) {println "Debug(${methodName}): about to configure ${debugTasks.size()} debug tasks."}
             debugTasks.each { et, optionMap ->
                 def copyTask = optionMap['copyTask'] 
-                // TODO-Kelly
-                // This doesn't quite work, we need to skip adding the linker task dependency if
-                // addExeOrDllSuffix was false, but we don't have access to those values here.
-                // Because of this, the util_1 project ends up with two inputs, so instead
-                // of Documentation.txt having the contents of doc.txt, it ends up 
-                // having the contents of util_1.exe.
-                // def addExeOrDllSuffix = optionMap['addExeOrDllSuffix']
-                // if(addExeOrDllSuffix) {...}
                 if(debugOn) { println "Debug: configuring debug task ${et.name}, copytask=${copyTask.name}" }
-                copyTask.configure {
-                    if(debugOn) { 
-                        println "Debug(${methodName}): Updating debug copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
-                            binary.linkTask.get().linkedFile.getAsFile().get().path
-                        String ifiles = ""
-                        it.inputs.files.each { f ->
-                            ifiles += ",${f.path} "
+                if(optionMap['addExeOrDllSuffix']) {
+                    copyTask.configure {
+                        if(debugOn) { 
+                            println "Debug(${methodName}): Updating debug copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
+                                binary.linkTask.get().linkedFile.getAsFile().get().path
+                            String ifiles = ""
+                            it.inputs.files.each { f ->
+                                ifiles += ",${f.path} "
+                            }
+                            println "Debug(${methodName}): CopyTask inputs before adding linked file: ${ifiles}"
                         }
-                        println "Debug(${methodName}): CopyTask inputs before adding linked file: ${ifiles}"
+                        inputs.file(binary.linkTask.get().linkedFile)
+                        it.dependsOn binary.linkTask
                     }
-                    inputs.file(binary.linkTask.get().linkedFile)
-                    it.dependsOn binary.linkTask
-                }
-                et.configure {
-                    if(debugOn) {
-                        println "Debug(${methodName}): Updating debug exec task ${tgtPrj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, inputs=${binary.linkTask.get().linkedFile}, file=" + binary.linkTask.get().linkedFile.getAsFile().get().name
+                    et.configure {
+                        if(debugOn) {
+                            println "Debug(${methodName}): Updating debug exec task ${tgtPrj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, inputs=${binary.linkTask.get().linkedFile}, file=" + binary.linkTask.get().linkedFile.getAsFile().get().name
+                        }
+                        it.dependsOn binary.linkTask
+                        inputs.file(binary.linkTask.get().linkedFile)
                     }
-                    it.dependsOn binary.linkTask
-                    inputs.file(binary.linkTask.get().linkedFile)
                 }
-
+                
                 if(debugOn) {
                     println "Debug(${methodName}): Updating debug task ${tgtPrj.path}:${dbgCopyAllTask.name} which now also dependsOn ${et.name}"
                 }
@@ -427,24 +423,26 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
             releaseTasks.each { et, optionMap ->
                 def copyTask = optionMap['copyTask'] 
                 if(debugOn) {println "Debug: configuring release task ${et.name}, copytask=${copyTask.name}"}
-                copyTask.configure {
-                    if(debugOn) { 
-                        println "Debug(${methodName}): Updating release copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
+                if(optionMap['addExeOrDllSuffix']) {
+                    copyTask.configure {
+                        if(debugOn) { 
+                            println "Debug(${methodName}): Updating release copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
+                                binary.linkTask.get().linkedFile.getAsFile().get().name
+                        }
+                        inputs.file(binary.linkTask.get().linkedFile)
+                        it.dependsOn binary.linkTask
+                    }
+                    et.configure {
+                        if(debugOn) {
+                            println "Debug(${methodName}): Updating release exec task ${tgtPrj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, inputs=${binary.linkTask.get().linkedFile}."
                             binary.linkTask.get().linkedFile.getAsFile().get().name
-                    }
-                    inputs.file(binary.linkTask.get().linkedFile)
-                    it.dependsOn binary.linkTask
-                }
-                et.configure {
-                    if(debugOn) {
-                        println "Debug(${methodName}): Updating release exec task ${tgtPrj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, inputs=${binary.linkTask.get().linkedFile}."
-                        binary.linkTask.get().linkedFile.getAsFile().get().name
-                    }
+                        }
 
-                    it.dependsOn binary.linkTask
-                    inputs.file(binary.linkTask.get().linkedFile)
+                        it.dependsOn binary.linkTask
+                        inputs.file(binary.linkTask.get().linkedFile)
+                    }
                 }
-
+                
                 if(debugOn) {
                     println "Debug(${methodName}): Updating release task ${tgtPrj.path}:${relCopyAllTask.name} which now also dependsOn ${et.name}"
                 }
