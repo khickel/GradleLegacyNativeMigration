@@ -31,7 +31,8 @@ application { app->
         configureEach(CHeaderSet) { from(projectDir) }
     }
 
-    addVSLinkerOption("/subsystem:windows").call(app)
+    // TODO(daniel): reenable subsystem windows or add a project that shows usage for subsystem windows
+//    addVSLinkerOption("/subsystem:windows").call(app)
 
     dependencies {
         implementation project(':static_lib')
