@@ -1,0 +1,5 @@
+package glm
+
+interface InstallationManifestExtension {
+
+}
