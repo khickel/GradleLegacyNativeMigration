@@ -29,8 +29,8 @@ class InstallationManifestBasePlugin implements Plugin<Project> {
             def manifestElements = project.configurations.create("${manifest.name}InstallationManifestElements", forManifest(manifest.name, project.objects))
             manifestElements.outgoing.artifact(manifest.destinationDirectory)
 
-            def stageTask = project.tasks.register("stage${manifest.name}InstallationManifest".toString(), Sync, { Sync task ->
-                task.with(manifest.getContentSpec())
+            def stageTask = project.tasks.register("stage${manifest.name.capitalize()}InstallationManifest".toString(), Sync, { Sync task ->
+                task.with(manifest.contentSpec)
                 task.destinationDir = project.layout.buildDirectory.dir("tmp/${task.name}".toString()).get().asFile
             } as Action<Sync>)
 
