@@ -36,4 +36,9 @@ abstract class InstallationManifest implements Named {
         contentSpec.from(sourcePaths, action)
         return this
     }
+
+    InstallationManifest into(Object destinationPath, Action<? super CopySpec> action) {
+        contentSpec.into(destinationPath, action)
+        return this
+    }
 }

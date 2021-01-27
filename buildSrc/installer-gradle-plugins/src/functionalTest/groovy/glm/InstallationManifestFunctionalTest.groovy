@@ -156,4 +156,30 @@ class InstallationManifestFunctionalTest extends AbstractFunctionalTest {
         succeeds('verify')
         that(file('build/manifest'), hasDescendants('d/readme', 'd/ch1.txt', 'd/ch2.txt', 'd/ch3.txt', 'd/ch4.txt'))
     }
+
+    def "can add multiple files into the same directory"() {
+        buildFile << '''
+            installationManifests.debug {
+                into('a1') {
+                    from('output/a1.txt', 'docs/ch1.txt')
+                }
+                into('a2') {
+                    from('output/a2')
+                    from('docs/ch2.txt')
+                }
+                into('a3') {
+                    from('output/a3')
+                    from('docs/ch3.txt')
+                }
+                from('docs/readme')
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/manifest'), hasDescendants('readme',
+                'a1/a1.txt', 'a1/ch1.txt',
+                'a2/b1.txt', 'a2/b2.txt', 'a2/ch2.txt',
+                'a3/b3.txt', 'a3/b4.txt', 'a3/ch3.txt'))
+    }
 }
