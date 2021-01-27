@@ -68,4 +68,26 @@ class InstallationManifestFunctionalTest extends AbstractFunctionalTest {
         succeeds('verify')
         that(file('build/manifest'), hasDescendants('b2.txt', 'readme'))
     }
+
+    def "can select the output of another task"() {
+        buildFile << '''
+            def generateTask = tasks.register('generate') {
+                outputs.dir(temporaryDir)
+                doLast {
+                    new File(temporaryDir, 'gen') << 'some-generated-file'
+                    def fooFile = new File(temporaryDir, 'bin/foo.exe')
+                    fooFile.parentFile.mkdirs()
+                    fooFile << 'compiled PE'
+                }
+            }
+
+            installationManifests.debug {
+                from(generateTask)
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/manifest'), hasDescendants('gen', 'bin/foo.exe'))
+    }
 }
