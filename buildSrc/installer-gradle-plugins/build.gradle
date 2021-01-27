@@ -1,5 +1,6 @@
 plugins {
     id 'dev.gradleplugins.groovy-gradle-plugin' version '1.1.32'
+    id 'dev.gradleplugins.gradle-plugin-functional-test' version '1.1.32'
 }
 
 gradlePlugin {
@@ -17,11 +18,18 @@ gradlePlugin {
 
 repositories {
     jcenter()
+
+    // For Spock snapshots
+    maven { url = 'https://oss.sonatype.org/content/repositories/snapshots/' }
 }
 
 dependencies {
-    testImplementation platform('org.spockframework:spock-bom:2.0-M4-groovy-2.5')
+    testImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5-SNAPSHOT')
     testImplementation 'org.spockframework:spock-core'
+
+    functionalTestImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5-SNAPSHOT')
+    functionalTestImplementation 'org.spockframework:spock-core'
+    functionalTestImplementation 'dev.gradleplugins:gradle-runner-kit:0.0.116'
 }
 
 tasks.withType(Test).configureEach { useJUnitPlatform() }

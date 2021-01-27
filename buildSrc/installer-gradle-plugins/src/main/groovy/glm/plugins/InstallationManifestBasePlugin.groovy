@@ -4,6 +4,7 @@ import glm.InstallationManifest
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -11,6 +12,7 @@ import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Usage
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.reflect.TypeOf
+import org.gradle.api.tasks.Sync
 
 @CompileStatic
 class InstallationManifestBasePlugin implements Plugin<Project> {
@@ -20,11 +22,19 @@ class InstallationManifestBasePlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
-        def extension = project.objects.domainObjectContainer(InstallationManifest)
+        def extension = project.objects.domainObjectContainer(InstallationManifest, createInstallationManifest(project))
         project.extensions.add(new TypeOf<NamedDomainObjectContainer<InstallationManifest>>() {}, 'installationManifests', extension)
 
         extension.all { InstallationManifest manifest ->
-            project.configurations.create("${manifest.name}InstallationManifestElements", forManifest(manifest.name, project.objects))
+            def manifestElements = project.configurations.create("${manifest.name}InstallationManifestElements", forManifest(manifest.name, project.objects))
+            manifestElements.outgoing.artifact(manifest.destinationDirectory)
+
+            def stageTask = project.tasks.register("stage${manifest.name}InstallationManifest".toString(), Sync, { Sync task ->
+                task.with(manifest.getContentSpec())
+                task.destinationDir = project.layout.buildDirectory.dir("tmp/${task.name}".toString()).get().asFile
+            } as Action<Sync>)
+
+            manifest.destinationDirectory.fileProvider(stageTask.map { it.destinationDir }).disallowChanges()
         }
     }
 
@@ -36,5 +46,14 @@ class InstallationManifestBasePlugin implements Plugin<Project> {
             configuration.attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, INSTALLATION_MANIFEST_USAGE_NAME))
             configuration.attributes.attribute(MANIFEST_IDENTITY_ATTRIBUTE, manifestIdentity)
         } as Action<Configuration>
+    }
+
+    NamedDomainObjectFactory<InstallationManifest> createInstallationManifest(Project project) {
+        return new NamedDomainObjectFactory<InstallationManifest>() {
+            @Override
+            InstallationManifest create(String name) {
+                return project.objects.newInstance(InstallationManifest, name, project.copySpec())
+            }
+        }
     }
 }
