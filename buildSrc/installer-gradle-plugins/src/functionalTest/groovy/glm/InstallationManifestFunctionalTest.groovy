@@ -11,6 +11,12 @@ class InstallationManifestFunctionalTest extends AbstractFunctionalTest {
         file('output/a3/b3.txt')
         file('output/a3/b4.txt')
 
+        file('docs/readme')
+        file('docs/ch1.txt')
+        file('docs/ch2.txt')
+        file('docs/ch3.txt')
+        file('docs/ch4.txt')
+
         buildFile << '''
             plugins {
                 id 'glm.installation-manifest-base'
@@ -48,5 +54,18 @@ class InstallationManifestFunctionalTest extends AbstractFunctionalTest {
         expect:
         succeeds('verify')
         that(file('build/manifest'), hasDescendants('b1.txt', 'b3.txt'))
+    }
+
+    def "can select from distinct file tree"() {
+        buildFile << '''
+            installationManifests.debug {
+                from('output/a2/b2.txt')
+                from('docs/readme')
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/manifest'), hasDescendants('b2.txt', 'readme'))
     }
 }
