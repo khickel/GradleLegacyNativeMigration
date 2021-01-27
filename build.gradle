@@ -18,6 +18,9 @@ ext {
     // Code signing info
     codeSignCert = "${rootDir}/MySPC.pfx"
     codeSignPassword = "passwordx"
+
+    isWindows = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
+        .currentOperatingSystem.isWindows()
 }
 
 // Default task if none specified on the command line, tell the user how to run things.
