@@ -10,4 +10,7 @@ repositories {
 dependencies {
     implementation platform("dev.nokee:nokee-gradle-plugins:0.5.0-43daa054")
     implementation 'commons-io:commons-io:2.6'
+
+    // Expose the dependencies to the main build
+    runtimeOnly project(':installer-gradle-plugins')
 }

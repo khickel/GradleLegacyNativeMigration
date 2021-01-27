@@ -1,5 +1,6 @@
 plugins {
     id 'legacy-installer'
+    id 'glm.installer-base'
 }
 
 dependencies {

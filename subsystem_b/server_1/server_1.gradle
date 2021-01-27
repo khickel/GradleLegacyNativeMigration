@@ -1,7 +1,9 @@
 plugins {
     id 'dev.nokee.cpp-application'
-    id 'legacy-installable'
     id 'code-sign'
+
+    id 'legacy-installable'
+    id 'glm.installation-manifest-base'
 }
 
 repositories {

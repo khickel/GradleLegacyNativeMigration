@@ -1,9 +1,11 @@
 plugins {
-    id 'legacy-installable'
     id 'dev.nokee.native-application'
     id 'dev.nokee.cpp-language'
     id 'dev.nokee.c-language'
     id 'code-sign'
+
+    id 'legacy-installable'
+    id 'glm.installation-manifest-base'
 }
 
 repositories {
