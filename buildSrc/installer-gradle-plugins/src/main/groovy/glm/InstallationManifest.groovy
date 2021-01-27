@@ -1,5 +1,6 @@
 package glm
 
+import org.gradle.api.Action
 import org.gradle.api.Named
 import org.gradle.api.file.CopySpec
 import org.gradle.api.file.DirectoryProperty
@@ -28,6 +29,11 @@ abstract class InstallationManifest implements Named {
 
     InstallationManifest from(Object... sourcePaths) {
         contentSpec.from(sourcePaths)
+        return this
+    }
+
+    InstallationManifest from(Object sourcePaths, Action<? super CopySpec> action) {
+        contentSpec.from(sourcePaths, action)
         return this
     }
 }

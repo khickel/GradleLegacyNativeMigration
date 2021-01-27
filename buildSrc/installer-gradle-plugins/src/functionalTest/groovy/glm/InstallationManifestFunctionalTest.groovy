@@ -90,4 +90,39 @@ class InstallationManifestFunctionalTest extends AbstractFunctionalTest {
         succeeds('verify')
         that(file('build/manifest'), hasDescendants('gen', 'bin/foo.exe'))
     }
+
+    def "can include specific files"() {
+        buildFile << '''
+            installationManifests.debug {
+                from('output/a3') {
+                    include('*3*')
+                }
+                from('docs') {
+                    include('*1*')
+                    include('readme')
+                }
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/manifest'), hasDescendants('b3.txt', 'readme', 'ch1.txt'))
+    }
+
+    def "can exclude specific files"() {
+        buildFile << '''
+            installationManifests.debug {
+                from('output/a3') {
+                    exclude('b3.txt')
+                }
+                from('docs') {
+                    exclude('ch3.txt')
+                }
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/manifest'), hasDescendants('b4.txt', 'readme', 'ch1.txt', 'ch2.txt', 'ch4.txt'))
+    }
 }
