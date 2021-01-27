@@ -3,6 +3,8 @@ package glm.plugins
 import glm.InstallationManifest
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
+import org.gradle.api.attributes.Attribute
+import org.gradle.api.attributes.Usage
 import spock.lang.Specification
 import spock.lang.Subject
 
@@ -28,6 +30,30 @@ class InstallationManifestBasePluginTest extends Specification {
 
         then:
         installationManifests*.name == ['debug', 'release']
+    }
+
+    def "creates consumable configurations based on manifests"() {
+        when:
+        installationManifests.create('debug')
+
+        then:
+        def debugConfiguration = project.configurations.debugInstallationManifestElements
+        !debugConfiguration.canBeResolved
+        debugConfiguration.canBeConsumed
+        debugConfiguration.description == "Installation manifest elements for 'debug'."
+        debugConfiguration.attributes.getAttribute(Usage.USAGE_ATTRIBUTE).name == 'installation-manifest'
+        debugConfiguration.attributes.getAttribute(Attribute.of('glm.manifest-identity', String)) == 'debug'
+
+        when:
+        installationManifests.create('release')
+
+        then:
+        def releaseConfiguration = project.configurations.releaseInstallationManifestElements
+        !releaseConfiguration.canBeResolved
+        releaseConfiguration.canBeConsumed
+        releaseConfiguration.description == "Installation manifest elements for 'release'."
+        releaseConfiguration.attributes.getAttribute(Usage.USAGE_ATTRIBUTE).name == 'installation-manifest'
+        releaseConfiguration.attributes.getAttribute(Attribute.of('glm.manifest-identity', String)) == 'release'
     }
 
     private NamedDomainObjectContainer<InstallationManifest> getInstallationManifests() {
