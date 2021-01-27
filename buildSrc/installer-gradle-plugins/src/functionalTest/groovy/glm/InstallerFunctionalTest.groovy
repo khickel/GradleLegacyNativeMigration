@@ -7,6 +7,7 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
     def setup() {
         file('manifest/output/a1.txt')
         file('manifest/output/b/b1.txt')
+        file('manifest/output/b/b2.txt')
         file('manifest/output/c/c1.txt')
         file('manifest/output/c/c2.txt')
 
@@ -37,7 +38,7 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
         '''
     }
 
-    def "can pick individual files from manifest"() {
+    def "can pick individual files from manifest into installer root"() {
         buildFile << '''
             installers.debug {
                 from(project(':manifest')) {
@@ -50,5 +51,19 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
         expect:
         succeeds('verify')
         that(file('build/installer'), hasDescendants('a1.txt', 'c2.txt'))
+    }
+
+    def "can pick individual folder from manifest into installer root"() {
+        buildFile << '''
+            installers.debug {
+                from(project(':manifest')) {
+                    select('b')
+                }
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/installer'), hasDescendants('b1.txt', 'b2.txt'))
     }
 }
