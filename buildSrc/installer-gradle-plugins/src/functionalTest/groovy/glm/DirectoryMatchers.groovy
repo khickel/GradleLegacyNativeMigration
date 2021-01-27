@@ -1,18 +1,13 @@
-package glm;
+package glm
 
-import org.gradle.api.file.FileVisitDetails;
-import org.gradle.testfixtures.ProjectBuilder;
-import org.hamcrest.FeatureMatcher;
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers
-import org.hamcrest.io.FileMatchers;
+import org.gradle.api.file.FileVisitDetails
+import org.gradle.testfixtures.ProjectBuilder
+import org.hamcrest.FeatureMatcher
+import org.hamcrest.Matcher
 
-import java.io.File;
-import java.util.Set
-
-import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.allOf
 import static org.hamcrest.Matchers.containsInAnyOrder
-import static org.hamcrest.io.FileMatchers.anExistingDirectory;
+import static org.hamcrest.io.FileMatchers.anExistingDirectory
 
 final class DirectoryMatchers {
     private DirectoryMatchers() {}

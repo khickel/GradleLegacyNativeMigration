@@ -1,9 +1,5 @@
 package glm
 
-
-import org.gradle.api.file.FileVisitDetails
-import org.gradle.testfixtures.ProjectBuilder
-
 import static glm.DirectoryMatchers.hasDescendants
 import static spock.util.matcher.HamcrestSupport.that
 
