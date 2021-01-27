@@ -1,8 +1,11 @@
 rootProject.name = 'LegacyNativeExample'
 
+
 include 'static_lib'
 include 'subsystem_a:util_1'
-include 'subsystem_a:win_mfc_a'
+if(org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem.isWindows()) {
+    include 'subsystem_a:win_mfc_a'
+}
 include 'subsystem_b:server_1'
 
 include 'legacy_installer'

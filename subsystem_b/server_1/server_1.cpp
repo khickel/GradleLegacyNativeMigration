@@ -1,10 +1,14 @@
+
+#ifdef WIN32
 #include <windows.h>
-#include <stdio.h>
 #include <direct.h>
 #include <io.h>
+#include <kernelspecs.h>
+#endif
+
+#include <stdio.h>
 #include <time.h>
 
-#include <kernelspecs.h>
 
 #include "lib_one.h"
 #include "CamelCase.h"

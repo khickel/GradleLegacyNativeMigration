@@ -52,6 +52,7 @@ def addDefaultCPPOptions(Project prj, Boolean suppressConsoleDef=false) {
 
                 ]
             }
+            return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
         }
 
         if(suppressConsoleDef == false) {
@@ -59,6 +60,7 @@ def addDefaultCPPOptions(Project prj, Boolean suppressConsoleDef=false) {
                 if (toolChain in VisualCpp) {
                     return ['/D_CONSOLE']
                 }
+                return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
             }
         }
     }
@@ -72,6 +74,7 @@ def addVSCompilerOption(Project prj, String newOption) {
             if (toolChain in VisualCpp) {
                 return [ newOption ]
             }
+            return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
         }
     }
 }
@@ -85,6 +88,7 @@ def AddVSExeLinkOption(Project prj, String newOption) {
                     newOption
                 ]
             }
+            return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
         }
     }
 }
@@ -98,6 +102,7 @@ def AddVSDllLinkOption(Project prj, String newOption) {
                     newOption
                 ]
             }
+            return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
         }
     }
 }
@@ -105,20 +110,22 @@ def AddVSDllLinkOption(Project prj, String newOption) {
 ////////////////////////////////////////////////////////////////
 def addDefaultCPPLibraryOptions(Project prj, CppLibrary lib, Boolean suppressConsoleDef=false) {
 
-    lib.targetMachines = [
-        prj.machines.windows.x86
-    ]
-
+    if (isWindows) {
+        lib.targetMachines = [prj.machines.windows.x86]
+    } else {
+        lib.targetMachines = [prj.machines.linux.x86_64]
+    }
     addDefaultCPPOptions(prj, suppressConsoleDef)
-
 }
 
 ////////////////////////////////////////////////////////////////
 def addDefaultCPPApplicationOptions(Project prj, CppApplication app, Boolean suppressConsoleDef=false) {
 
-    app.targetMachines = [
-        prj.machines.windows.x86
-    ]
+    if (isWindows) {
+        app.targetMachines = [prj.machines.windows.x86]
+    } else {
+        app.targetMachines = [prj.machines.linux.x86_64]
+    }
 
     addDefaultCPPOptions(prj, suppressConsoleDef)
 
@@ -159,7 +166,7 @@ def addWindowsResourceFile(Project prj, CppApplication app, String dir=".") {
                 if (toolChain instanceof VisualCpp) {
                     return [ "/v", "/l", "0x409" ]
                 }
-                return []
+                return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
             }).get()
             it.outputDir = prj.layout.buildDirectory.dir("windows-resources/${bin.name}").get().asFile
         }
@@ -171,7 +178,7 @@ def addWindowsResourceFile(Project prj, CppApplication app, String dir=".") {
                 if (toolChain instanceof VisualCpp) {
                     return ["user32.lib"]
                 }
-                return []
+                return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
             }
         }
     }
