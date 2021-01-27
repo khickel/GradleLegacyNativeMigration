@@ -125,4 +125,35 @@ class InstallationManifestFunctionalTest extends AbstractFunctionalTest {
         succeeds('verify')
         that(file('build/manifest'), hasDescendants('b4.txt', 'readme', 'ch1.txt', 'ch2.txt', 'ch4.txt'))
     }
+
+    def "can relocate files into a directory"() {
+        buildFile << '''
+            installationManifests.debug {
+                from('output/a2/b1.txt') {
+                    into('b1')
+                }
+                 from('output/a2/b2.txt') {
+                    into('b2')
+                }
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/manifest'), hasDescendants('b1/b1.txt', 'b2/b2.txt'))
+    }
+
+    def "can relocate directory into a directory"() {
+        buildFile << '''
+            installationManifests.debug {
+                from('docs') {
+                    into('d')
+                }
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/manifest'), hasDescendants('d/readme', 'd/ch1.txt', 'd/ch2.txt', 'd/ch3.txt', 'd/ch4.txt'))
+    }
 }
