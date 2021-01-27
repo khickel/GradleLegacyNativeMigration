@@ -1,7 +1,8 @@
 package glm.plugins
 
-import glm.InstallationManifestExtension
-import glm.InstallerExtension
+
+import glm.Installer
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import spock.lang.Specification
 import spock.lang.Subject
@@ -18,6 +19,19 @@ class InstallerBasePluginTest extends Specification {
 
     def "registers installer extension"() {
         expect:
-        project.extensions.installer instanceof InstallerExtension
+        project.extensions.installers instanceof NamedDomainObjectContainer
+    }
+
+    def "can create installers"() {
+        when:
+        installers.create('debug')
+        installers.create('release')
+
+        then:
+        installers*.name == ['debug', 'release']
+    }
+
+    private NamedDomainObjectContainer<Installer> getInstallers() {
+        return project.extensions.installers
     }
 }

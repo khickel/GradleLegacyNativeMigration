@@ -1,6 +1,7 @@
 package glm.plugins
 
-import glm.InstallationManifestExtension
+import glm.InstallationManifest
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import spock.lang.Specification
 import spock.lang.Subject
@@ -17,6 +18,19 @@ class InstallationManifestBasePluginTest extends Specification {
 
     def "registers installation manifest extension"() {
         expect:
-        project.extensions.installationManifest instanceof InstallationManifestExtension
+        project.extensions.installationManifests instanceof NamedDomainObjectContainer
+    }
+
+    def "can create manifests"() {
+        when:
+        installationManifests.create('debug')
+        installationManifests.create('release')
+
+        then:
+        installationManifests*.name == ['debug', 'release']
+    }
+
+    private NamedDomainObjectContainer<InstallationManifest> getInstallationManifests() {
+        return project.extensions.installationManifests
     }
 }
