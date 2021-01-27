@@ -17,3 +17,16 @@ void rename_build_file_to_module_name(project) {
 
 // Change the build.gradle filename for each subproject to use it's name instead of 'build.gradle'.
 rootProject.children.each { subproject -> rename_build_file_to_module_name(subproject) }
+
+plugins.withId('com.gradle.enterprise') {
+  gradleEnterprise {
+    buildScan {
+      termsOfServiceUrl = "https://gradle.com/terms-of-service"
+
+      if (System.getenv('CI')) {
+        tag 'CI'
+        termsOfServiceAgree = "yes"
+      }
+    }
+  }
+}
