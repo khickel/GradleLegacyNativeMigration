@@ -48,7 +48,7 @@ class InstallationManifestBasePlugin implements Plugin<Project> {
         } as Action<Configuration>
     }
 
-    NamedDomainObjectFactory<InstallationManifest> createInstallationManifest(Project project) {
+    private static NamedDomainObjectFactory<InstallationManifest> createInstallationManifest(Project project) {
         return new NamedDomainObjectFactory<InstallationManifest>() {
             @Override
             InstallationManifest create(String name) {
