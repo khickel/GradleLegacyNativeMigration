@@ -16,7 +16,7 @@ abstract class InstallerSpec {
         this.spec = spec
     }
 
-    InstallerSpec select(String sourcePath) {
+    InstallerSpec from(String sourcePath) {
         spec.from(baseDirectory.file(sourcePath))
         return this
     }

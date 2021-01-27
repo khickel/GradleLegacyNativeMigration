@@ -41,9 +41,9 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
     def "can pick individual files from manifest into installer root"() {
         buildFile << '''
             installers.debug {
-                from(project(':manifest')) {
-                    select('a1.txt')
-                    select('c/c2.txt')
+                manifest(project(':manifest')) {
+                    from('a1.txt')
+                    from('c/c2.txt')
                 }
             }
         '''
@@ -56,8 +56,8 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
     def "can pick individual folder from manifest into installer root"() {
         buildFile << '''
             installers.debug {
-                from(project(':manifest')) {
-                    select('b')
+                manifest(project(':manifest')) {
+                    from('b')
                 }
             }
         '''
