@@ -10,6 +10,7 @@ windowsResources.from(fileTree(dir: projectDir, includes: ['**/*.rc']))
 application(Configure.withDefaultApplicationConfiguration())
 application(Configure.addAFXOptions())
 application { app ->
+    targetMachines = [machines.windows.x86]
     // Set the executable filename
 //    baseName = 'win_mfc_a'
 
