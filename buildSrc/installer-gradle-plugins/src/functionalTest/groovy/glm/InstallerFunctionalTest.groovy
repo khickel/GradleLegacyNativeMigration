@@ -11,6 +11,8 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
         file('manifest/output/c/c1.txt')
         file('manifest/output/c/c2.txt')
 
+        file('manifest/docs/readme')
+
         settingsFile << '''
             include 'manifest'
         '''
@@ -21,6 +23,9 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
             
             installationManifests.create('debug') {
                 from('output')
+            }
+            installationManifests.create('docs') {
+                from('docs')
             }
         '''
 
@@ -142,5 +147,19 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
         expect:
         succeeds('verify')
         that(file('build/installer'), hasDescendants('a1', 'b1', 'b2'))
+    }
+
+    def "can consume different manifest identity"() {
+        buildFile << '''
+            installers.debug {
+                manifest(project(':manifest'), 'docs') {
+                    from('readme')
+                }
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/installer'), hasDescendants('readme'))
     }
 }

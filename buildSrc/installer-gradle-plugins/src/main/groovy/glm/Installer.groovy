@@ -38,5 +38,13 @@ abstract class Installer implements Named {
         return this
     }
 
+    Installer manifest(Object notation, String identity, Action<? super InstallerSpec> action) {
+        def baseDirectory = baseDirectoryFactory.create(notation, identity)
+
+        action.execute(objects.newInstance(InstallerSpec, objects.newInstance(InstallerSpec.Spec, baseDirectory, contentSpec)))
+
+        return this
+    }
+
     abstract DirectoryProperty getDestinationDirectory()
 }
