@@ -6,7 +6,7 @@ include 'subsystem_b:server_1'
 
 include 'legacy_installer'
 
-//include 'inst_three'
+include 'inst_three'
 
 // To avoid every gradle file being named 'build.gradle', this bit of code
 // will tell gradle to look for PROJNAME.gradle.

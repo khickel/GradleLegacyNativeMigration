@@ -1,0 +1,10 @@
+plugins {
+    id 'glm.installation-manifest-base'
+}
+
+installationManifests {
+    base {
+        from('misc_files') { into('misc_files') }
+        from('base_config.ini')
+    }
+}

@@ -2,6 +2,8 @@ plugins {
     // https://github.com/dorongold/gradle-task-tree
     id "com.dorongold.task-tree" version "1.5"
     id 'usage'
+
+    id 'glm.installation-manifest-base'
 }
 
 allprojects {
@@ -12,5 +14,12 @@ allprojects {
 
     pluginManager.withPlugin('code-sign') {
         codeSign.certificateDirectory = rootProject.layout.buildDirectory.dir('Certs')
+    }
+}
+
+installationManifests {
+    base {
+        from('LICENSE')
+        from('README.md')
     }
 }
