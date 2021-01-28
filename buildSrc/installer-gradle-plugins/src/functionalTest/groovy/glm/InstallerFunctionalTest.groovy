@@ -1,6 +1,6 @@
 package glm
 
-import static glm.DirectoryMatchers.hasDescendants
+import static glm.DirectoryMatchers.*
 import static spock.util.matcher.HamcrestSupport.that
 
 class InstallerFunctionalTest extends AbstractFunctionalTest {
@@ -161,5 +161,54 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
         expect:
         succeeds('verify')
         that(file('build/installer'), hasDescendants('readme'))
+    }
+
+    def "can ensure empty directories are present"() {
+        buildFile << '''
+            installers.debug {
+                // Make sure the installer has sources
+                manifest(project(':manifest'), 'docs') { from('readme') }
+
+                // Test empty directory
+                emptyDirectory('config')
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/installer'), hasDescendantDirectories('config'))
+        that(file('build/installer/config'), anEmptyDirectory())
+    }
+
+    def "can ensure nested empty directories are present"() {
+        buildFile << '''
+            installers.debug {
+                // Make sure the installer has sources
+                manifest(project(':manifest'), 'docs') { from('readme') }
+
+                // Test nested empty directory
+                emptyDirectory('sys/config')
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/installer'), hasDescendantDirectories('sys', 'sys/config'))
+        that(file('build/installer/sys/config'), anEmptyDirectory())
+    }
+
+    def "throws exception when empty directories are not empty"() {
+        buildFile << '''
+            installers.debug {
+                manifest(project(':manifest'), 'docs') {
+                    from('readme') { into('config') }
+                }
+                emptyDirectory('config')
+            }
+        '''
+
+        expect:
+        failure('verify')
+        // TODO: assert failure
     }
 }

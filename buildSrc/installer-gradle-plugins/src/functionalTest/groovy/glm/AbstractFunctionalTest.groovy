@@ -39,4 +39,8 @@ abstract class AbstractFunctionalTest extends Specification {
     protected BuildResult succeeds(String... tasks) {
         return runner.withTasks(tasks).build()
     }
+
+    protected BuildResult failure(String... tasks) {
+        return runner.withTasks(tasks).build()
+    }
 }

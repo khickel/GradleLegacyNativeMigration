@@ -13,6 +13,7 @@ abstract class Installer implements Named {
     private final CopySpec contentSpec
     private final ObjectFactory objects
     private final InstallationManifestBaseDirectoryFactory baseDirectoryFactory
+    private final List<String> emptyDirectories = new ArrayList<>();
 
     @Inject
     Installer(String name, ObjectFactory objects, CopySpec contentSpec, InstallationManifestBaseDirectoryFactory baseDirectoryFactory) {
@@ -30,6 +31,10 @@ abstract class Installer implements Named {
         return contentSpec
     }
 
+    List<String> getEmptyDirectories() {
+        return Collections.unmodifiableList(emptyDirectories);
+    }
+
     Installer manifest(Object notation, Action<? super InstallerSpec> action) {
         def baseDirectory = baseDirectoryFactory.create(notation, name)
 
@@ -43,6 +48,15 @@ abstract class Installer implements Named {
 
         action.execute(objects.newInstance(InstallerSpec, objects.newInstance(InstallerSpec.Spec, baseDirectory, contentSpec)))
 
+        return this
+    }
+
+    Installer emptyDirectory(String destinationPath) {
+        // TODO: Disallow relative path that goes up one directory
+        // TODO: Disallow absolute path
+        // TODO: Disallow null
+        // TODO: Disallow empty string
+        emptyDirectories.add(destinationPath)
         return this
     }
 

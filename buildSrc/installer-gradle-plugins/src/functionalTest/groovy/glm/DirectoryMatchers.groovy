@@ -7,6 +7,7 @@ import org.hamcrest.Matcher
 
 import static org.hamcrest.Matchers.allOf
 import static org.hamcrest.Matchers.containsInAnyOrder
+import static org.hamcrest.Matchers.emptyArray
 import static org.hamcrest.io.FileMatchers.anExistingDirectory
 
 final class DirectoryMatchers {
@@ -29,5 +30,33 @@ final class DirectoryMatchers {
             }
         }
         return result
+    }
+
+    static Matcher<File> hasDescendantDirectories(String... descendants) {
+        return allOf(anExistingDirectory(), new FeatureMatcher<File, Set<String>>(containsInAnyOrder(descendants), "", "") {
+            @Override
+            protected Set<String> featureValueOf(File actual) {
+                return walkDirectoryTree(actual)
+            }
+        })
+    }
+
+    private static Set<String> walkDirectoryTree(File dir) {
+        def result = [] as Set
+        ProjectBuilder.builder().build().fileTree(dir).visit { FileVisitDetails details ->
+            if (details.isDirectory()) {
+                result.add(details.relativePath.getPathString())
+            }
+        }
+        return result
+    }
+
+    static Matcher<File> anEmptyDirectory() {
+        return allOf(anExistingDirectory(), new FeatureMatcher<File, String[]>(emptyArray(), "", "") {
+            @Override
+            protected String[] featureValueOf(File actual) {
+                return actual.list()
+            }
+        })
     }
 }
