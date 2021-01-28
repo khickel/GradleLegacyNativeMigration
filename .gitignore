@@ -15,3 +15,5 @@ build/
 *.json
 *.exe
 *.lib
+
+.DS_Store
