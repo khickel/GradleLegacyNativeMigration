@@ -124,4 +124,23 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
                 'subsystem-b/a1.txt', 'subsystem-b/b1.txt', 'subsystem-b/b2.txt',
                 'subsystem-c/a1.txt', 'subsystem-c/c1.txt', 'subsystem-c/c2.txt'))
     }
+
+    def "can rename files"() {
+        buildFile << '''
+            installers.debug {
+                manifest(project(':manifest')) {
+                    from('a1.txt') {
+                        rename('a1.txt', 'a1')
+                    }
+                    from('b') {
+                        rename('(.*).txt', '$1')
+                    }
+                }
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/installer'), hasDescendants('a1', 'b1', 'b2'))
+    }
 }

@@ -182,4 +182,18 @@ class InstallationManifestFunctionalTest extends AbstractFunctionalTest {
                 'a2/b1.txt', 'a2/b2.txt', 'a2/ch2.txt',
                 'a3/b3.txt', 'a3/b4.txt', 'a3/ch3.txt'))
     }
+
+    def "can rename files"() {
+        buildFile << '''
+            installationManifests.debug {
+                from('docs') {
+                    rename('(.*).txt', '$1')
+                }
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/manifest'), hasDescendants('readme', 'ch1', 'ch2', 'ch3', 'ch4'))
+    }
 }
