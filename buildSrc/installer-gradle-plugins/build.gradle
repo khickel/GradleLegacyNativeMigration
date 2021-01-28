@@ -19,7 +19,7 @@ gradlePlugin {
 repositories {
     jcenter()
 
-    // For Spock snapshots
+    // For Spock snapshots, because of the TempDir bug
     maven { url = 'https://oss.sonatype.org/content/repositories/snapshots/' }
 }
 
