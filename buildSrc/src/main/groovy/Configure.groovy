@@ -15,11 +15,19 @@ import dev.nokee.utils.ActionUtils
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
+import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.Transformer
+import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
+import org.gradle.language.nativeplatform.tasks.AbstractNativeSourceCompileTask
+import org.gradle.nativeplatform.tasks.AbstractLinkTask
 import org.gradle.nativeplatform.toolchain.NativeToolChain
 import org.gradle.nativeplatform.toolchain.VisualCpp
+import org.gradle.nativeplatform.toolchain.internal.ToolType
+
+import java.nio.file.Files
+import java.nio.file.Path
 
 final class Configure {
     private Configure() {}
@@ -279,6 +287,22 @@ final class Configure {
     }
 
     /**
+     * Returns the computed list if the mapping toolchain is Visual C++, else returns an empty list.
+     *
+     * @param value the values to return if the mapping toolchain is Visual C++
+     * @return a transformer to use in provider mapping, never null.
+     */
+    @CompileStatic
+    private static <T> Transformer<List<T>, NativeToolChain> whenVisualCpp(Transformer<List<T>, VisualCpp> generator) {
+        return {
+            if (it in VisualCpp) {
+                return generator.transform(it)
+            }
+            return []
+        } as Transformer<List<T>, NativeToolChain>
+    }
+
+    /**
      * Adds VS compiler options for all languages.
      *
      * @param newOptions  the new options to add
@@ -305,6 +329,49 @@ final class Configure {
             component.binaries.configureEach(sharedLibraryOrExecutable()) {
                 linkTask.configure {
                     linkerArgs.addAll(toolChain.map(whenVisualCpp(newOptions)))
+                }
+            }
+        }
+    }
+
+    static Closure addAFXOptions() {
+        return { component ->
+            component.binaries.configureEach(sharedLibraryOrExecutable()) {
+                compileTasks.configureEach { AbstractNativeSourceCompileTask task ->
+                    systemIncludes.from(toolChain.map(whenVisualCpp(memoize {
+                        List<File> f = it.select(task.getTargetPlatform().get()).getSystemLibraries(ToolType.CPP_COMPILER).getIncludeDirs()
+                        Path result = f.collect { it.toPath().resolve('../atlmfc/include') }.find { Files.exists(it) }
+                        if (result != null) {
+                            return result.toFile().canonicalFile
+                        }
+                        return []
+                    })))
+                    task.compilerArgs.addAll('/D_WINDOWS', '/D_MBCS', '/DStandard')
+                }
+                linkTask.configure { AbstractLinkTask task ->
+                    // TODO: The code assume x86 architecture
+                    task.linkerArgs.addAll(toolChain.map(whenVisualCpp(memoize {
+                        List<File> f = it.select(task.getTargetPlatform().get()).getSystemLibraries(ToolType.CPP_COMPILER).getIncludeDirs()
+                        Path result = f.collect { it.toPath().resolve('../atlmfc/lib/x86') }.find { Files.exists(it) }
+                        if (result != null) {
+                            return ["/LIBPATH:${result.toFile().canonicalFile}"]
+                        }
+                        return []
+                    })))
+                    task.linkerArgs.add('/subsystem:windows')
+                }
+            }
+        }
+    }
+
+    @CompileStatic
+    private static <OUT, IN> Transformer<OUT, IN> memoize(Transformer<OUT, IN> transformer) {
+        return new Transformer<OUT, IN>() {
+            private final Map<Integer, OUT> cache = new HashMap<>()
+
+            OUT transform(IN t) {
+                return cache.computeIfAbsent(System.identityHashCode(t)) {
+                    return transformer.transform(t)
                 }
             }
         }

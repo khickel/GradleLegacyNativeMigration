@@ -1,32 +1,24 @@
 plugins {
-    id 'cpp-application'
-    id 'windows-resources'
+    id 'dev.nokee.cpp-application'
+//    id 'windows-resources'
+
+    id 'glm.installation-manifest-base'
 }
 
 // Define a map listing the targetPath,targetFileName for any files that need to be copied to staging area.
-ext.installerFiles = [ (file(project.property('stagingDir'))):'win_mfc_a' ]
+//ext.installerFiles = [ (file(project.property('stagingDir'))):'win_mfc_a' ]
 
-application { app->
+application(Configure.withDefaultApplicationConfiguration())
+application(Configure.addAFXOptions())
+application { app ->
 
     // Set the executable filename
-    baseName = 'win_mfc_a'
+//    baseName = 'win_mfc_a'
 
-    binaries.configureEach {
-        def compileTask = compileTask.get()
-        compileTask.source.from fileTree(dir: ".", include: "*.cpp")
-    }
-
-    // Set the project standard C++ compiler/linker options
-    addDefaultCPPApplicationOptions(project, app, true)
-    addVSCompilerOption(project, "/D_WINDOWS")
-    addVSCompilerOption(project, "/D_MBCS")
-    addVSCompilerOption(project, "/DStandard")
+    cppSources.from(fileTree(dir: projectDir, include: '*.cpp'))
+    privateHeaders.from(projectDir)
 
 
-    // Add *.rc from this subproject directory to the link.
-    addWindowsResourceFile(project, app)
-
-    // This project uses AFX, so add the required flags.
-    addAFXOptions(project)
-    
+//    // Add *.rc from this subproject directory to the link.
+//    addWindowsResourceFile(project, app)
 }
