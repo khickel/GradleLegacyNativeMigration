@@ -1,1 +1,2 @@
 include 'installer-gradle-plugins'
+include 'lifecycle-gradle-plugins'

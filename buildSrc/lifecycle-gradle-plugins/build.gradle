@@ -1,0 +1,41 @@
+plugins {
+    id 'dev.gradleplugins.groovy-gradle-plugin' version '1.1.32'
+}
+
+gradlePlugin {
+    plugins {
+        base {
+            id = 'glm.build-type-lifecycle-base'
+            implementationClass = 'glm.lifecycle.plugins.BuildTypeLifecycleBasePlugin'
+        }
+        debugLifecycle {
+            id = 'glm.debug-lifecycle'
+            implementationClass = 'glm.lifecycle.plugins.DebugLifecyclePlugin'
+        }
+        releaseLifecycle {
+            id = 'glm.release-lifecycle'
+            implementationClass = 'glm.lifecycle.plugins.ReleaseLifecyclePlugin'
+        }
+    }
+}
+
+repositories {
+    jcenter()
+
+    // For Spock snapshots, because of the TempDir bug
+    maven { url = 'https://oss.sonatype.org/content/repositories/snapshots/' }
+}
+
+repositories {
+    maven { url = 'https://dl.bintray.com/nokeedev/distributions-snapshots' }
+    jcenter()
+}
+
+dependencies {
+    implementation platform("dev.nokee:nokee-gradle-plugins:${nokeeVersion}")
+
+    testImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5-SNAPSHOT')
+    testImplementation 'org.spockframework:spock-core'
+}
+
+tasks.withType(Test).configureEach { useJUnitPlatform() }

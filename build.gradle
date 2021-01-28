@@ -7,8 +7,8 @@ plugins {
 }
 
 allprojects {
-    apply plugin: 'lifecycle-debug'
-    apply plugin: 'lifecycle-release'
+    apply plugin: 'glm.debug-lifecycle'
+    apply plugin: 'glm.release-lifecycle'
     apply plugin: 'default-import'
     apply plugin: 'dev.nokee.visual-studio-ide'
 
