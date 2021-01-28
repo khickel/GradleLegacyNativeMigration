@@ -39,8 +39,8 @@ application { app->
 }
 
 installationManifests {
-    debug
-    release
+    debug {}
+    release {}
 }
 installationManifests.all {
     def buildType = name

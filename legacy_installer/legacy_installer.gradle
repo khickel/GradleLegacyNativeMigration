@@ -2,10 +2,9 @@ plugins {
     id 'glm.installer-base'
     id 'glm.installation-manifest-base'
 }
-
 installers {
-    debug
-    release
+    debug {}
+    release {}
 }
 installers.all {
     manifest(project(':subsystem_a:util_1')) {
