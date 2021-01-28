@@ -1,15 +1,5 @@
 plugins {
-    id 'legacy-installer'
     id 'glm.installer-base'
-}
-
-dependencies {
-    installer project(':subsystem_a:util_1')
-    installer project(':subsystem_b:server_1')
-}
-
-legacyInstaller {
-    targetBuildTypes = ['debug', 'release']
 }
 
 installers {

@@ -4,7 +4,6 @@ plugins {
     id 'dev.nokee.c-language'
     id 'code-sign'
 
-    id 'legacy-installable'
     id 'glm.installation-manifest-base'
 }
 
