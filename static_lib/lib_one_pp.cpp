@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "lib_One.h"
+#include "lib_one.h"
 #include "CamelCase.h"
 
 int lib_one_cpp_func_one(int i) {
