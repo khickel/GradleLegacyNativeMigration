@@ -33,7 +33,7 @@ abstract class Installer implements Named {
     Installer manifest(Object notation, Action<? super InstallerSpec> action) {
         def baseDirectory = baseDirectoryFactory.create(notation, name)
 
-        action.execute(objects.newInstance(InstallerSpec, baseDirectory, contentSpec))
+        action.execute(objects.newInstance(InstallerSpec, objects.newInstance(InstallerSpec.Spec, baseDirectory, contentSpec)))
 
         return this
     }

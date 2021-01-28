@@ -66,4 +66,62 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
         succeeds('verify')
         that(file('build/installer'), hasDescendants('b1.txt', 'b2.txt'))
     }
+
+    def "can relocate directory into a directory"() {
+        buildFile << '''
+            installers.debug {
+                manifest(project(':manifest')) {
+                    from('b') {
+                        into('subsystem-b')
+                    }
+                }
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/installer'), hasDescendants('subsystem-b/b1.txt', 'subsystem-b/b2.txt'))
+    }
+
+    def "can relocate files into a directory"() {
+        buildFile << '''
+            installers.debug {
+                manifest(project(':manifest')) {
+                    from('b/b1.txt') {
+                        into('first')
+                    }
+                    from('b/b2.txt') {
+                        into('second')
+                    }
+                }
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/installer'), hasDescendants('first/b1.txt', 'second/b2.txt'))
+    }
+
+    def "can add multiple files into directory"() {
+        buildFile << '''
+            installers.debug {
+                manifest(project(':manifest')) {
+                    into('subsystem-b') {
+                        from('b')
+                        from('a1.txt')
+                    }
+                    into('subsystem-c') {
+                        from('c')
+                        from('a1.txt')
+                    }
+                }
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/installer'), hasDescendants(
+                'subsystem-b/a1.txt', 'subsystem-b/b1.txt', 'subsystem-b/b2.txt',
+                'subsystem-c/a1.txt', 'subsystem-c/c1.txt', 'subsystem-c/c2.txt'))
+    }
 }
