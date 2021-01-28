@@ -115,7 +115,6 @@ installers {
         }
         emptyDirectory('config/mt1')
         emptyDirectory('config/mt2')
-        // TODO: from legacyInstaller.zip of :legacy_installer
     }
 }
 //

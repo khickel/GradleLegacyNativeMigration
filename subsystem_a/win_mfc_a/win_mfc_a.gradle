@@ -1,24 +1,36 @@
 plugins {
     id 'dev.nokee.cpp-application'
-//    id 'windows-resources'
+    id 'glm.windows-resources'
 
     id 'glm.installation-manifest-base'
 }
 
-// Define a map listing the targetPath,targetFileName for any files that need to be copied to staging area.
-//ext.installerFiles = [ (file(project.property('stagingDir'))):'win_mfc_a' ]
+windowsResources.from(fileTree(dir: projectDir, includes: ['**/*.rc']))
 
 application(Configure.withDefaultApplicationConfiguration())
 application(Configure.addAFXOptions())
 application { app ->
-
     // Set the executable filename
 //    baseName = 'win_mfc_a'
 
     cppSources.from(fileTree(dir: projectDir, include: '*.cpp'))
     privateHeaders.from(projectDir)
+}
 
-
-//    // Add *.rc from this subproject directory to the link.
-//    addWindowsResourceFile(project, app)
+installationManifests {
+    debug {}
+    release {}
+}
+installationManifests.all {
+    def buildType = name
+    from(application.variants
+            .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
+            .flatMap { it.first().developmentBinary }
+            .flatMap {
+                if (it.buildable) { return it.linkTask }
+                return null // no buildable binaries
+            }
+            .flatMap { it.linkedFile }) {
+        into('bin')
+    }
 }

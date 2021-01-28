@@ -18,9 +18,14 @@ import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.Transformer
+import org.gradle.api.file.FileCollection
+import org.gradle.api.file.ProjectLayout
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
+import org.gradle.api.tasks.TaskContainer
 import org.gradle.language.nativeplatform.tasks.AbstractNativeSourceCompileTask
+import org.gradle.language.rc.tasks.WindowsResourceCompile
 import org.gradle.nativeplatform.tasks.AbstractLinkTask
 import org.gradle.nativeplatform.toolchain.NativeToolChain
 import org.gradle.nativeplatform.toolchain.VisualCpp
@@ -380,5 +385,27 @@ final class Configure {
     @CompileStatic
     private static Spec<Binary> sharedLibraryOrExecutable() {
         return { binary -> binary instanceof SharedLibraryBinary || binary instanceof ExecutableBinary } as Spec<Binary>
+    }
+
+    static Closure addWindowsResources(TaskContainer tasks, ObjectFactory objects, ProjectLayout layout, FileCollection sourceFiles) {
+        return { component ->
+            component.variants.configureEach { variant ->
+                variant.binaries.configureEach(sharedLibraryOrExecutable()) { binary ->
+                    def resourceTask = tasks.register("compile${variant.identifier.name.capitalize()}WindowsResources", WindowsResourceCompile) { task ->
+                        task.source.from(sourceFiles)
+                        task.toolChain = binary.linkTask.flatMap { it.toolChain }
+                        task.targetPlatform = binary.linkTask.flatMap { it.targetPlatform }
+                        task.compilerArgs.addAll(toolChain.map(whenVisualCpp('/v')))
+                        task.outputDir = layout.buildDirectory.dir("windows-resources/${variant.identifier.name}").get().asFile
+                        task.includes.from(binary.compileTasks.filter { it instanceof CppCompile }.map { [ it.systemIncludes.files, it.includes.files].flatten() })
+                    }
+
+                    binary.linkTask.configure { AbstractLinkTask task ->
+                        task.source.from(objects.fileTree().setDir(resourceTask.map { it.outputDir }).include('**/*.res', '**/*.obj'))
+                        task.linkerArgs.addAll(task.toolChain.map(whenVisualCpp('user32.lib')))
+                    }
+                }
+            }
+        }
     }
 }

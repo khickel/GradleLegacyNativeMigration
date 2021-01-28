@@ -1,0 +1,4 @@
+plugins.withId('dev.nokee.cpp-application') {
+    project.ext.windowsResources = objects.fileCollection()
+    application(Configure.addWindowsResources(tasks, objects, layout, windowsResources))
+}
