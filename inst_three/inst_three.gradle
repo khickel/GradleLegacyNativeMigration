@@ -1,0 +1,265 @@
+// YAIM - Yet Another Installer Mechanism
+// This one has a few mor bells and whistles, but all of the inputs/components
+// are configured here, in this sub project.
+// It's likely "better" for each sub project that contributes to an installer
+// to specify what it is contributing (e.g. installUtils), but there are some concepts here that need
+// to be included.
+import java.text.SimpleDateFormat
+import org.apache.tools.ant.filters.ReplaceTokens
+
+
+ext {
+    targetPath = file(buildDir.path + '/install').path
+}
+
+def debug_on = false
+
+def varName = 'InstallerThree'
+
+def ZPKG = "${projectDir}/inst_three.zip"
+
+tasks.create(varName + 'Debug')
+tasks.create(varName + 'Release')
+
+
+
+// Big array of data specifying how to copy files from source directories into the install tree.
+// Each element is a map with at least src_path, dest_path and elements entries.
+// Elements is a map of from_str:into_str.
+// If into_str (which specifies the target directory) is null, then the map key should be a directory,
+// and it will be copied to a directory of the same name and relative path.
+// If into_str is the empty string, the map key should be a file and it will go into the target path.
+// Into_str can be a map of options and values.
+//
+//  TODO: This format should be refined a bit, then the entries reorganized to be grouped by the dest_path, I think.
+//
+// It's set up sort of like this:
+// def files_to_install = [
+//    [src_path:"SRC_PATH", dest_path:"DEST_PATH", elements: [
+//         ['DIR_TO_COPY':null],
+//         ['FILE_TO_COPY':''],
+//         ['DIR2_TO_COPY':[options]],
+//         ['FILE_TO_COPY':[options]],
+//        ]
+//    ],
+// ]
+// Possible options are: into_str, copy_debug_on, rename_str, exclude_regex, include_regex, depends_on.
+//   exclude_regex and include_regex can be a string, or list of strings.
+//
+// Note: Keys can only be used once, the second use overwrites the first.
+//
+// Note: To get a backslash (for a directory separator) into a single-quoted regex string, you have to use four backslashes.
+//       Although it appears we might be able to use Matcher.quoteReplacement, per https://stackoverflow.com/questions/24001263/using-backslashes-in-groovy.
+
+// I should write some tests to make sure that all the files end up as expected, nothing missing, nothing extra.
+// I haven't written any gradle tests yet, so that's a future TODO.
+def files_to_install = [
+        [ src_path:"${getRootProject().projectDir}", dest_path:"", elements: [
+                ['LICENSE':[into_str:'', rename_str:'PROD_LICENSE.txt']],
+                ['README.md':[into_str:'', rename_str:'PROD_README.md']],
+        ]],
+
+        [ src_path:"${getRootProject().projectDir}/subsystem_a", dest_path:"sys_a", elements: [
+                ['config':null],
+        ]],
+
+        [ src_path:"${getRootProject().projectDir}/subsystem_b", dest_path:"sys_b", elements: [
+                ['base_config.ini':[into_str:'install',rename_str:'config.ini']],
+        ]],
+
+        [ src_path:"${getRootProject().projectDir}", dest_path:"sys_b/doc", elements: [
+                ['README.md':''],
+        ]],
+
+        [ src_path:"${getRootProject().projectDir}/subsystem_b", dest_path:"misc_1", elements: [
+                ['misc_files':[ exclude_regex: [ '_2_' ]]]]],
+
+        [ src_path:"${getRootProject().projectDir}/subsystem_b", dest_path:"misc_2", elements: [
+                ['misc_files':[ include_regex: [ '_2_' ]]]]],
+
+        [ src_path:"${getRootProject().projectDir}/legacy_installer", dest_path:"sys_a", elements: [
+                ['legacyInstaller.zip':[into_str:'',depends_on:':legacy_installer:debug']],
+        ]],
+
+]
+
+
+// A list of empty directories to be created under targetPath
+def dirs_to_create = [
+        'config/mt1',
+        'config/mt2'
+]
+
+
+// Create a copy all task, which will depend on all the copy tasks registered below.
+def copyAll = tasks.create('copyAll')
+def thisProj = project
+
+
+def inst_three_stage = tasks.create("instThreeInstaller") {
+
+    // Make the specified empty directories directories.
+    dirs_to_create.eachWithIndex { dir, src_idx ->
+        def md_task = tasks.register('mkdir_' + src_idx) {
+            new File(targetPath, dir).mkdirs()
+        }
+        copyAll.dependsOn(md_task)
+    }
+
+    // Register tasks to copy all the files.
+    files_to_install.eachWithIndex { item, src_idx ->
+        if(debug_on) { println "Debug: handling src_idx=${src_idx}, item=${item}" }
+        def src_path=item['src_path']
+        def dest_path=item['dest_path']
+        item['elements'].eachWithIndex { element_map, element_idx ->
+            element_map.eachWithIndex { from_str, into_str, copy_idx ->
+                if(debug_on) { println "Debug: \t\t handling from_str=${from_str}, into_str=${into_str}, copy_idx=${copy_idx}" }
+                def copy_debug_on = false
+                def rename_str = null
+                def exclude_regex = null
+                def include_regex = null
+                def depends_on = null
+                if(into_str instanceof Map) {
+                    // the into_str value is actually a map with various options, all valid options are listed here.
+                    def into_map = into_str
+                    into_str = into_map["into_str"]   // could be null or a string, if it is null, then dest_path will be used.
+                    copy_debug_on=into_map["copy_debug_on"]
+                    rename_str = into_map["rename_str"]    // could be null or a string.
+                    exclude_regex = into_map["exclude_regex"] // could be null, or a list (any Iterable).
+                    include_regex = into_map["include_regex"] // could be null, or a list (any Iterable).
+                    depends_on = into_map["depends_on"]
+                }
+                if(into_str == null) {
+                    into_str = dest_path + '/' + from_str
+                    if(debug_on) { println "Debug: \t\t\t into_str was null, using dest_path=${dest_path} and from_str=${from_str}, result=${into_str}" }
+                } else {
+                    into_str = dest_path + '/' + into_str
+                    if(debug_on) { println "Debug: \t\t\t into_str is ${into_str}, using dest_path=${dest_path}, result=${into_str}" }
+                }
+                def real_into_str = targetPath + '/' + into_str
+                def real_from_str = src_path + '/' + from_str
+                if(debug_on) { println "Debug \t\t\t using real_from_str=${real_from_str}, real_into_str=${real_into_str}" }
+
+                // Create relative paths for the task description.
+                def rel_src_path = file(getRootProject().projectDir).toPath().relativize( file(real_from_str).toPath() ).toFile()
+                def rel_into_path = file(getRootProject().projectDir).toPath().relativize( file(real_into_str).toPath() ).toFile()
+
+                def taskName = 'copy_idx_' + src_idx + '_' + element_idx + '_' + copy_idx
+                if(debug_on) { println "INFO: Registering task ${taskName} for src_path=${src_path}, dest_path=${dest_path}, from_str=${from_str}, into_str=${into_str}" }
+                def copyTask = thisProj.tasks.register(taskName, Copy) {
+                    if(debug_on) { println "Debug: \t\t\t using real_from_str=${real_from_str}, copy_debug_on=${copy_debug_on}"}
+
+                    if(depends_on) {
+                        dependsOn(depends_on)
+                    }
+
+                    if(rename_str) {
+                        setDescription("Copy from ${rel_src_path} to ${rel_into_path}\\${rename_str}.")
+                    } else {
+                        setDescription("Copy from ${rel_src_path} into ${rel_into_path}.")
+                    }
+
+                    from(real_from_str) {
+                        include { ftree ->
+                            def rv = true; // return true to include this file.
+
+                            if(copy_debug_on) {
+                                println "Debug: copy task handling file ${ftree.getFile().getPath()}"
+                            }
+
+                            if(include_regex != null) {
+                                rv = false; // assume we are not including it.
+                                if(debug_on) { println "Debug: \t\t\t checking file ${ftree.getFile().getPath()} against include_regex=${include_regex}" }
+                                if(include_regex instanceof Iterable) {
+                                    include_regex.each { rgx ->
+                                        if(ftree.getFile().getPath() =~ rgx) {
+                                            if(debug_on) { println "Debug: \t\t\t\t\t file ${ftree.getFile().getPath()} matches." }
+                                            rv = true;
+                                        }
+                                    }
+                                } else {
+                                    if(ftree.getFile().getPath() =~ include_regex) {
+                                        if(debug_on) { println "Debug: \t\t\t\t\t file ${ftree.getFile().getPath()} matches." }
+                                        rv = true;
+                                    }
+                                }
+                            }
+                            return rv;
+                        }
+                        exclude { ftree ->
+                            def rv = false; // return true to exclude this file.
+                            if(exclude_regex != null) {
+                                if(debug_on) { println "Debug: \t\t\t checking file ${ftree.getFile().getPath()} against exclude_regex=${exclude_regex}" }
+                                if(exclude_regex instanceof Iterable) {
+                                    exclude_regex.each { rgx ->
+                                        if(ftree.getFile().getPath() =~ rgx) {
+                                            if(debug_on) { println "Debug: \t\t\t\t\t file ${ftree.getFile().getPath()} matches." }
+                                            rv = true;
+                                        }
+                                    }
+                                } else {
+                                    if(ftree.getFile().getPath() =~ exclude_regex) {
+                                        if(debug_on) { println "Debug: \t\t\t\t\t file ${ftree.getFile().getPath()} matches." }
+                                        rv = true;
+                                    }
+                                }
+                            }
+                            return rv;
+                        }
+                        rename {
+                            if(rename_str && debug_on) { println "Debug: \t\t\t using rename_str=${rename_str}" }
+                            return rename_str
+                        }
+                    }
+                    if(debug_on) { println "Debug: \t\t\t using real_into_str=${real_into_str}"}
+                    into(real_into_str)
+                }
+                copyAll.dependsOn(copyTask)
+            }
+        }
+    }
+
+    dependsOn(copyAll) // If any of the copy tasks run, this task should run as well.
+
+
+    outputs.file ZPKG
+    doLast {
+        delete ZPKG  // If the file already exists, the 7za command fails.
+        exec {
+            workingDir targetPath
+            commandLine "/bin/7za.exe", "a", "-r", "${ZPKG}", "*"
+        }
+    }
+}
+
+// Set tasks up to throw an exception if a copy task has no source.
+// This won't detect a case where we're copying a directory and some file is missing.
+gradle.taskGraph.afterTask { tsk ->
+    // This acts globally, affecting all tasks, for the moment I want to limit it to this project (but I'm not, just filtering out the CopyOnly tasks).
+    // I probably should move it to build.gradle and apply it to everything.
+    //
+    // It was tripping for the _CopyOnly tasks from installUtils because they really don't have a source at the point this is checked, so just screen those out.
+    if(!tsk.name.contains('_CopyOnly')) {
+        if(tsk.state.noSource) {
+            def desc = tsk.getDescription()
+            if(desc) {
+                throw new GradleException("Stopping build because NO_SOURCE task outcome detected for ${tsk.path}, ${desc}")
+            } else {
+                throw new GradleException("Stopping build because NO_SOURCE task outcome detected for ${tsk.path}, (no description)")
+            }
+        }
+    }
+}
+
+// TODO create a zip task and hook things up.
+// def instTaskMap = createZipInstallerTasks(project,
+//                                           installerFileName, installerFilePath,
+//                                           productName, productDescription,
+//                                           programDescription, defaultPath,
+//                                           serviceName, runProgram,
+//                                           CCI_stage, targetPath, "**/*",
+//                                           false)
+// def debugInstallerTask = instTaskMap['debugInstallerTask']
+// def releaseInstallerTask = instTaskMap['releaseInstallerTask']
+tasks.findByName('debug').dependsOn("instThreeInstaller")
+tasks.findByName('release').dependsOn("instThreeInstaller")
