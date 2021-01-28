@@ -12,7 +12,7 @@ plugins {
 //     maven(systemOpenSsl(project))
 // }
 
-library(withDefaultLibraryConfiguration())
+library(Configure.withDefaultLibraryConfiguration())
 //library(withOpenSSLLibraryConfiguration())
 library { lib->
     targetLinkages = [linkages.static]

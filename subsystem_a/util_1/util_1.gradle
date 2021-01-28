@@ -15,7 +15,7 @@ import dev.nokee.language.c.CHeaderSet
 import dev.nokee.language.cpp.CppHeaderSet
 
 // Set the project standard C++ compiler/linker options
-application(withDefaultApplicationConfiguration())
+application(Configure.withDefaultApplicationConfiguration())
 application { app->
 
     // TODO(nokeedev): Support base name on the extension

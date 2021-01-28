@@ -9,7 +9,7 @@ repositories {
     maven(RepositoryUtils.systemOpenSsl(project))
 }
 
-application(withDefaultApplicationConfiguration())
+application(Configure.withDefaultApplicationConfiguration())
 application { app->
 
     // TODO(nokeedev): Support base name on the extension

@@ -21,8 +21,8 @@ import org.gradle.api.specs.Spec
 import org.gradle.nativeplatform.toolchain.NativeToolChain
 import org.gradle.nativeplatform.toolchain.VisualCpp
 
-final class ConfigurationUtils {
-    private ConfigurationUtils() {}
+final class Configure {
+    private Configure() {}
 
     static Closure withDefaultApplicationConfiguration(Action<NativeConfiguration> action = ActionUtils.doNothing()) {
         return { application ->
