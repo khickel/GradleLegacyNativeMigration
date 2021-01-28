@@ -11,3 +11,16 @@ dependencies {
 legacyInstaller {
     targetBuildTypes = ['debug', 'release']
 }
+
+installers {
+    debug
+    release
+}
+installers.all {
+    manifest(project(':subsystem_a:util_1')) {
+        from('bin')
+    }
+    manifest(project(':subsystem_b:server_1')) {
+        from('bin')
+    }
+}

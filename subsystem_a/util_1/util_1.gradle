@@ -38,3 +38,18 @@ application { app->
         implementation project(':static_lib')
     }
 }
+
+installationManifests {
+    debug
+    release
+}
+installationManifests.all {
+    def buildType = name
+    from(application.variants
+            .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
+            .flatMap { it.first().developmentBinary }
+            .flatMap { it.linkTask }
+            .flatMap { it.linkedFile }) {
+        into('bin')
+    }
+}
