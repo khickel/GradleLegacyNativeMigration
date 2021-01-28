@@ -27,7 +27,7 @@ final class ConfigurationUtils {
     static Closure withDefaultApplicationConfiguration(Action<NativeConfiguration> action = ActionUtils.doNothing()) {
         return { application ->
             application.with {
-                targetMachines = [machines.windows.x86]
+                targetMachines = [machines.windows.x86, machines.linux.x86_64]
                 targetBuildTypes = [buildTypes.named('debug'), buildTypes.named('release')]
 
                 variants.configureEach(NativeApplication) { variant ->
@@ -47,7 +47,7 @@ final class ConfigurationUtils {
     static Closure withDefaultLibraryConfiguration(Action<NativeConfiguration> action = ActionUtils.doNothing()) {
         return { library ->
             library.with {
-                targetMachines = [machines.windows.x86]
+                targetMachines = [machines.windows.x86, machines.linux.x86_64]
                 targetBuildTypes = [buildTypes.named('debug'), buildTypes.named('release')]
 
                 variants.configureEach(NativeLibrary) { variant ->
@@ -140,7 +140,7 @@ final class ConfigurationUtils {
     static Closure withOpenSSLLibraryConfiguration(Action<NativeConfiguration> action = ActionUtils.doNothing()) {
         return { library ->
             library.with {
-                targetMachines = [machines.windows.x86]
+                targetMachines = [machines.windows.x86, machines.linux.x86_64]
                 targetBuildTypes = [buildTypes.named('debug'), buildTypes.named('release')]
 
                 variants.configureEach(NativeLibrary) { variant ->
@@ -183,7 +183,7 @@ final class ConfigurationUtils {
     static Closure withBoostLibraryConfiguration(Action<NativeConfiguration> action = ActionUtils.doNothing()) {
         return { library ->
             library.with {
-                targetMachines = [machines.windows.x86]
+                targetMachines = [machines.windows.x86, machines.linux.x86_64]
                 targetBuildTypes = [buildTypes.named('debug'), buildTypes.named('release')]
 
                 variants.configureEach(NativeLibrary) { variant ->
