@@ -33,7 +33,10 @@ installationManifests.all {
     from(application.variants
             .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
             .flatMap { it.first().developmentBinary }
-            .flatMap { it.linkTask }
+            .flatMap {
+                if (it.buildable) { return it.linkTask }
+                return null // no buildable binaries
+            }
             .flatMap { it.linkedFile }) {
         into('bin')
     }

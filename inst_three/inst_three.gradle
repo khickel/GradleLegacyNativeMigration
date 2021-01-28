@@ -110,6 +110,9 @@ installers {
                 include('*_2_*')
             }
         }
+        manifest(project(':legacy_installer')) {
+            from('legacyInstaller.zip') { into('sys_a') }
+        }
         emptyDirectory('config/mt1')
         emptyDirectory('config/mt2')
         // TODO: from legacyInstaller.zip of :legacy_installer

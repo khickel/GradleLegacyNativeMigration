@@ -1,5 +1,6 @@
 plugins {
     id 'glm.installer-base'
+    id 'glm.installation-manifest-base'
 }
 
 installers {
@@ -13,4 +14,13 @@ installers.all {
     manifest(project(':subsystem_b:server_1')) {
         from('bin')
     }
+}
+
+installers.all { installer ->
+    def installerTask = tasks.register("zip${name.capitalize()}Installer", Zip) {task ->
+        task.from(installer.destinationDirectory)
+        task.archiveBaseName = 'legacyInstaller'
+        task.destinationDirectory = layout.buildDirectory.dir("tmp/${name}")
+    }
+    installationManifests.maybeCreate(installer.name).from(installerTask)
 }
