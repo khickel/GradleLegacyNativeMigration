@@ -31,6 +31,16 @@ class InstallerBasePluginTest extends Specification {
         installers*.name == ['debug', 'release']
     }
 
+    def "creates a lifecycle task per installers"() {
+        when:
+        installers.create('debug')
+        installers.create('release')
+
+        then:
+        project.tasks.findByName('debugInstaller') != null
+        project.tasks.findByName('releaseInstaller') != null
+    }
+
     private NamedDomainObjectContainer<Installer> getInstallers() {
         return project.extensions.installers
     }

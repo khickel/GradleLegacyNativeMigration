@@ -39,6 +39,10 @@ class InstallerBasePlugin implements Plugin<Project> {
             } as Action<Sync>)
 
             installer.destinationDirectory.fileProvider(stageTask.map { it.destinationDir }).disallowChanges()
+
+            project.tasks.register("${installer.name}Installer", { Task task ->
+                task.dependsOn(stageTask)
+            } as Action<Task>)
         }
     }
 
