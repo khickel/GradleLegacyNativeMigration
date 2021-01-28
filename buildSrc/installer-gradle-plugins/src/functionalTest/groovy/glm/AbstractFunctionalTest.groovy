@@ -33,7 +33,6 @@ abstract class AbstractFunctionalTest extends Specification {
     }
 
     def setup() {
-        println testDirectory
         runner = GradleRunner.create(gradleTestKit()).withPluginClasspath().ignoresMissingSettingsFile().inDirectory(testDirectory.toFile())
     }
 
