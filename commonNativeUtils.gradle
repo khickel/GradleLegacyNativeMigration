@@ -110,23 +110,13 @@ def AddVSDllLinkOption(Project prj, String newOption) {
 ////////////////////////////////////////////////////////////////
 def addDefaultCPPLibraryOptions(Project prj, CppLibrary lib, Boolean suppressConsoleDef=false) {
 
-    if (isWindows) {
-        lib.targetMachines = [prj.machines.windows.x86]
-    } else {
-        lib.targetMachines = [prj.machines.linux.x86_64]
-    }
+    lib.targetMachines = [prj.machines.windows.x86, prj.machines.linux.x86_64]
     addDefaultCPPOptions(prj, suppressConsoleDef)
 }
 
 ////////////////////////////////////////////////////////////////
 def addDefaultCPPApplicationOptions(Project prj, CppApplication app, Boolean suppressConsoleDef=false) {
-
-    if (isWindows) {
-        app.targetMachines = [prj.machines.windows.x86]
-    } else {
-        app.targetMachines = [prj.machines.linux.x86_64]
-    }
-
+    app.targetMachines = [prj.machines.windows.x86, prj.machines.linux.x86_64]
     addDefaultCPPOptions(prj, suppressConsoleDef)
 
     // Add Windows specific linker options
