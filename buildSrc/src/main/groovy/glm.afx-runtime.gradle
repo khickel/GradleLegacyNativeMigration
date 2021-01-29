@@ -1,0 +1,11 @@
+plugins {
+    id 'glm.windows-subsystem'
+}
+
+plugins.withId('dev.nokee.cpp-application') {
+    application(Configure.addAFXOptions())
+}
+
+plugins.withId('dev.nokee.c-application') {
+    application(Configure.addAFXOptions())
+}

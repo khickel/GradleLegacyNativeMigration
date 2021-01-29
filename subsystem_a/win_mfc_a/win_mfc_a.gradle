@@ -1,6 +1,7 @@
 plugins {
     id 'dev.nokee.cpp-application'
     id 'glm.windows-resources'
+    id 'glm.afx-runtime'
 
     id 'glm.installation-manifest-base'
 }
@@ -8,7 +9,6 @@ plugins {
 windowsResources.from(fileTree(dir: projectDir, includes: ['**/*.rc']))
 
 application(Configure.withDefaultApplicationConfiguration())
-application(Configure.addAFXOptions())
 application { app ->
     targetMachines = [machines.windows.x86]
     // Set the executable filename
