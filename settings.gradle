@@ -5,10 +5,15 @@ include 'subsystem_a:util_1'
 include 'subsystem_a:win_mfc_a'
 include 'subsystem_b:server_1'
 
+
 include 'legacy_installer'
 
 // YAIM - Yet Another Installer Mechanism
 include 'inst_three'
+
+// old style self extracting zip based installers.
+include 'zsfx_inst:zsfx_one'
+include 'zsfx_inst:zsfx_two'
 
 // To avoid every gradle file being named 'build.gradle', this bit of code
 // will tell gradle to look for PROJNAME.gradle.

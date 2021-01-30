@@ -11,9 +11,15 @@ apply from: "${rootDir}/debugging.gradle"
 ext { 
     stagingDir = "${projectDir}/staging/"
 
+    TopProjDir = "${projectDir}/"
+
     // Names for our task groups
     debugGroup = "Legacy Native Migration Example Debug"
     releaseGroup = "Legacy Native Migration Example Release"
+
+    releaseString = "1.1.00"
+    versionTextInputFilename = 'VERSION.txt.in'
+    versionTextInputPath = "${rootDir}/${versionTextInputFilename}"
 
     // Code signing info
     codeSignCert = "${rootDir}/MySPC.pfx"

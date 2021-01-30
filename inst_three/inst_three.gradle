@@ -224,10 +224,10 @@ def inst_three_stage = tasks.create("instThreeInstaller") {
 
     outputs.file ZPKG
     doLast {
-        delete ZPKG  // If the file already exists, the 7za command fails.
+        delete ZPKG  // If the file already exists, the 7z command fails.
         exec {
             workingDir targetPath
-            commandLine "/bin/7za.exe", "a", "-r", "${ZPKG}", "*"
+            commandLine "7z", "a", "-r", "${ZPKG}", "*"
         }
     }
 }

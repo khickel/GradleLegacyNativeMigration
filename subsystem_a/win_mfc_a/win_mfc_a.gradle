@@ -6,6 +6,8 @@ plugins {
 // Define a map listing the targetPath,targetFileName for any files that need to be copied to staging area.
 ext.installerFiles = [ (file(project.property('stagingDir'))):'win_mfc_a' ]
 
+//ext.legacyInstaller = [ 'dummyOne':'win_mfc_a' ]
+
 application { app->
 
     // Set the executable filename

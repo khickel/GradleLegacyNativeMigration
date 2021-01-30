@@ -16,7 +16,10 @@ getRootProject().allprojects {
     // However, if I remove it, then it is too early to find sub projects with this property.
     afterEvaluate { prj ->
         if(prj.hasProperty(varName)) {
+            println "legacy_installer:DEBUG: Project ${prj.name} DOES have something to contribute to legacy_installer."
             addProjOutputCopyFilesTask(prj, thisProj, varName, varName, targetPath, "Build the legacy installer", true)
+        } else {
+            println "legacy_installer:DEBUG: Project ${prj.name} does NOT have anything to contribute to legacy_installer."
         }
     }
 }

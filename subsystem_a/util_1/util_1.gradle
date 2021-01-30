@@ -17,6 +17,11 @@ ext.legacyInstaller = ['.':[
      'outputFilename':'Documentation.txt']
 ]]
 
+ext.zsfx_one = [ 'wintools':'util_1' ]
+//ext.zsfx_one = [ '.':
+//'util_1':'wintools' ]
+ext.zsfx_two = [ 'wintools':'util_1' ]
+
 application { app->
 
     // Set the executable filename

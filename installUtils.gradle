@@ -7,7 +7,7 @@
 
 def getDebugState(Project prj) {
     // May be enchanced to enable debugging for certain project names.
-    def rv = false;
+    def rv = true//false
     return rv
 }
 
@@ -454,7 +454,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
 }
 
 ////////////////////////////////////////////////////////////////
-// Creates a $ZIPINST.bat style installer, returns maps with the created tasks.
+// Creates a self extracting old style zip installer, returns maps with the created tasks.
 def createZipInstallerTasks(Project prj,
                             String installerFileName, String installerFilePath,
                             String productName, String productDescription,
@@ -481,9 +481,9 @@ def createZipInstallerTasks(Project prj,
 
     // TODO: Can I move the application in here too? probably not but would be nice, which means I need to pass in the path, or just assume it's here.
 
-    def ZNST = file("${prj.buildDir}/ZipInst.exe").path
-    def BDRY = file("${TopProjDir}/SourceS/ZipInstall/BOUNDARY.txt").path
-    def ZSFX = file("${TopProjDir}/\$BUILD_TOOLS.dir/unzipsfx.exe").path
+    def ZNST = file("${prj.buildDir}/${installerFileName}").path
+    def BDRY = file("${TopProjDir}/zsfx_inst/zsfx_base/boundary.txt").path
+    def ZSFX = file("${TopProjDir}/zsfx_inst/zsfx_base/unzipsfx.exe").path
     def CSETUP = file("${buildDir}/install/wintools/CSetup.exe").path
     def ZPKG = file("${prj.buildDir}/pkg.zip").path
 
@@ -497,6 +497,13 @@ def createZipInstallerTasks(Project prj,
     def debugInstallerTask = prj.tasks.register("createDebug${instTaskNameSuffix}") {
         dependsOn(createParmsHeader)
         dependsOn(toDependOn)
+
+        // The installer tasks need to also depend upon the installer stage/copy task, at least with the way things are set up now.
+        // TODO Someday, really this should depend on the link task and we should know to use the debug exe,
+        // but the calling project is currently telling us to take the .exe from the top of the Build directory.
+        // So this is a bit of a hack, but I'm hoping to do much better when we can move to Nokee.
+        dependsOn(prj.tasks.findByName('stageDebug_CopyAll'))
+
         inputs.files(
             ZNST,
             BDRY,
@@ -507,18 +514,31 @@ def createZipInstallerTasks(Project prj,
         doLast {
             def instFile = file(installerFilePath)
             def instFileDir = instFile.getAbsoluteFile().getParent()
+            if(!file(ZNST).exists()) {
+                throw new GradleException("Unable to find ZNST file ${ZNST}.");
+            }
+            if(!file(BDRY).exists()) {
+                throw new GradleException("Unable to find BDRY file ${BDRY}.");
+            }
+            if(!file(ZSFX).exists()) {
+                throw new GradleException("Unable to find ZFSX file ${ZSFX}.");
+            }
+            if(!file(ZPKG).exists()) {
+                throw new GradleException("Unable to find ZPKG file ${ZPKG}.");
+            }
             exec {
                 workingDir "${inputPath}"
                 if(silentInstaller) {
                     commandLine "cmd", "/C", "copy", "/b", "${ZNST}+${BDRY}+${ZSFX}+${ZPKG}", instFile.getPath()
                 } else {
+                    logger.info("Executing command: cmd /C copy /b ${ZNST}+${BDRY}+${ZSFX}+${ZPKG}, ${instFile.getPath()}")
                     commandLine "cmd", "/C", "copy", "/b", "${ZNST}+${BDRY}+${ZSFX}+${ZPKG}", instFile.getPath()
                 }
             }
             exec {
                 workingDir instFile.getParentFile()
-                commandLine "signtool", "sign", "/v", "/f", "${project.property('certDir')}BmcAmiCCS.pfx",
-                    "/p", "bmcdefender", "/t", codeSignTimestampURL, instFile.name
+                commandLine 'signtool', 'sign', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
+                              '/p', getRootProject().property('codeSignPassword'), instFile.name
             }
         }
     }
@@ -529,6 +549,10 @@ def createZipInstallerTasks(Project prj,
     def releaseInstallerTask = prj.tasks.create("createRelease${instTaskNameSuffix}") {
         dependsOn(createParmsHeader)
         dependsOn(toDependOn)
+        def relCopy = prj.tasks.findByName('stageRelease_CopyAll')
+        if(relCopy) {
+            dependsOn(relCopy)
+        }
         inputs.files(
             ZNST,
             BDRY,
@@ -545,8 +569,8 @@ def createZipInstallerTasks(Project prj,
             }
             exec {
                 workingDir instFile.getParentFile()
-                commandLine "signtool", "sign", "/v", "/f", "${project.property('certDir')}BmcAmiCCS.pfx",
-                    "/p", "bmcdefender", "/t", codeSignTimestampURL, instFile.name
+                commandLine 'signtool', 'sign', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
+                              '/p', getRootProject().property('codeSignPassword'), instFile.name
             }
         }
     }
