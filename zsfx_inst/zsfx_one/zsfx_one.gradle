@@ -6,6 +6,7 @@ plugins {
     id 'glm.windows-resources'
     id 'glm.afx-runtime'
 
+    id 'glm.installation-manifest-base'
     id 'glm.installer-base'
 }
 
@@ -68,6 +69,24 @@ application { app ->
 //                                          createPkgZip, targetPath, "**/*",
 //                                          false)
 
+installationManifests {
+    debug {}
+    release {}
+}
+installationManifests.all {
+    def buildType = name
+    from(application.variants
+            .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
+            .flatMap { it.first().developmentBinary }
+            .flatMap {
+                if (it.buildable) { return it.linkTask }
+                return null // no buildable binaries
+            }
+            .flatMap { it.linkedFile }) {
+        into('bin')
+    }
+}
+
 installers {
     debug {}
     release {}
@@ -100,7 +119,9 @@ installers.all {
     manifest(project(':subsystem_a:util_1')) {
         from('bin') { into('wintools') }
     }
-    // TODO: add local files
+    manifest(project) {
+        from('bin') { into('wintools') }
+    }
 }
 
 tasks.named('debug') { dependsOn(installers.debug.destinationDirectory) }
