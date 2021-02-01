@@ -363,7 +363,6 @@ final class Configure {
                         }
                         return []
                     })))
-                    task.linkerArgs.add('/subsystem:windows')
                 }
             }
         }
