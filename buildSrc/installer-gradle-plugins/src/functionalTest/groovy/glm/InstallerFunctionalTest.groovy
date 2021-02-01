@@ -214,6 +214,9 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
     def "throws exception when empty directories are outside the base directory (relative)"() {
         buildFile << '''
             installers.debug {
+                manifest(project(':manifest')) {
+                    from('b')
+                }
                 emptyDirectory('../config')
             }
         '''
@@ -225,6 +228,9 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
     def "throws exception when empty directories are outside the base directory (absolute)"() {
         buildFile << """
             installers.debug {
+                manifest(project(':manifest')) {
+                    from('b')
+                }
                 emptyDirectory('${file('config').absolutePath.replace('\\', '/')}')
             }
         """
