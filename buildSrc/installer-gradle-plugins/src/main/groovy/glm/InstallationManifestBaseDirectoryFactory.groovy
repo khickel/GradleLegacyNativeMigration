@@ -35,8 +35,14 @@ final class InstallationManifestBaseDirectoryFactory {
     InstallationManifestBaseDirectory create(Object notation, String identity) {
         if (isCurrentProject(notation)) {
             def project = (Project) notation
-            def artifactFileProvider = ((NamedDomainObjectContainer<InstallationManifest>)project.extensions.getByName("installationManifests")).getByName(identity).destinationDirectory.map { Directory it -> it.asFile }
-            return new InstallationManifestBaseDirectory(artifactFileProvider)
+            try {
+                def installationManifests = (NamedDomainObjectContainer<InstallationManifest>)project.extensions.getByName("installationManifests")
+                def manifest = installationManifests.getByName(identity)
+                def artifactFileProvider = manifest.destinationDirectory.map { Directory it -> it.asFile }
+                return new InstallationManifestBaseDirectory(artifactFileProvider)
+            } catch (Throwable ex) {
+                throw new IllegalArgumentException("Project '${project.path}' does declare any installation manifests, please apply 'glm.installation-manifest-base' and declare your manifests.")
+            }
         } else {
             def configuration = configurations.detachedConfiguration(dependencies.create(notation))
             configuration.canBeConsumed = false
