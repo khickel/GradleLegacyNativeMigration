@@ -15,13 +15,11 @@ import dev.nokee.utils.ActionUtils
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
-import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.Transformer
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.language.nativeplatform.tasks.AbstractNativeSourceCompileTask
@@ -405,6 +403,32 @@ final class Configure {
                     }
                 }
             }
+        }
+    }
+
+    static Closure addParamH(TaskContainer tasks) {
+        return { component ->
+            ParmsHExtension extension = component.extensions.create('parmsH', ParmsHExtension)
+            def generatorTask = tasks.register('generateParmsH') { task ->
+                task.inputs.property('defaultPath', extension.defaultPath)
+                task.inputs.property('programDescription', extension.programDescription)
+                task.inputs.property('runProgram', extension.runProgram)
+                task.inputs.property('serviceName', extension.serviceName)
+
+                task.ext.parmsHeaderFile = new File(temporaryDir, 'parms.h')
+                task.outputs.file(parmsHeaderFile)
+
+                task.doLast {
+                    parmsHeaderFile.text = """
+                        |#define PROGRAM_DESCR    "${extension.programDescription.get()}"
+                        |#define DEFAULT_PATH     "${extension.defaultPath.get()}"
+                        |#define SERVICE_NAME     "${extension.serviceName.get()}"
+                        |#define RUN_PROGRAM      "${extension.runProgram.get()}"
+                        |""".stripMargin()
+                }
+            }
+            extension.parmsHeaderFile.fileProvider(generatorTask.map { it.parmsHeaderFile }).disallowChanges()
+            component.privateHeaders.from(generatorTask)
         }
     }
 }

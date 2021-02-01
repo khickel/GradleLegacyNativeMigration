@@ -1,0 +1,119 @@
+import java.text.SimpleDateFormat
+import org.apache.tools.ant.filters.ReplaceTokens
+
+plugins {
+    id 'dev.nokee.cpp-application'
+    id 'glm.windows-resources'
+    id 'glm.afx-runtime'
+}
+
+ext {
+    installerFiles = [ (file("${buildDir}")):'zsfx_two' ]
+
+    productName = 'SelfExtractingZipBasedInstaller_Two'
+    productDescription = 'GLM sample.'
+    programDescription = "ZSFX_Two - Installer"
+    defaultPath = "C:\\\\Program Files\\\\ZSFX_Two"
+    serviceName = "GLM zsfx two"
+    runProgram = "dummy\\\\dummy.exe"
+
+    ZPKG = file("${buildDir}/pkg.zip").path
+
+    targetPath = buildDir.path + '/install'
+
+    installerFileName = "zsfx_two.exe"
+    installerFilePath = file("${projectDir}/${installerFileName}").path
+}
+
+def varName = 'zsfx_two'
+
+tasks.create(varName + 'Debug')
+tasks.create(varName + 'Release')
+
+def createPkgZipTask
+
+application(Configure.withDefaultApplicationConfiguration())
+application(Configure.addParamH(tasks))
+application { app->
+//    baseName = 'zsfx_two'
+
+    cppSources.from fileTree(dir: '../zsfx_base', include: '*.cpp')
+
+    parmsH {
+        programDescription = "ZSFX_Two - Installer"
+        defaultPath = "C:\\\\Program Files\\\\ZSFX_Two"
+        serviceName = "GLM zsfx two"
+        runProgram = "dummy\\\\dummy.exe"
+    }
+
+    // Add *.rc from this subproject directory to the link.
+//    addWindowsResourceFile(project, app, "../zsfx_base")
+    windowsResources.from(fileTree(dir: '../zsfx_base', include: '*.rc'))
+
+//    // Find all subprojects that have a "zsfx_two" property and set them up to copy the built executables to the staging area for the installer.
+//    def thisProj = project
+//    getRootProject().allprojects {
+//        afterEvaluate { prj ->
+//            if(prj.hasProperty(varName)) {
+//                addProjOutputCopyFilesTask(prj, thisProj, varName, varName, targetPath, "Build the ZSFX Two installer", true)
+//            }
+//        }
+//    }
+//
+//    def copyTasks = [
+//        tasks.register("copyLicenseTextFile", Copy) {
+//            from "${getRootProject().projectDir}/LICENSE"
+//            into "${targetPath}/wintools"
+//            rename 'LICENSE', 'ZSFX_TWO_LICENSE.txt'
+//        }
+//    ]
+//
+//    def date = new Date()
+//    def day_date_format = new SimpleDateFormat("EEE MM/dd/yyyy")
+//    def year_format = new SimpleDateFormat("yyyy")
+//    String dateStr = day_date_format.format(date)
+//    String yearStr = year_format.format(date)
+//    String relStr = "${releaseString}"
+//    def createVersionTextFileTask = tasks.register("createVersionTextFile", Copy) {
+//        from versionTextInputPath
+//        into "${targetPath}/wintools"
+//        rename versionTextInputFilename, 'VERSION.txt'
+//        filter(ReplaceTokens, beginToken: '@', endToken: '@', tokens: [
+//            'DATE_WITH_DAY' : dateStr,
+//            'CURRENT_YEAR' : yearStr,
+//            'RELEASE_STRING': relStr,
+//            'PRODUCT_NAME': productName,
+//            'PRODUCT_DESCRIPTION': productDescription,
+//            'UNICODE_INFO' : '',
+//            'PLATFORM' : '32-Bit Windows Version\nX32 '
+//        ])
+//        filteringCharset = 'UTF-8'
+//    }
+//
+//    createPkgZipTask = tasks.register("createPkgZip", Exec) {
+//        dependsOn(copyTasks, createVersionTextFile)
+//        inputs.files(
+//            "${targetPath}/wintools/util_1.exe",
+//            "${targetPath}/wintools/LICENSE.txt",
+//            "${targetPath}/wintools/VERSION.txt",
+//        )
+//
+//        outputs.files(ZPKG)
+//        delete ZPKG  // If the file already exists, the 7z command fails.
+//        workingDir targetPath
+//        commandLine "7z", "a", "-r", "${ZPKG}", "wintools/*"
+//    }
+}
+
+//def instTaskMap = createZipInstallerTasks(project,
+//                                          installerFileName, installerFilePath,
+//                                          productName, productDescription,
+//                                          programDescription, defaultPath,
+//                                          serviceName, runProgram,
+//                                          createPkgZip, targetPath, "**/*",
+//                                          false)
+//def debugInstallerTask = instTaskMap['debugInstallerTask']
+//tasks.findByName('debug').dependsOn(debugInstallerTask)
+//def releaseInstallerTask = instTaskMap['releaseInstallerTask']
+//tasks.findByName('release').dependsOn(releaseInstallerTask)
+
