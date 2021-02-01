@@ -24,6 +24,8 @@ repositories {
 }
 
 dependencies {
+    implementation 'com.google.guava:guava:28.2-jre'
+
     testImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5-SNAPSHOT')
     testImplementation 'org.spockframework:spock-core'
 

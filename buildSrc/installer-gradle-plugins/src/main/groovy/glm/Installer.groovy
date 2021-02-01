@@ -1,5 +1,7 @@
 package glm
 
+import com.google.common.base.Preconditions
+import com.google.common.base.Strings
 import org.gradle.api.Action
 import org.gradle.api.Named
 import org.gradle.api.file.CopySpec
@@ -52,10 +54,9 @@ abstract class Installer implements Named {
     }
 
     Installer emptyDirectory(String destinationPath) {
-        // TODO: Disallow relative path that goes up one directory
-        // TODO: Disallow absolute path
-        // TODO: Disallow null
-        // TODO: Disallow empty string
+        // Relative and absolute path escape are caught by the stage task
+        Preconditions.checkNotNull(destinationPath, "'destinationPath' must not be null")
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(destinationPath.trim()), "'destinationPath' must not be empty")
         emptyDirectories.add(destinationPath)
         return this
     }

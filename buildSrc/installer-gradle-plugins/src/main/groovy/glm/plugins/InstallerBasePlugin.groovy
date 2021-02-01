@@ -32,7 +32,11 @@ class InstallerBasePlugin implements Plugin<Project> {
                     void execute(Task t) {
                         def baseDirectory = task.destinationDir.toPath()
                         installer.emptyDirectories.each {
-                            Files.createDirectories(baseDirectory.resolve(it))
+                            def emptyDirectoryPath = baseDirectory.resolve(it).toAbsolutePath()
+                            if (!emptyDirectoryPath.startsWith(baseDirectory)) {
+                                throw new IllegalArgumentException("Empty directory '${emptyDirectoryPath}' is outside of the installer staging directory '${baseDirectory}.")
+                            }
+                            Files.createDirectories(emptyDirectoryPath)
                         }
                     }
                 })

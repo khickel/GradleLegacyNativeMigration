@@ -209,6 +209,27 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
 
         expect:
         failure('verify')
-        // TODO: assert failure
+    }
+
+    def "throws exception when empty directories are outside the base directory (relative)"() {
+        buildFile << '''
+            installers.debug {
+                emptyDirectory('../config')
+            }
+        '''
+
+        expect:
+        failure('verify')
+    }
+
+    def "throws exception when empty directories are outside the base directory (absolute)"() {
+        buildFile << """
+            installers.debug {
+                emptyDirectory('${file('config').absolutePath}')
+            }
+        """
+
+        expect:
+        failure('verify')
     }
 }
