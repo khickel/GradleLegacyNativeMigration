@@ -4,7 +4,6 @@ import dev.nokee.platform.base.Binary
 import dev.nokee.platform.base.ComponentContainer
 import dev.nokee.platform.base.Variant
 import dev.nokee.platform.base.VariantAwareComponent
-import dev.nokee.platform.base.internal.components.ComponentContainerInternal
 import dev.nokee.platform.nativebase.NativeBinary
 import dev.nokee.platform.nativebase.internal.DefaultTargetBuildTypeFactory
 import dev.nokee.runtime.nativebase.TargetBuildType
@@ -32,7 +31,7 @@ class BuildTypeLifecycleBasePlugin implements Plugin<Project> {
 
     private static Set<Component> allNativeComponents(ExtensionContainer extensions) {
         // TODO(nokeedev): Upgrade to latest nokee to access elements without internal API
-        def components = (ComponentContainerInternal) extensions.findByType(ComponentContainer)
+        def components = extensions.findByType(ComponentContainer)
         if (components == null) {
             return [] as Set
         }
