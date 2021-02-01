@@ -1,6 +1,6 @@
 package glm.lifecycle.plugins
 
-import dev.nokee.platform.base.Binary
+import dev.nokee.platform.base.Component
 import dev.nokee.platform.base.ComponentContainer
 import dev.nokee.platform.base.Variant
 import dev.nokee.platform.base.VariantAwareComponent
@@ -8,15 +8,11 @@ import dev.nokee.platform.nativebase.NativeBinary
 import dev.nokee.platform.nativebase.internal.DefaultTargetBuildTypeFactory
 import dev.nokee.runtime.nativebase.TargetBuildType
 import dev.nokee.utils.ProviderUtils
+import dev.nokee.utils.TransformerUtils
 import glm.lifecycle.tasks.BuildTypeLifecycleTask
-import groovy.transform.CompileStatic
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import dev.nokee.platform.base.Component
 import org.gradle.api.plugins.ExtensionContainer
-import org.gradle.api.provider.Provider
-
-import java.util.concurrent.Callable
 
 //@CompileStatic
 class BuildTypeLifecycleBasePlugin implements Plugin<Project> {
@@ -30,7 +26,6 @@ class BuildTypeLifecycleBasePlugin implements Plugin<Project> {
     }
 
     private static Set<Component> allNativeComponents(ExtensionContainer extensions) {
-        // TODO(nokeedev): Upgrade to latest nokee to access elements without internal API
         def components = extensions.findByType(ComponentContainer)
         if (components == null) {
             return [] as Set
@@ -42,7 +37,7 @@ class BuildTypeLifecycleBasePlugin implements Plugin<Project> {
         def result = components.collect { component ->
             def g = (VariantAwareComponent<Variant>) component
             return g.variants.filter {it.buildVariant.hasAxisOf(buildType) }
-                    .map(ProviderUtils.flatMap { Variant it -> it.binaries.get() }) // TODO(nokeedev): Upgrade to latest nokee to access flatTransformEach (which will later become grava)
+                    .map(TransformerUtils.flatTransformEach { Variant it -> it.binaries.get() })
                     .map(ProviderUtils.filter { NativeBinary it -> it.buildable }).get()
         }.flatten()
         return result
