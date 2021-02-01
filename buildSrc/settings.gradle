@@ -1,2 +1,6 @@
+plugins {
+    id 'dev.gradleplugins.gradle-plugin-development' version '1.1.35'
+}
+
 include 'installer-gradle-plugins'
 include 'lifecycle-gradle-plugins'
