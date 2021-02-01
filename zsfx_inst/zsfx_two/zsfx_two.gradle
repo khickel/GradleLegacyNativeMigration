@@ -5,6 +5,8 @@ plugins {
     id 'dev.nokee.cpp-application'
     id 'glm.windows-resources'
     id 'glm.afx-runtime'
+
+    id 'glm.installer-base'
 }
 
 ext {
@@ -25,13 +27,6 @@ ext {
     installerFilePath = file("${projectDir}/${installerFileName}").path
 }
 
-def varName = 'zsfx_two'
-
-tasks.create(varName + 'Debug')
-tasks.create(varName + 'Release')
-
-def createPkgZipTask
-
 application(Configure.withDefaultApplicationConfiguration())
 application(Configure.addParamH(tasks))
 application { app->
@@ -47,49 +42,8 @@ application { app->
     }
 
     // Add *.rc from this subproject directory to the link.
-//    addWindowsResourceFile(project, app, "../zsfx_base")
     windowsResources.from(fileTree(dir: '../zsfx_base', include: '*.rc'))
 
-//    // Find all subprojects that have a "zsfx_two" property and set them up to copy the built executables to the staging area for the installer.
-//    def thisProj = project
-//    getRootProject().allprojects {
-//        afterEvaluate { prj ->
-//            if(prj.hasProperty(varName)) {
-//                addProjOutputCopyFilesTask(prj, thisProj, varName, varName, targetPath, "Build the ZSFX Two installer", true)
-//            }
-//        }
-//    }
-//
-//    def copyTasks = [
-//        tasks.register("copyLicenseTextFile", Copy) {
-//            from "${getRootProject().projectDir}/LICENSE"
-//            into "${targetPath}/wintools"
-//            rename 'LICENSE', 'ZSFX_TWO_LICENSE.txt'
-//        }
-//    ]
-//
-//    def date = new Date()
-//    def day_date_format = new SimpleDateFormat("EEE MM/dd/yyyy")
-//    def year_format = new SimpleDateFormat("yyyy")
-//    String dateStr = day_date_format.format(date)
-//    String yearStr = year_format.format(date)
-//    String relStr = "${releaseString}"
-//    def createVersionTextFileTask = tasks.register("createVersionTextFile", Copy) {
-//        from versionTextInputPath
-//        into "${targetPath}/wintools"
-//        rename versionTextInputFilename, 'VERSION.txt'
-//        filter(ReplaceTokens, beginToken: '@', endToken: '@', tokens: [
-//            'DATE_WITH_DAY' : dateStr,
-//            'CURRENT_YEAR' : yearStr,
-//            'RELEASE_STRING': relStr,
-//            'PRODUCT_NAME': productName,
-//            'PRODUCT_DESCRIPTION': productDescription,
-//            'UNICODE_INFO' : '',
-//            'PLATFORM' : '32-Bit Windows Version\nX32 '
-//        ])
-//        filteringCharset = 'UTF-8'
-//    }
-//
 //    createPkgZipTask = tasks.register("createPkgZip", Exec) {
 //        dependsOn(copyTasks, createVersionTextFile)
 //        inputs.files(
@@ -112,8 +66,43 @@ application { app->
 //                                          serviceName, runProgram,
 //                                          createPkgZip, targetPath, "**/*",
 //                                          false)
-//def debugInstallerTask = instTaskMap['debugInstallerTask']
-//tasks.findByName('debug').dependsOn(debugInstallerTask)
-//def releaseInstallerTask = instTaskMap['releaseInstallerTask']
-//tasks.findByName('release').dependsOn(releaseInstallerTask)
 
+installers {
+    debug {}
+    release {}
+}
+installers.all {
+    manifest(project(':'), 'base') {
+        into('wintools') {
+            from('LICENSE') { rename('LICENSE', 'ZSFX_TWO_LICENSE.txt') }
+            from(versionTextInputFilename) {
+                rename(versionTextInputFilename, 'VERSION.txt')
+
+                // TODO: The following should be moved to a central
+                def date = new Date()
+                def day_date_format = new SimpleDateFormat("EEE MM/dd/yyyy")
+                def year_format = new SimpleDateFormat("yyyy")
+                String dateStr = day_date_format.format(date)
+                String yearStr = year_format.format(date)
+                String relStr = "${releaseString}"
+                filter(ReplaceTokens, beginToken: '@', endToken: '@', tokens: [
+                        'DATE_WITH_DAY' : dateStr,
+                        'CURRENT_YEAR' : yearStr,
+                        'RELEASE_STRING': relStr,
+                        'PRODUCT_NAME': productName,
+                        'PRODUCT_DESCRIPTION': productDescription,
+                        'UNICODE_INFO' : '',
+                        'PLATFORM' : '32-Bit Windows Version\nX32 '
+                ])
+                filteringCharset = 'UTF-8'
+            }
+        }
+    }
+    manifest(project(':subsystem_a:util_1')) {
+        from('bin') { into('wintools') }
+    }
+    // TODO: add local files
+}
+
+tasks.named('debug') { dependsOn(installers.debug.destinationDirectory) }
+tasks.named('release') { dependsOn(installers.release.destinationDirectory) }
