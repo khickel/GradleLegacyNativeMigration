@@ -81,7 +81,6 @@ final class Configure {
 
     @Canonical
     static class NativeConfiguration {
-        enum ConsoleDef { SUPPRESS, DEFINED }
         ConsoleDef consoleDef = ConsoleDef.DEFINED
     }
 
@@ -130,7 +129,7 @@ final class Configure {
                     '/DUSE_REL_SIGLIB_PATH',
             ])))
 
-            if (configuration.consoleDef == NativeConfiguration.ConsoleDef.DEFINED) {
+            if (configuration.consoleDef == ConsoleDef.DEFINED) {
                 task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/D_CONSOLE')))
             }
         } as Action<NativeSourceCompile>
