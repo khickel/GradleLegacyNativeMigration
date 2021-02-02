@@ -7,11 +7,20 @@ gradlePlugin {
     plugins {
         installerProducer {
             id = 'glm.installation-manifest-base'
-            implementationClass = 'glm.plugins.InstallationManifestBasePlugin'
+            implementationClass = 'glm.installer.plugins.InstallationManifestBasePlugin'
         }
         installerConsumer {
             id = 'glm.installer-base'
-            implementationClass = 'glm.plugins.InstallerBasePlugin'
+            implementationClass = 'glm.installer.plugins.InstallerBasePlugin'
+        }
+
+        installerZipPackageBase {
+            id = 'glm.zip-installer-package-base'
+            implementationClass = 'glm.installer.plugins.ZipInstallerPackageBasePlugin'
+        }
+        zipInstaller {
+            id = 'glm.zip-installer-package'
+            implementationClass = 'glm.installer.plugins.ZipInstallerPackagePlugin'
         }
     }
 }
