@@ -47,6 +47,9 @@ abstract class PkgZip extends DefaultTask {
     @Inject
     protected abstract ExecOperations getExecOperations()
 
+    @Input
+    abstract Property<String> getZipInputSpec()
+
     @TaskAction
     void doPkgZip() {
         installerFile.get().asFile.delete() // If the file already exists, the 7z command fails.
@@ -61,7 +64,7 @@ abstract class PkgZip extends DefaultTask {
             spec.standardOutput = new FileOutputStream(new File(temporaryDir, 'outputs_7z.txt'))
             spec.commandLine('7z', 'a', '-r',
                              ZPKG,
-                             'wintools/*')
+                             zipInputSpec.get())
         }
         execOperations.exec { ExecSpec spec ->
             spec.workingDir(temporaryDir)

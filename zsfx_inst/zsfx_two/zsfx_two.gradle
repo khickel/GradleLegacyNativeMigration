@@ -111,6 +111,7 @@ installers.all { Installer installer ->
         pkg.installerBaseName = project.name
         pkg.codeSignCert.fileProvider(provider { rootProject.property('codeSignCert') })
         pkg.codeSignPassword = provider { rootProject.property('codeSignPassword') }
+        pkg.zipInputSpec = 'wintools/*'
     }
 }
 

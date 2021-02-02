@@ -22,4 +22,5 @@ abstract class PkgZipInstallerPackage extends InstallerPackage {
     abstract RegularFileProperty getZNST()
     abstract RegularFileProperty getCodeSignCert()
     abstract Property<String> getCodeSignPassword()
+    abstract Property<String> getZipInputSpec()
 }

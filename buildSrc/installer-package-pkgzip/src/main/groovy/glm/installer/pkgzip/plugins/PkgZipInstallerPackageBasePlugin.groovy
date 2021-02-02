@@ -20,10 +20,12 @@ abstract class PkgZipInstallerPackageBasePlugin extends AbstractInstallerPackage
     protected Provider<RegularFile> createPackageTask(Installer installer, PkgZipInstallerPackage pkg) {
         pkg.installerExtension.convention('exe')
         pkg.silentInstaller.convention(false)
+        pkg.zipInputSpec.convention('.')
         def createTask = tasks.register(taskName(installer, pkg), PkgZip, { PkgZip task ->
             task.BDRY.value(pkg.BDRY).disallowChanges()
             task.ZSFX.value(pkg.ZSFX).disallowChanges()
             task.ZNST.value(pkg.ZNST).disallowChanges()
+            task.zipInputSpec.value(pkg.zipInputSpec).disallowChanges()
             task.silentInstaller.value(pkg.silentInstaller).disallowChanges()
             task.codeSignCert.value(pkg.codeSignCert).disallowChanges()
             task.codeSignPassword.value(pkg.codeSignPassword).disallowChanges()
