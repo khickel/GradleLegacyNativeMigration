@@ -57,21 +57,26 @@ abstract class PkgZip extends DefaultTask {
         def BDRY = this.BDRY.get().asFile
         def instFile = this.installerFile.get().asFile
         execOperations.exec { ExecSpec spec ->
+            spec.workingDir sourceDirectory.get().asFile
+            spec.standardOutput = new FileOutputStream(new File(temporaryDir, 'outputs_7z.txt'))
             spec.commandLine('7z', 'a', '-r',
-                    ZPKG,
-                    sourceDirectory.get().asFile.absolutePath)
+                             ZPKG,
+                             'wintools/*')
         }
         execOperations.exec { ExecSpec spec ->
             spec.workingDir(temporaryDir)
             if(silentInstaller.get()) {
                 spec.commandLine("cmd", "/C", "copy", "/b", "${ZNST}+${BDRY}+${ZSFX}+${ZPKG}", instFile)
+                spec.standardOutput = new FileOutputStream(new File(temporaryDir, 'outputs_copy.txt'))
             } else {
                 logger.info("Executing command: cmd /C copy /b ${ZNST}+${BDRY}+${ZSFX}+${ZPKG}, ${instFile.getPath()}")
                 spec.commandLine("cmd", "/C", "copy", "/b", "${ZNST}+${BDRY}+${ZSFX}+${ZPKG}", instFile)
+                spec.standardOutput = new FileOutputStream(new File(temporaryDir, 'outputs_copy.txt'))
             }
         }
         execOperations.exec { ExecSpec spec ->
             spec.workingDir(temporaryDir)
+            spec.standardOutput = new FileOutputStream(new File(temporaryDir, 'outputs_sign.txt'))
             spec.commandLine('signtool', 'sign', '/a', '/v', '/f', codeSignCert.get().asFile,
                     '/p', codeSignPassword.get(), instFile.name)
         }

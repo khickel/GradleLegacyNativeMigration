@@ -397,6 +397,7 @@ final class Configure {
                     }
 
                     binary.linkTask.configure { AbstractLinkTask task ->
+                        dependsOn(resourceTask)
                         task.source.from(objects.fileTree().setDir(resourceTask.map { it.outputDir }).include('**/*.res', '**/*.obj'))
                         task.linkerArgs.addAll(task.toolChain.map(whenVisualCpp('user32.lib')))
                     }

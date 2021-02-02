@@ -31,7 +31,7 @@ application(Configure.withDefaultApplicationConfiguration())
 application(Configure.addParamH(tasks))
 application { app ->
     targetMachines = [machines.windows.x86]
-    baseName = 'zsfx_one'
+    baseName = 'ZipInst'
 
     cppSources.from fileTree(dir: '../zsfx_base', include: '*.cpp')
     windowsResources.from(fileTree(dir: '../zsfx_base', include: '*.rc'))
@@ -94,15 +94,19 @@ installers.all { Installer installer ->
     manifest(project(':subsystem_a:util_1')) {
         from('bin') { into('wintools') }
     }
-    manifest(project) {
-        from('bin') { into('wintools') }
-    }
 
     packages.pkgZip(PkgZipInstallerPackage) { PkgZipInstallerPackage pkg ->
         pkg.BDRY = file('../zsfx_base/boundary.txt')
         pkg.ZSFX = file('../zsfx_base/unzipsfx.exe')
         pkg.CSETUP = installer.destinationDirectory.file('wintools/CSetup.exe')
-        pkg.ZNST = installer.destinationDirectory.file("wintools/${installerFileName}")
+        pkg.ZNST = application.variants
+                .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(installer.name)) }
+                .flatMap { it.first().developmentBinary }
+                .flatMap {
+                    if (it.buildable) { return it.linkTask }
+                    return null // no buildable binaries
+                }
+                .flatMap { it.linkedFile }
         pkg.installerBaseName = project.name
         pkg.codeSignCert.fileProvider(provider { rootProject.property('codeSignCert') })
         pkg.codeSignPassword = provider { rootProject.property('codeSignPassword') }
