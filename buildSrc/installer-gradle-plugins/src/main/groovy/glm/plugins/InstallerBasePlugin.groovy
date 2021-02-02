@@ -38,8 +38,10 @@ class InstallerBasePlugin implements Plugin<Project> {
                             }
                             Files.createDirectories(emptyDirectoryPath)
 
-                            if (Files.list(emptyDirectoryPath).findFirst().isPresent()) {
-                                throw new IllegalStateException("Directory '${emptyDirectoryPath}' should be empty, but wasn't.")
+                            Files.list(emptyDirectoryPath).withCloseable {
+                                if (it.findFirst().isPresent()) {
+                                    throw new IllegalStateException("Directory '${emptyDirectoryPath}' should be empty, but wasn't.")
+                                }
                             }
                         }
                     }
