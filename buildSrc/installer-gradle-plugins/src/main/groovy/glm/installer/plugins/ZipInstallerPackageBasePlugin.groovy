@@ -1,18 +1,14 @@
-package glm.plugins
+package glm.installer.plugins
 
-import glm.Installer
-import glm.InstallerPackage
-import glm.ZipInstallerPackage
+import glm.installer.Installer
+import glm.installer.ZipInstallerPackage
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.bundling.Zip
 
-import javax.inject.Inject
-
-import static glm.plugins.InstallerBasePlugin.INSTALLERS_EXTENSION_TYPE
+import static glm.installer.plugins.InstallerBasePlugin.INSTALLERS_EXTENSION_TYPE
 
 @CompileStatic
 class ZipInstallerPackageBasePlugin implements Plugin<Project> {

@@ -1,4 +1,4 @@
-package glm
+package glm.installer
 
 import org.gradle.api.Transformer
 import org.gradle.api.provider.Provider

@@ -1,4 +1,4 @@
-package glm
+package glm.installer
 
 import com.google.common.base.Preconditions
 import com.google.common.base.Strings

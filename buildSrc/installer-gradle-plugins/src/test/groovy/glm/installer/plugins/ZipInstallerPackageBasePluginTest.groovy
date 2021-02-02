@@ -1,13 +1,13 @@
-package glm.plugins
+package glm.installer.plugins
 
-import glm.Installer
-import glm.ZipInstallerPackage
+import glm.installer.Installer
+import glm.installer.ZipInstallerPackage
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.tasks.bundling.Zip
 import spock.lang.Specification
 
-import static glm.plugins.TestUtils.rootProject
+import static glm.installer.TestUtils.rootProject
 
 class ZipInstallerPackageBasePluginTest extends Specification {
     private final Project project = rootProject()

@@ -1,6 +1,6 @@
-package glm.plugins
+package glm.installer.plugins
 
-import glm.InstallationManifest
+import glm.installer.InstallationManifest
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer

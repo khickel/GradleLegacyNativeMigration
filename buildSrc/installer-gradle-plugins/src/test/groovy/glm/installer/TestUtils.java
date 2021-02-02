@@ -1,4 +1,4 @@
-package glm.plugins;
+package glm.installer;
 
 import org.gradle.api.Project;
 import org.gradle.api.provider.ProviderFactory;

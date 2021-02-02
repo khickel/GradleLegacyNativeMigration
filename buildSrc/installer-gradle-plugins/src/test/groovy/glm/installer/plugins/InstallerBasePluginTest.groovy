@@ -1,13 +1,13 @@
-package glm.plugins
+package glm.installer.plugins
 
 
-import glm.Installer
+import glm.installer.Installer
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import spock.lang.Specification
 import spock.lang.Subject
 
-import static glm.plugins.TestUtils.rootProject
+import static glm.installer.TestUtils.rootProject
 
 @Subject(InstallerBasePlugin)
 class InstallerBasePluginTest extends Specification {

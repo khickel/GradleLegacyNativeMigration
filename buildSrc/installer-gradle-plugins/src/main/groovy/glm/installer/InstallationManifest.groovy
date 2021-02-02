@@ -1,4 +1,4 @@
-package glm
+package glm.installer
 
 import org.gradle.api.Action
 import org.gradle.api.Named

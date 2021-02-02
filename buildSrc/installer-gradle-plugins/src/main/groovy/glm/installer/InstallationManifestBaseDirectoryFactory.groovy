@@ -1,5 +1,6 @@
-package glm
+package glm.installer
 
+import glm.installer.plugins.InstallationManifestBasePlugin
 import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
@@ -11,8 +12,8 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.model.ObjectFactory
 
-import static glm.plugins.InstallationManifestBasePlugin.INSTALLATION_MANIFEST_USAGE_NAME
-import static glm.plugins.InstallationManifestBasePlugin.MANIFEST_IDENTITY_ATTRIBUTE
+import static glm.installer.plugins.InstallationManifestBasePlugin.INSTALLATION_MANIFEST_USAGE_NAME
+import static glm.installer.plugins.InstallationManifestBasePlugin.MANIFEST_IDENTITY_ATTRIBUTE
 
 @CompileStatic
 final class InstallationManifestBaseDirectoryFactory {

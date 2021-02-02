@@ -1,11 +1,11 @@
-package glm.plugins
+package glm.installer
 
-import glm.InstallationManifestBaseDirectoryFactory
-import glm.Installer
+import glm.installer.InstallationManifestBaseDirectoryFactory
+import glm.installer.Installer
 import spock.lang.Specification
 import spock.lang.Subject
 
-import static glm.plugins.TestUtils.rootProject
+import static glm.installer.TestUtils.rootProject
 
 @Subject(Installer)
 class InstallerTest extends Specification {

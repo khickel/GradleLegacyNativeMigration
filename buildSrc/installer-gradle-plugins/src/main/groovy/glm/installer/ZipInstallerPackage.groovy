@@ -1,4 +1,4 @@
-package glm
+package glm.installer
 
 import groovy.transform.CompileStatic
 import org.gradle.api.provider.Property
