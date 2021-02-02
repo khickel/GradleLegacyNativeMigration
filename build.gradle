@@ -6,6 +6,12 @@ plugins {
     id 'glm.installation-manifest-base'
 }
 
+ext {
+    // Code signing info
+    codeSignCert = file("MySPC.pfx")
+    codeSignPassword = "passwordx"
+}
+
 allprojects {
     apply plugin: 'glm.debug-lifecycle'
     apply plugin: 'glm.release-lifecycle'
