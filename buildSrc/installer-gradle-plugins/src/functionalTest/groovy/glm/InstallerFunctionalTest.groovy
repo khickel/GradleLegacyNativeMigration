@@ -238,4 +238,17 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
         expect:
         failure('verify')
     }
+
+    def "throws exception when picked file or directory is missing"() {
+        buildFile << """
+            installers.debug {
+                manifest(project(':manifest')) {
+                    from('missing')
+                }
+            }
+        """
+
+        expect:
+        failure('verify')
+    }
 }

@@ -24,6 +24,10 @@ class InstallationManifestBaseDirectoryTest extends Specification {
     }
 
     def "can create file provider for paths under base directory"() {
+        given:
+        file('foo/bar').mkdirs()
+        file('f/a/r').mkdirs()
+
         expect:
         createSubject().file('foo').get() == file('foo')
         createSubject().file('foo/bar').get() == file('foo/bar')
@@ -36,5 +40,14 @@ class InstallationManifestBaseDirectoryTest extends Specification {
 
         then:
         noExceptionThrown()
+    }
+
+    def "throws exception when file is missing"() {
+        when:
+        createSubject().file('foo').get()
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == "File at 'foo' in manifest at '${testDirectory.toFile().canonicalPath}' does not exists."
     }
 }
