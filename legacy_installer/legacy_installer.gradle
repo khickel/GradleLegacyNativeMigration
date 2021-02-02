@@ -1,6 +1,7 @@
 plugins {
     id 'glm.installer-base'
     id 'glm.installation-manifest-base'
+    id 'glm.zip-installer-package'
 }
 
 installers {
@@ -21,10 +22,8 @@ installers.all {
 }
 
 installers.all { installer ->
-    def installerTask = tasks.register("zip${name.capitalize()}Installer", Zip) {task ->
-        task.from(installer.destinationDirectory)
-        task.archiveBaseName = 'legacyInstaller'
-        task.destinationDirectory = layout.buildDirectory.dir("tmp/${name}")
+    installer.packages.zip {
+        baseName = "legacyInstaller"
     }
-    installationManifests.maybeCreate(installer.name).from(installerTask)
+    installationManifests.maybeCreate(installer.name).from(installer.packages.zip.installerFile)
 }

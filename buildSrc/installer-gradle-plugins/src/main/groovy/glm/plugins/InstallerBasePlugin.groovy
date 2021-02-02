@@ -17,10 +17,12 @@ import java.nio.file.Files
 
 @CompileStatic
 class InstallerBasePlugin implements Plugin<Project> {
+    static final TypeOf<NamedDomainObjectContainer<Installer>> INSTALLERS_EXTENSION_TYPE = new TypeOf<NamedDomainObjectContainer<Installer>>() {}
+
     @Override
     void apply(Project project) {
         def extension = project.objects.domainObjectContainer(Installer, createInstaller(project))
-        project.extensions.add(new TypeOf<NamedDomainObjectContainer<Installer>>() {}, 'installers', extension)
+        project.extensions.add(INSTALLERS_EXTENSION_TYPE, 'installers', extension)
 
         extension.all { Installer installer ->
             def stageTask = project.tasks.register("stage${installer.name.capitalize()}Installer", Sync, { Sync task ->
@@ -50,10 +52,15 @@ class InstallerBasePlugin implements Plugin<Project> {
 
             installer.destinationDirectory.fileProvider(stageTask.map { it.destinationDir }).disallowChanges()
 
-            project.tasks.register("${installer.name}Installer", { Task task ->
+            project.tasks.register(installerTaskName(installer), { Task task ->
                 task.dependsOn(stageTask)
+                task.dependsOn(installer.packages*.installerFile)
             } as Action<Task>)
         }
+    }
+
+    static String installerTaskName(Installer installer) {
+        return "${installer.name}Installer"
     }
 
     private static NamedDomainObjectFactory<Installer> createInstaller(Project project) {

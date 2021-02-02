@@ -13,6 +13,15 @@ gradlePlugin {
             id = 'glm.installer-base'
             implementationClass = 'glm.plugins.InstallerBasePlugin'
         }
+
+        installerZipPackageBase {
+            id = 'glm.zip-installer-package-base'
+            implementationClass = 'glm.plugins.ZipInstallerPackageBasePlugin'
+        }
+        zipInstaller {
+            id = 'glm.zip-installer-package'
+            implementationClass = 'glm.plugins.ZipInstallerPackagePlugin'
+        }
     }
 }
 

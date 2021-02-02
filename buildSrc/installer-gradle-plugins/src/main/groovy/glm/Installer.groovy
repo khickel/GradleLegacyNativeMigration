@@ -2,7 +2,9 @@ package glm
 
 import com.google.common.base.Preconditions
 import com.google.common.base.Strings
+import groovy.transform.CompileStatic
 import org.gradle.api.Action
+import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Named
 import org.gradle.api.file.CopySpec
 import org.gradle.api.file.DirectoryProperty
@@ -10,12 +12,14 @@ import org.gradle.api.model.ObjectFactory
 
 import javax.inject.Inject
 
+@CompileStatic
 abstract class Installer implements Named {
     private final String name
     private final CopySpec contentSpec
     private final ObjectFactory objects
     private final InstallationManifestBaseDirectoryFactory baseDirectoryFactory
-    private final List<String> emptyDirectories = new ArrayList<>();
+    private final List<String> emptyDirectories = new ArrayList<>()
+    private final ExtensiblePolymorphicDomainObjectContainer<InstallerPackage> packages
 
     @Inject
     Installer(String name, ObjectFactory objects, CopySpec contentSpec, InstallationManifestBaseDirectoryFactory baseDirectoryFactory) {
@@ -23,6 +27,7 @@ abstract class Installer implements Named {
         this.objects = objects
         this.contentSpec = contentSpec
         this.baseDirectoryFactory = baseDirectoryFactory
+        this.packages = objects.polymorphicDomainObjectContainer(InstallerPackage)
     }
 
     String getName() {
@@ -62,4 +67,8 @@ abstract class Installer implements Named {
     }
 
     abstract DirectoryProperty getDestinationDirectory()
+
+    ExtensiblePolymorphicDomainObjectContainer<InstallerPackage> getPackages() {
+        return packages
+    }
 }
