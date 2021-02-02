@@ -4,30 +4,27 @@ import glm.installer.Installer
 import glm.installer.ZipInstallerPackage
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
-import org.gradle.api.Plugin
-import org.gradle.api.Project
+import org.gradle.api.file.RegularFile
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.bundling.Zip
 
-import static glm.installer.plugins.InstallerBasePlugin.INSTALLERS_EXTENSION_TYPE
-
 @CompileStatic
-class ZipInstallerPackageBasePlugin implements Plugin<Project> {
+abstract class ZipInstallerPackageBasePlugin extends AbstractInstallerPackageBasePlugin<ZipInstallerPackage> {
     @Override
-    void apply(Project project) {
-        project.plugins.withType(InstallerBasePlugin) {
-            project.extensions.getByType(INSTALLERS_EXTENSION_TYPE).all { Installer installer ->
-                installer.packages.registerFactory(ZipInstallerPackage) { String name -> project.objects.newInstance(ZipInstallerPackage, name) }
+    protected Class<ZipInstallerPackage> getInstallerPackageType() {
+        return ZipInstallerPackage
+    }
 
-                installer.packages.withType(ZipInstallerPackage).all { ZipInstallerPackage pkg ->
-                    pkg.baseName.convention("${installer.name}Installer".toString())
-                    def createTask = project.tasks.register("create${pkg.name.capitalize()}${installer.name.capitalize()}Installer".toString(), Zip, { Zip task ->
-                        task.from(installer.destinationDirectory)
-                        task.archiveBaseName.value(pkg.baseName).disallowChanges()
-                        task.destinationDirectory.set(project.layout.buildDirectory.dir("tmp/${task.name}"))
-                    } as Action<Zip>)
-                    pkg.installerFile.value(createTask.flatMap { it.archiveFile }).disallowChanges()
-                }
-            }
-        }
+    @Override
+    protected Provider<RegularFile> createPackageTask(Installer installer, ZipInstallerPackage pkg) {
+        pkg.installerExtension.convention('zip')
+        def createTask = tasks.register(taskName(installer, pkg), Zip, { Zip task ->
+            task.from(installer.destinationDirectory)
+            task.archiveBaseName.value(pkg.installerBaseName).disallowChanges()
+            task.archiveExtension.value(pkg.installerExtension).disallowChanges()
+            task.destinationDirectory.set(layout.buildDirectory.dir("tmp/${task.name}"))
+        } as Action<Zip>)
+
+        return createTask.flatMap { it.archiveFile }
     }
 }

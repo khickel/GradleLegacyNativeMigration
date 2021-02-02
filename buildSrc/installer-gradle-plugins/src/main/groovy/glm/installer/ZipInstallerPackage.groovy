@@ -12,5 +12,5 @@ abstract class ZipInstallerPackage extends InstallerPackage {
         super(name)
     }
 
-    abstract Property<String> getBaseName()
+    abstract Property<String> getInstallerBaseName()
 }

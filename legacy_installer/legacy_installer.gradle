@@ -23,7 +23,7 @@ installers.all {
 
 installers.all { installer ->
     installer.packages.zip {
-        baseName = "legacyInstaller"
+        installerBaseName = "legacyInstaller"
     }
     installationManifests.maybeCreate(installer.name).from(installer.packages.zip.installerFile)
 }

@@ -3,6 +3,7 @@ package glm.installer
 import groovy.transform.CompileStatic
 import org.gradle.api.Named
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
 
 @CompileStatic
 abstract class InstallerPackage implements Named {
@@ -17,4 +18,6 @@ abstract class InstallerPackage implements Named {
     }
 
     abstract RegularFileProperty getInstallerFile()
+    abstract Property<String> getInstallerBaseName()
+    abstract Property<String> getInstallerExtension()
 }
