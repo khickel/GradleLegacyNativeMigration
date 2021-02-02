@@ -1,3 +1,5 @@
+import glm.installer.pkgzip.PkgZipInstallerPackage
+
 plugins {
     // https://github.com/dorongold/gradle-task-tree
     id "com.dorongold.task-tree" version "1.5"
@@ -10,6 +12,7 @@ ext {
     // Code signing info
     codeSignCert = file("MySPC.pfx")
     codeSignPassword = "passwordx"
+
 }
 
 allprojects {
@@ -20,6 +23,19 @@ allprojects {
 
     pluginManager.withPlugin('code-sign') {
         codeSign.certificateDirectory = rootProject.layout.buildDirectory.dir('Certs')
+    }
+
+    // Make sure that we know where to find unzipsfx.exe
+    project.pluginManager.withPlugin('glm.installer-base') {
+        installers.all {
+            packages.withType(PkgZipInstallerPackage).all {
+                ZSFX = providers.environmentVariable('UNZIPSFX_LOCATION').map { new File(it) }
+                    .orElse(provider {
+                            throw new GradleException(
+                                "Please download unzipsfx from <https://sourceforge.net/projects/infozip/files/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip/download>, unzip it, and set the environment variable 'UNZIPSFX_LOCATION'"
+                            ) } )
+            }
+        }
     }
 }
 
