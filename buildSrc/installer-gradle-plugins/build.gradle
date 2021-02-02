@@ -22,6 +22,15 @@ gradlePlugin {
             id = 'glm.zip-installer-package'
             implementationClass = 'glm.installer.plugins.ZipInstallerPackagePlugin'
         }
+
+        pkgZipInstallerPackageBase {
+            id = 'glm.pkgzip-installer-package-base'
+            implementationClass = 'glm.installer.plugins.PkgZipInstallerPackageBasePlugin'
+        }
+        pkgZipInstaller {
+            id = 'glm.pkgzip-installer-package'
+            implementationClass = 'glm.installer.plugins.PkgZipInstallerPackagePlugin'
+        }
     }
 }
 
