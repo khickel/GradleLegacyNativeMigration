@@ -103,7 +103,7 @@ installers.all { Installer installer ->
         pkg.BDRY = file('../zsfx_base/boundary.txt')
         pkg.ZSFX = file('../zsfx_base/unzipsfx.exe')
         pkg.CSETUP = installer.destinationDirectory.file('wintools/CSetup.exe')
-        pkg.ZNST = layout.buildDirectory.file(installerFileName) // NOTE: don't know where this is coming from
+        pkg.ZNST = installer.destinationDirectory.file("wintools/${installerFileName}")
         pkg.installerBaseName = project.name
         pkg.codeSignCert.fileProvider(provider { rootProject.property('codeSignCert') })
         pkg.codeSignPassword = provider { rootProject.property('codeSignPassword') }
