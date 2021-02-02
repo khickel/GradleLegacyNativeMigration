@@ -81,10 +81,10 @@ application { app->
     getRootProject().allprojects {
         afterEvaluate { prj ->
             if(prj.hasProperty(varName)) {
-                println "ZSFX1:DEBUG: Project ${prj.name} DOES have something to contribute to zsfx_one."
+                //println "ZSFX1:DEBUG: Project ${prj.name} DOES have something to contribute to zsfx_one."
                 addProjOutputCopyFilesTask(prj, thisProj, varName, varName, targetPath, "Build the ZSFX One installer", true)
             } else {
-                println "ZSFX1:DEBUG: Project ${prj.name} does NOT have anything to contribute to zsfx_one."
+                //println "ZSFX1:DEBUG: Project ${prj.name} does NOT have anything to contribute to zsfx_one."
             }
         }
     }

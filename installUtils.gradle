@@ -7,7 +7,7 @@
 
 def getDebugState(Project prj) {
     // May be enchanced to enable debugging for certain project names.
-    def rv = true//false
+    def rv = false
     return rv
 }
 
