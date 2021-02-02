@@ -15,10 +15,6 @@ ext {
 
     productName = 'SelfExtractingZipBasedInstaller_One'
     productDescription = 'GLM sample.'
-    programDescription = "ZSFX_One - Installer"
-    defaultPath = "C:\\\\Program Files\\\\ZSFX_One"
-    serviceName = "GLM zsfx one"
-    runProgram = "dummy\\\\dummy.exe"
 
     ZPKG = file("${buildDir}/pkg.zip").path
 
@@ -30,11 +26,13 @@ ext {
 
 application(Configure.withDefaultApplicationConfiguration())
 application(Configure.addParamH(tasks))
+application(Configure.addAFXOptions())
 application { app ->
     targetMachines = [machines.windows.x86]
     baseName = 'zsfx_one'
 
     cppSources.from fileTree(dir: '../zsfx_base', include: '*.cpp')
+    windowsResources.from(fileTree(dir: '../zsfx_base', include: '*.rc'))
 
     parmsH {
         programDescription = "ZSFX_One - Installer"
@@ -42,32 +40,7 @@ application { app ->
         serviceName = "GLM zsfx one"
         runProgram = "dummy\\\\dummy.exe"
     }
-
-    // Add *.rc from this subproject directory to the link.
-    windowsResources.from(fileTree(dir: '../zsfx_base', include: '*.rc'))
-//
-//    createPkgZipTask = tasks.register("createPkgZip", Exec) {
-//        dependsOn(copyTasks, createVersionTextFile)
-//        inputs.files(
-//            "${targetPath}/wintools/util_1.exe",
-//            "${targetPath}/wintools/LICENSE.txt",
-//            "${targetPath}/wintools/VERSION.txt",
-//        )
-//
-//        outputs.files(ZPKG)
-//        delete ZPKG  // If the file already exists, the 7z command fails.
-//        workingDir targetPath
-//        commandLine "7z", "a", "-r", "${ZPKG}", "wintools/*"
-//    }
 }
-
-//def instTaskMap = createZipInstallerTasks(project,
-//                                          installerFileName, installerFilePath,
-//                                          productName, productDescription,
-//                                          programDescription, defaultPath,
-//                                          serviceName, runProgram,
-//                                          createPkgZip, targetPath, "**/*",
-//                                          false)
 
 installationManifests {
     debug {}
