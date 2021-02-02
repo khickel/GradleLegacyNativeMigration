@@ -104,7 +104,7 @@ installers.all { Installer installer ->
         pkg.CSETUP = installer.destinationDirectory.file('wintools/CSetup.exe')
         pkg.ZNST = layout.buildDirectory.file(installerFileName) // NOTE: don't know where this is coming from
         pkg.installerBaseName = project.name
-        pkg.codeSignCert = provider { rootProject.property('codeSignCert') }
+        pkg.codeSignCert.fileProvider(provider { rootProject.property('codeSignCert') })
         pkg.codeSignPassword = provider { rootProject.property('codeSignPassword') }
     }
 }
