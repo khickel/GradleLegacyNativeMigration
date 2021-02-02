@@ -1,12 +1,11 @@
-package glm.installer.plugins
+package glm.installer.pkgzip.plugins
 
 import glm.installer.Installer
-import glm.installer.PkgZipInstallerPackage
+import glm.installer.pkgzip.PkgZipInstallerPackage
+import glm.installer.plugins.InstallerBasePlugin
 import groovy.transform.CompileStatic
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-
-import static glm.installer.plugins.InstallerBasePlugin.INSTALLERS_EXTENSION_TYPE
 
 @CompileStatic
 class PkgZipInstallerPackagePlugin implements Plugin<Project> {
@@ -15,7 +14,7 @@ class PkgZipInstallerPackagePlugin implements Plugin<Project> {
         project.pluginManager.apply(InstallerBasePlugin)
         project.pluginManager.apply(PkgZipInstallerPackageBasePlugin)
 
-        project.extensions.getByType(INSTALLERS_EXTENSION_TYPE).all { Installer installer ->
+        project.extensions.getByType(InstallerBasePlugin.INSTALLERS_EXTENSION_TYPE).all { Installer installer ->
             installer.packages.create('pkgZip', PkgZipInstallerPackage)
         }
     }

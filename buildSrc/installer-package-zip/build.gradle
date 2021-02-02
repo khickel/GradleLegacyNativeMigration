@@ -1,0 +1,25 @@
+plugins {
+    id 'dev.gradleplugins.groovy-gradle-plugin'
+    id 'dev.gradleplugins.gradle-plugin-functional-test'
+}
+
+gradlePlugin {
+    plugins {
+        zipInstallerPackageBase {
+            id = 'glm.zip-installer-package-base'
+            implementationClass = 'glm.installer.zip.plugins.ZipInstallerPackageBasePlugin'
+        }
+        zipInstallerPackage {
+            id = 'glm.zip-installer-package'
+            implementationClass = 'glm.installer.zip.plugins.ZipInstallerPackagePlugin'
+        }
+    }
+}
+
+dependencies {
+    implementation project(':installer-gradle-plugins')
+
+    testImplementation testFixtures(project(':installer-gradle-plugins'))
+
+    functionalTestImplementation 'dev.gradleplugins:gradle-runner-kit:0.0.116'
+}

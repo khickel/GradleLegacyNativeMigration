@@ -1,8 +1,8 @@
-package glm.installer.plugins
+package glm.installer.pkgzip
 
 import glm.installer.InstallerPackage
-import glm.installer.PkgZipInstallerPackage
-import glm.installer.tasks.PkgZip
+import glm.installer.fixtures.AbstractInstallerPackageBasePluginTest
+import glm.installer.pkgzip.tasks.PkgZip
 import org.gradle.api.Task
 
 class PkgZipInstallerPackageBasePluginTest extends AbstractInstallerPackageBasePluginTest {

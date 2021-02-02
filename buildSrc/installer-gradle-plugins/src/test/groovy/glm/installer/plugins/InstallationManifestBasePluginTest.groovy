@@ -8,7 +8,7 @@ import org.gradle.api.attributes.Usage
 import spock.lang.Specification
 import spock.lang.Subject
 
-import static glm.installer.TestUtils.rootProject
+import static glm.installer.fixtures.TestUtils.rootProject
 
 @Subject(InstallationManifestBasePlugin)
 class InstallationManifestBasePluginTest extends Specification {

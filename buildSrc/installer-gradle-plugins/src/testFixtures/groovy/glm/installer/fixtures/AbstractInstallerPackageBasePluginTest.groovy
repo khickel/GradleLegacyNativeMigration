@@ -1,4 +1,4 @@
-package glm.installer.plugins
+package glm.installer.fixtures
 
 import glm.installer.Installer
 import glm.installer.InstallerPackage
@@ -7,7 +7,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import spock.lang.Specification
 
-import static glm.installer.TestUtils.rootProject
+import static glm.installer.fixtures.TestUtils.rootProject
 
 abstract class AbstractInstallerPackageBasePluginTest extends Specification {
     private final Project project = rootProject()

@@ -1,12 +1,12 @@
 package glm.installer
 
-import glm.installer.InstallationManifestBaseDirectory
+
 import spock.lang.Specification
 import spock.lang.TempDir
 
 import java.nio.file.Path
 
-import static glm.installer.TestUtils.providerFactory
+import static glm.installer.fixtures.TestUtils.providerFactory
 
 class InstallationManifestBaseDirectoryTest extends Specification {
     @TempDir Path testDirectory

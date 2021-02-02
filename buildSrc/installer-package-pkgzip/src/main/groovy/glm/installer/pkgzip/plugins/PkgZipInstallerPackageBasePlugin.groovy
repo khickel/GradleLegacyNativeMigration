@@ -1,8 +1,9 @@
-package glm.installer.plugins
+package glm.installer.pkgzip.plugins
 
 import glm.installer.Installer
-import glm.installer.PkgZipInstallerPackage
-import glm.installer.tasks.PkgZip
+import glm.installer.pkgzip.tasks.PkgZip
+import glm.installer.pkgzip.PkgZipInstallerPackage
+import glm.installer.plugins.AbstractInstallerPackageBasePlugin
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.file.RegularFile

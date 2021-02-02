@@ -3,4 +3,6 @@ plugins {
 }
 
 include 'installer-gradle-plugins'
+include 'installer-package-pkgzip'
+include 'installer-package-zip'
 include 'lifecycle-gradle-plugins'

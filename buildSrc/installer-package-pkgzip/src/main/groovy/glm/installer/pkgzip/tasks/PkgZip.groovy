@@ -1,4 +1,4 @@
-package glm.installer.tasks
+package glm.installer.pkgzip.tasks
 
 import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask

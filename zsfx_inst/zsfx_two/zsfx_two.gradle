@@ -1,5 +1,5 @@
 import glm.installer.Installer
-import glm.installer.PkgZipInstallerPackage
+import glm.installer.pkgzip.PkgZipInstallerPackage
 
 import java.text.SimpleDateFormat
 import org.apache.tools.ant.filters.ReplaceTokens

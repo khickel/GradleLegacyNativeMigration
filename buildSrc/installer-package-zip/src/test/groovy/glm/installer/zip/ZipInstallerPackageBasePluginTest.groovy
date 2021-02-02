@@ -1,7 +1,7 @@
-package glm.installer.plugins
+package glm.installer.zip
 
 import glm.installer.InstallerPackage
-import glm.installer.ZipInstallerPackage
+import glm.installer.fixtures.AbstractInstallerPackageBasePluginTest
 import org.gradle.api.Task
 import org.gradle.api.tasks.bundling.Zip
 

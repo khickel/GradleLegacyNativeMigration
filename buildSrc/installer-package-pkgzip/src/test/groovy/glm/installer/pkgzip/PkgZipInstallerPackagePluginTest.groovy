@@ -1,7 +1,7 @@
-package glm.installer.plugins
+package glm.installer.pkgzip
 
 import glm.installer.InstallerPackage
-import glm.installer.PkgZipInstallerPackage
+import glm.installer.fixtures.AbstractInstallerPackagePluginTest
 
 class PkgZipInstallerPackagePluginTest extends AbstractInstallerPackagePluginTest {
     @Override

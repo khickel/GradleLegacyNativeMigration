@@ -1,7 +1,7 @@
-package glm.installer.plugins
+package glm.installer.zip
 
 import glm.installer.InstallerPackage
-import glm.installer.ZipInstallerPackage
+import glm.installer.fixtures.AbstractInstallerPackagePluginTest
 
 class ZipInstallerPackagePluginTest extends AbstractInstallerPackagePluginTest {
 

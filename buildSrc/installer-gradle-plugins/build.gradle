@@ -1,6 +1,7 @@
 plugins {
     id 'dev.gradleplugins.groovy-gradle-plugin'
     id 'dev.gradleplugins.gradle-plugin-functional-test'
+    id 'java-test-fixtures'
 }
 
 gradlePlugin {
@@ -13,43 +14,22 @@ gradlePlugin {
             id = 'glm.installer-base'
             implementationClass = 'glm.installer.plugins.InstallerBasePlugin'
         }
-
-        zipInstallerPackageBase {
-            id = 'glm.zip-installer-package-base'
-            implementationClass = 'glm.installer.plugins.ZipInstallerPackageBasePlugin'
-        }
-        zipInstallerPackage {
-            id = 'glm.zip-installer-package'
-            implementationClass = 'glm.installer.plugins.ZipInstallerPackagePlugin'
-        }
-
-        pkgZipInstallerPackageBase {
-            id = 'glm.pkgzip-installer-package-base'
-            implementationClass = 'glm.installer.plugins.PkgZipInstallerPackageBasePlugin'
-        }
-        pkgZipInstaller {
-            id = 'glm.pkgzip-installer-package'
-            implementationClass = 'glm.installer.plugins.PkgZipInstallerPackagePlugin'
-        }
     }
-}
-
-repositories {
-    jcenter()
-
-    // For Spock snapshots, because of the TempDir bug
-    maven { url = 'https://oss.sonatype.org/content/repositories/snapshots/' }
 }
 
 dependencies {
     implementation 'com.google.guava:guava:28.2-jre'
 
-    testImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5-SNAPSHOT')
-    testImplementation 'org.spockframework:spock-core'
-
-    functionalTestImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5-SNAPSHOT')
-    functionalTestImplementation 'org.spockframework:spock-core'
-    functionalTestImplementation 'dev.gradleplugins:gradle-runner-kit:0.0.116'
+    testFixturesImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5-SNAPSHOT')
+    testFixturesImplementation 'org.spockframework:spock-core'
+    testFixturesCompileOnly gradleApi()
 }
 
-tasks.withType(Test).configureEach { useJUnitPlatform() }
+functionalTest {
+    dependencies {
+        pluginUnderTestMetadata project(':installer-package-pkgzip')
+        pluginUnderTestMetadata project(':installer-package-zip')
+
+        implementation 'dev.gradleplugins:gradle-runner-kit:0.0.116'
+    }
+}

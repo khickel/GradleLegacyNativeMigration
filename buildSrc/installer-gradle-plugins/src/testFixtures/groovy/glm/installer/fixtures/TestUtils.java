@@ -1,4 +1,4 @@
-package glm.installer;
+package glm.installer.fixtures;
 
 import org.gradle.api.Project;
 import org.gradle.api.provider.ProviderFactory;
