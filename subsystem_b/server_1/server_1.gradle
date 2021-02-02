@@ -14,7 +14,7 @@ application { app->
 
     // TODO(nokeedev): Support base name on the extension
     // Set the executable filename
-//    baseName = 'server_1'
+    baseName = 'server_1'
 
     // Add *.cpp to the project
     cppSources.from(fileTree(dir: projectDir, include: '*.cpp'))

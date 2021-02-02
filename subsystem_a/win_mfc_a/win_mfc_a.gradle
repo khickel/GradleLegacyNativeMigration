@@ -8,11 +8,11 @@ plugins {
 
 windowsResources.from(fileTree(dir: projectDir, includes: ['**/*.rc']))
 
-application(Configure.withDefaultApplicationConfiguration())
+application(Configure.withDefaultApplicationConfiguration({ it.consoleDef = ConsoleDef.SUPPRESS }))
 application { app ->
     targetMachines = [machines.windows.x86]
     // Set the executable filename
-//    baseName = 'win_mfc_a'
+    baseName = 'win_mfc_a'
 
     cppSources.from(fileTree(dir: projectDir, include: '*.cpp'))
     privateHeaders.from(projectDir)

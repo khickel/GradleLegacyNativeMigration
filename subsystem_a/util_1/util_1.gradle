@@ -18,9 +18,8 @@ import dev.nokee.language.cpp.CppHeaderSet
 application(Configure.withDefaultApplicationConfiguration())
 application { app->
 
-    // TODO(nokeedev): Support base name on the extension
-//    // Set the executable filename
-//    baseName = 'util_1'
+    // Set the executable filename
+    baseName = 'util_1'
     
     // Add *.cpp/*.c to the project
     sources {

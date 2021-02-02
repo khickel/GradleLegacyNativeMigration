@@ -32,7 +32,7 @@ application(Configure.withDefaultApplicationConfiguration())
 application(Configure.addParamH(tasks))
 application { app ->
     targetMachines = [machines.windows.x86]
-//    baseName = 'zsfx_two'
+    baseName = 'zsfx_two'
 
     cppSources.from fileTree(dir: '../zsfx_base', include: '*.cpp')
 
