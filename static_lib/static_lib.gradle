@@ -1,6 +1,5 @@
 import dev.nokee.language.cpp.CppHeaderSet
 import dev.nokee.language.c.CHeaderSet
-//import static RepositoryUtils.systemOpenSsl
 
 plugins {
     id 'dev.nokee.native-library'
@@ -8,12 +7,7 @@ plugins {
     id 'dev.nokee.c-language'
 }
 
-// repositories {
-//     maven(systemOpenSsl(project))
-// }
-
 library(Configure.withDefaultLibraryConfiguration())
-//library(withOpenSSLLibraryConfiguration())
 library { lib->
     targetLinkages = [linkages.static]
 
@@ -24,10 +18,10 @@ library { lib->
         configureEach(CHeaderSet) { from(projectDir) }
     }
 
-    // dependencies {
-    //     implementation 'system.OpenSSL:libcrypto:1.1.1h'
-    //     implementation 'system.OpenSSL:libssl:1.1.1h'
-    // }
+     dependencies {
+         implementation 'system.OpenSSL:libcrypto:1.1.1h'
+         implementation 'system.OpenSSL:libssl:1.1.1h'
+     }
 
     // TODO-KFH temp change to try to figure out what is bringing in DriverSpec.h
     // TODO(nokeedev): Figuring out where a header comes from should be made easy with Nokee by exposing the data it already acquire during compilation

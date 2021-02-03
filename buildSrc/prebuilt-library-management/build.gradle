@@ -1,0 +1,26 @@
+plugins {
+    id 'dev.gradleplugins.groovy-gradle-plugin'
+    id 'dev.gradleplugins.gradle-plugin-functional-test'
+}
+
+gradlePlugin {
+    plugins {
+        prebuiltLibraryManagementBase {
+            id = 'glm.prebuilt-library-management-base'
+            implementationClass = 'glm.prebuilt.plugins.PrebuiltLibraryManagementBasePlugin'
+        }
+
+        prebuiltRepository {
+            id = 'glm.prebuilt-repositories'
+            implementationClass = 'glm.prebuilt.plugins.MavenPrebuiltLibraryRepositoryPlugin'
+        }
+    }
+}
+
+repositories {
+    mavenLocal()
+}
+
+dependencies {
+    implementation 'dev.gradleplugins:grava-publish:1.0'
+}

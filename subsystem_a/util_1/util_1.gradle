@@ -7,10 +7,6 @@ plugins {
     id 'glm.installation-manifest-base'
 }
 
-repositories {
-    maven(RepositoryUtils.systemOpenSsl(project))
-}
-
 import dev.nokee.language.c.CHeaderSet
 import dev.nokee.language.cpp.CppHeaderSet
 
