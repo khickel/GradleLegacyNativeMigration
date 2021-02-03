@@ -5,8 +5,8 @@ plugins {
 }
 
 installers {
-    debug {}
-    release {}
+    create('debug')
+    create('release')
 }
 
 installers.all {

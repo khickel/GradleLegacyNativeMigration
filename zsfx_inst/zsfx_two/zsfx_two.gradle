@@ -45,8 +45,8 @@ application { app ->
 }
 
 installationManifests {
-    debug {}
-    release {}
+    create('debug')
+    create('release')
 }
 installationManifests.all {
     def buildType = name
@@ -63,8 +63,8 @@ installationManifests.all {
 }
 
 installers {
-    debug {}
-    release {}
+    create('debug')
+    create('release')
 }
 installers.all { Installer installer ->
     manifest(project(':'), 'base') {
