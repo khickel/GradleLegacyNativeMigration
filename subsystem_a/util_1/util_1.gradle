@@ -15,6 +15,10 @@ repositories {
 import dev.nokee.language.c.CHeaderSet
 import dev.nokee.language.cpp.CppHeaderSet
 
+ext {
+    windowsSubsystem = 'console'
+}
+
 // Set the project standard C++ compiler/linker options
 application(Configure.withDefaultApplicationConfiguration())
 application { app->
