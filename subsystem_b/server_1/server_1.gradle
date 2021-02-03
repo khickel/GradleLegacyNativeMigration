@@ -5,6 +5,10 @@ plugins {
     id 'glm.installation-manifest-base'
 }
 
+repositories {
+    maven(RepositoryUtils.systemOpenSsl(project))
+}
+
 application(Configure.withDefaultApplicationConfiguration())
 application { app->
 
