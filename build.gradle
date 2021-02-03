@@ -57,6 +57,18 @@ installationManifests {
 }
 
 prebuiltLibraryManagement {
+
+    def openSSLRoot = providers.environmentVariable('GLM_OPENSSL_ROOT').forUseAtConfigurationTime().map { new File(it) }
+        .orElse(provider {
+                throw new GradleException(
+                    "Please set the environment variable 'GLM_OPENSSL_ROOT' to the top of an OpenSSL installation."
+                ) } )
+        .get()
+
+    def openSSLLibFile = new File(openSSLRoot, 'lib\\libcrypto.lib')
+    if(!openSSLLibFile.exists()) {
+        throw new GradleException( "The environment variable GLM_OPENSSL_ROOT does not seem to specify a valid location, ${openSSLLibFile} does not exist." )
+    }
     libraries {
         'libcrypto' {
             groupId = 'system.OpenSSL'
@@ -64,10 +76,10 @@ prebuiltLibraryManagement {
             version = '1.1.1h'
             variants {
                 x86Shared(SharedLibraryVariant) {
-                    includeRoot = new File('C:\\Program Files (x86)\\OpenSSL-Win32\\include')
-                    importLibraryFile = new File('C:\\Program Files (x86)\\OpenSSL-Win32\\lib\\libcrypto.lib')
-                    runtimeLibraryFile = new File('C:\\Program Files (x86)\\OpenSSL-Win32\\libcrypto-1_1.dll')
-                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                        includeRoot = new File(openSSLRoot, 'include')
+                        importLibraryFile = new File(openSSLRoot, 'lib/libcrypto.lib')
+                        runtimeLibraryFile = new File(openSSLRoot, 'libcrypto-1_1.dll')
+                        attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
                 }
             }
         }
@@ -77,10 +89,10 @@ prebuiltLibraryManagement {
             version = '1.1.1h'
             variants {
                 x86Shared(SharedLibraryVariant) {
-                    includeRoot = new File('C:\\Program Files (x86)\\OpenSSL-Win32\\include')
-                    importLibraryFile = new File('C:\\Program Files (x86)\\OpenSSL-Win32\\lib\\libssl.lib')
-                    runtimeLibraryFile = new File('C:\\Program Files (x86)\\OpenSSL-Win32\\libssl-1_1.dll')
-                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                        includeRoot = new File(openSSLRoot, 'include')
+                        importLibraryFile = new File(openSSLRoot, 'lib/libssl.lib')
+                        runtimeLibraryFile = new File(openSSLRoot, 'libssl-1_1.dll')
+                        attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
                 }
             }
         }
