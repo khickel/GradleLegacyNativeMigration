@@ -393,7 +393,7 @@ final class Configure {
                         task.targetPlatform = binary.linkTask.flatMap { it.targetPlatform }
                         task.compilerArgs.addAll(toolChain.map(whenVisualCpp('/v')))
                         task.outputDir = layout.buildDirectory.dir("windows-resources/${variant.identifier.name}").get().asFile
-                        task.includes.from(binary.compileTasks.filter { it instanceof CppCompile }.map { [ it.systemIncludes.files, it.includes.files].flatten() })
+                        task.includes.from(binary.compileTasks.filter { (it instanceof CppCompile || it instanceof CCompile) }.map { [ it.systemIncludes.files, it.includes.files].flatten() })
                     }
 
                     binary.linkTask.configure { AbstractLinkTask task ->
