@@ -14,7 +14,9 @@ class PkgZipInstallerPackagePlugin implements Plugin<Project> {
         project.pluginManager.apply(InstallerBasePlugin)
         project.pluginManager.apply(PkgZipInstallerPackageBasePlugin)
 
+        // For each installer...
         project.extensions.getByType(InstallerBasePlugin.INSTALLERS_EXTENSION_TYPE).all { Installer installer ->
+            // Create a PkgZip installer package named 'pkgZip'
             installer.packages.create('pkgZip', PkgZipInstallerPackage)
         }
     }

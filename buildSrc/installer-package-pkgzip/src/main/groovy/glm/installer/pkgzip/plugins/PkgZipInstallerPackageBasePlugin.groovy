@@ -9,6 +9,10 @@ import org.gradle.api.Action
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
+/**
+ * The PkgZip installer package creates a self-extracting zip package.
+ * It's more evolved that the basic Zip installer package, but the structure is the same.
+ */
 @CompileStatic
 abstract class PkgZipInstallerPackageBasePlugin extends AbstractInstallerPackageBasePlugin<PkgZipInstallerPackage> {
     @Override
@@ -18,10 +22,14 @@ abstract class PkgZipInstallerPackageBasePlugin extends AbstractInstallerPackage
 
     @Override
     protected Provider<RegularFile> createPackageTask(Installer installer, PkgZipInstallerPackage pkg) {
+        // Defaults
         pkg.installerExtension.convention('exe')
         pkg.silentInstaller.convention(false)
         pkg.zipInputSpec.convention('.')
+
+        // Create task
         def createTask = tasks.register(taskName(installer, pkg), PkgZip, { PkgZip task ->
+            // Wiring between package model and task
             task.BDRY.value(pkg.BDRY).disallowChanges()
             task.ZSFX.value(pkg.ZSFX).disallowChanges()
             task.ZNST.value(pkg.ZNST).disallowChanges()

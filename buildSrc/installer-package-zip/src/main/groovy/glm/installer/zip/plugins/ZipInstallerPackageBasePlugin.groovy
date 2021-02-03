@@ -9,6 +9,9 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.bundling.Zip
 
+/**
+ * The zip installer package simply use the Zip task to create a zip archive of the installer staging directory.
+ */
 @CompileStatic
 abstract class ZipInstallerPackageBasePlugin extends AbstractInstallerPackageBasePlugin<ZipInstallerPackage> {
     @Override
@@ -18,8 +21,12 @@ abstract class ZipInstallerPackageBasePlugin extends AbstractInstallerPackageBas
 
     @Override
     protected Provider<RegularFile> createPackageTask(Installer installer, ZipInstallerPackage pkg) {
+        // Defaults
         pkg.installerExtension.convention('zip')
+
+        // Create task
         def createTask = tasks.register(taskName(installer, pkg), Zip, { Zip task ->
+            // Wiring between package model and task
             task.from(installer.destinationDirectory)
             task.archiveBaseName.value(pkg.installerBaseName).disallowChanges()
             task.archiveExtension.value(pkg.installerExtension).disallowChanges()

@@ -8,6 +8,9 @@ import org.gradle.util.ConfigureUtil
 
 import javax.inject.Inject
 
+/**
+ * Represent the content spec of a installer for a particular manifest.
+ */
 @CompileStatic
 abstract class InstallerSpec {
     private final CopySpec spec
@@ -34,6 +37,7 @@ abstract class InstallerSpec {
         return this
     }
 
+    // Custom CopySpec implementation with a specific base directory, e.g. manifest base directory
     protected static class Spec implements CopySpec {
         @Delegate private final CopySpec delegate
         private final InstallationManifestBaseDirectory baseDirectory

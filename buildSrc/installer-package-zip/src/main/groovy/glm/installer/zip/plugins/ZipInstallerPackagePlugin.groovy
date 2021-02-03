@@ -14,7 +14,9 @@ class ZipInstallerPackagePlugin implements Plugin<Project> {
         project.pluginManager.apply(InstallerBasePlugin)
         project.pluginManager.apply(ZipInstallerPackageBasePlugin)
 
+        // For each installer...
         project.extensions.getByType(InstallerBasePlugin.INSTALLERS_EXTENSION_TYPE).all { Installer installer ->
+            // Create a Zip installer package named 'zip'
             installer.packages.create('zip', ZipInstallerPackage)
         }
     }

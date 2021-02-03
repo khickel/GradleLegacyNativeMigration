@@ -12,6 +12,12 @@ import org.gradle.api.model.ObjectFactory
 
 import javax.inject.Inject
 
+/**
+ * Represent an installer to assemble.
+ * The model serves to configure the file selection from the manifest into a staging directory before packaging the files into an installer package, i.e. Zip, self-extracting Zip, etc.
+ *
+ * See working with files chapter in Gradle documentation: https://docs.gradle.org/current/userguide/working_with_files.html
+ */
 @CompileStatic
 abstract class Installer implements Named {
     private final String name
@@ -30,18 +36,51 @@ abstract class Installer implements Named {
         this.packages = objects.polymorphicDomainObjectContainer(InstallerPackage)
     }
 
+    /**
+     * The name of the installer, e.g.:
+     * <pre>
+     * installers {
+     *     debug {
+     *         assert name == 'debug'
+     *     }
+     * }
+     * </pre>
+     *
+     * @return the installer name, never null
+     */
     String getName() {
         return name
     }
 
+    // Access the content spec for the manifest.
     CopySpec getContentSpec() {
         return contentSpec
     }
 
+    // Access the declared empty directories
     List<String> getEmptyDirectories() {
         return Collections.unmodifiableList(emptyDirectories);
     }
 
+    /**
+     * Select a manifest from the specified dependency notation with an identity matching the installer name.
+     *
+     * <pre>
+     * installers {
+     *     debug {
+     *         manifest(project(':foo')) {
+     *             from('text.txt')
+     *             from('base.exe') { into('bin') }
+     *         }
+     *     }
+     * }
+     * </pre>
+     *
+     * @param notation  a dependency notation, i.e. project(':foo') or project
+     * @param action  an configure action to select the files required by the installer
+     * @return this installer
+     * @see #manifest(Object, String, Action) when the consuming manifest identity doesn't match the installer name
+     */
     Installer manifest(Object notation, Action<? super InstallerSpec> action) {
         def baseDirectory = baseDirectoryFactory.create(notation, name)
 
@@ -50,6 +89,28 @@ abstract class Installer implements Named {
         return this
     }
 
+    /**
+     * Select a manifest from the specified dependency notation and identity.
+     *
+     * <pre>
+     * installers {
+     *     debug {
+     *         //      Note the manifest vvvvvv identity!
+     *         manifest(project(':foo'), 'base') {
+     *             //                    ^^^^^^
+     *             from('text.txt')
+     *             from('base.exe') { into('bin') }
+     *         }
+     *     }
+     * }
+     * </pre>
+     *
+     * @param notation  a dependency notation, i.e. project(':foo') or project
+     * @param identity  the manifest identity, e.g. name, to consume
+     * @param action  an configure action to select the files required by the installer
+     * @return this installer
+     * @return
+     */
     Installer manifest(Object notation, String identity, Action<? super InstallerSpec> action) {
         def baseDirectory = baseDirectoryFactory.create(notation, identity)
 
@@ -58,6 +119,12 @@ abstract class Installer implements Named {
         return this
     }
 
+    /**
+     * Declare an empty directory to create and assert that is left empty.
+     *
+     * @param destinationPath  the relative path of the empty directory
+     * @return this installer
+     */
     Installer emptyDirectory(String destinationPath) {
         // Relative and absolute path escape are caught by the stage task
         Preconditions.checkNotNull(destinationPath, "'destinationPath' must not be null")
@@ -66,8 +133,34 @@ abstract class Installer implements Named {
         return this
     }
 
+    /**
+     * The staging directory for the installer.
+     * The property contains an implicit dependency to the staging task, e.g.:
+     * <pre>
+     * installers {
+     *     debug {
+     *         // ...
+     *     }
+     * }
+     *
+     * tasks.register('copyInstaller', Sync) {
+     *     from(installers.debug.destinationDirectory)
+     *     destinationDir = 'build/installer'
+     * }
+     * </pre>
+     * The previous code will copy the 'debug' installer to 'build/installer'.
+     *
+     * @return a property representing the staging directory of the installer
+     */
     abstract DirectoryProperty getDestinationDirectory()
 
+    /**
+     * Returns a container with all installer packages.
+     * Plugins can register new package type to the container.
+     * Each installer can have any number of package created from the staged installer directory.
+     *
+     * @return a container of all the installer packages
+     */
     ExtensiblePolymorphicDomainObjectContainer<InstallerPackage> getPackages() {
         return packages
     }

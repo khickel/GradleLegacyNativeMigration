@@ -3,12 +3,10 @@ package glm.installer
 import org.gradle.api.Transformer
 import org.gradle.api.provider.Provider
 
-import java.nio.file.FileVisitResult
-import java.nio.file.FileVisitor
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.attribute.BasicFileAttributes
-
+/**
+ * A helper representing an installation manifest base directory when building an installer.
+ * @see InstallationManifestBaseDirectoryFactory use to create an instance
+ */
 final class InstallationManifestBaseDirectory {
     private final Provider<File> baseDirectory
 
@@ -16,6 +14,14 @@ final class InstallationManifestBaseDirectory {
         this.baseDirectory = baseDirectory
     }
 
+    /**
+     * Returns a file provider of the file/directory represented by the specified path.
+     * The path is evaluated relative to the manifest base directory.
+     * When the provider is realized, it will assert the file/directory exists.
+     *
+     * @param path  a file/directory path to select inside the manifest
+     * @return a file provider asserting existence when realized
+     */
     Provider<File> file(String path) {
         return baseDirectory.map(fileAt(path))
     }

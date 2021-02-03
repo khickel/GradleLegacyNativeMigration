@@ -33,24 +33,44 @@ final class InstallationManifestBaseDirectoryFactory {
         return new InstallationManifestBaseDirectoryFactory(project.getPath(), project.configurations, project.dependencies, project.objects)
     }
 
+    /**
+     * Creates a manifest base directory for the specified dependency notation and identity.
+     * Both are used to select the right installation manifest base directory.
+     *
+     * @param notation  a dependency notation
+     * @param identity  a manifest identity, e.g. name, see {@link InstallationManifest#getName()}
+     * @return a manifest base directory
+     */
     InstallationManifestBaseDirectory create(Object notation, String identity) {
+        // When the notation is the current project, shortcut the dependency engine
         if (isCurrentProject(notation)) {
             def project = (Project) notation
             try {
+                // Find the installationManifests extension
                 def installationManifests = (NamedDomainObjectContainer<InstallationManifest>)project.extensions.getByName("installationManifests")
+
+                // Find the manifest identity
                 def manifest = installationManifests.getByName(identity)
+
+                // Get the manifest staging directory
                 def artifactFileProvider = manifest.destinationDirectory.map { Directory it -> it.asFile }
                 return new InstallationManifestBaseDirectory(artifactFileProvider)
             } catch (Throwable ex) {
                 throw new IllegalArgumentException("Project '${project.path}' does declare any installation manifests, please apply 'glm.installation-manifest-base' and declare your manifests.")
             }
         } else {
+            // Else, resolve the notation through the dependency engine
             def configuration = configurations.detachedConfiguration(dependencies.create(notation))
+
+            // This time, the configuration is resolvable, e.g. incoming
             configuration.canBeConsumed = false
             configuration.canBeResolved = true
+
+            // Configure matching attributes with the outgoing manifest
             configuration.attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, INSTALLATION_MANIFEST_USAGE_NAME))
             configuration.attributes.attribute(MANIFEST_IDENTITY_ATTRIBUTE, identity)
 
+            // Map the incoming files into a single base directory (this is what we expect)
             def artifactFileProvider = configuration.incoming.files.elements.map(expectSingleFile())
 
             return new InstallationManifestBaseDirectory(artifactFileProvider)

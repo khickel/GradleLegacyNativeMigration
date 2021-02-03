@@ -16,15 +16,38 @@ import javax.inject.Inject
 
 import static glm.installer.plugins.InstallerBasePlugin.INSTALLERS_EXTENSION_TYPE
 
+/**
+ * Base implementation for installer package plugin.
+ *
+ * This plugin will register a new installer package to every installer.
+ * The implementation assume one task per package
+ * @param <T>
+ */
 abstract class AbstractInstallerPackageBasePlugin<T extends InstallerPackage> implements Plugin<Project> {
     @Override
     final void apply(Project project) {
-        project.plugins.withType(InstallerBasePlugin) {
+        // Wait until the glm.installer-base plugin is applied
+        project.pluginManager.withPlugin('glm.installer-base') {
+            // Configure each installer...
             project.extensions.getByType(INSTALLERS_EXTENSION_TYPE).all { Installer installer ->
+                // By registering a factory for installer package type:
+                //  installers.debug.packages {
+                //    foo(<packageType>) {
+                //      /* configure the installer package */
+                //    }
+                //  }
                 installer.packages.registerFactory(installerPackageType, newFactory())
+
+                // ... for each installer package provided by this base plugin...
                 installer.packages.withType(installerPackageType).all { InstallerPackage pkg ->
+                    // Configure the installer base name
                     pkg.installerBaseName.convention("${installer.name}Installer".toString())
-                    pkg.installerFile.value(createPackageTask(installer, (T) pkg)).disallowChanges()
+
+                    // Create the package task
+                    def packageTask = createPackageTask(installer, (T) pkg)
+
+                    // Bind the package file as the package installer file
+                    pkg.installerFile.value(packageTask).disallowChanges()
                 }
             }
         }
@@ -42,10 +65,23 @@ abstract class AbstractInstallerPackageBasePlugin<T extends InstallerPackage> im
     @Inject
     protected abstract ProviderFactory getProviders()
 
+    /**
+     * @return the installer package type provided by this plugin
+     */
     protected abstract Class<T> getInstallerPackageType()
 
+    /**
+     * Creates the package task and returns the task output as a file provider.
+     *
+     * @param installer  the installer
+     * @param pkg  the installer package
+     * @return a provider to the installer package file (e.g. the installer file)
+     */
     protected abstract Provider<RegularFile> createPackageTask(Installer installer, T pkg)
 
+    /**
+     * @return a factory for the installer package model type
+     */
     protected NamedDomainObjectFactory<T> newFactory() {
         return new NamedDomainObjectFactory<T>() {
             @Override
@@ -55,6 +91,7 @@ abstract class AbstractInstallerPackageBasePlugin<T extends InstallerPackage> im
         }
     }
 
+    // Utility for composing the installer package task name
     protected String taskName(Installer installer, InstallerPackage pkg) {
         return "create${pkg.name.capitalize()}${installer.name.capitalize()}Installer".toString()
     }
