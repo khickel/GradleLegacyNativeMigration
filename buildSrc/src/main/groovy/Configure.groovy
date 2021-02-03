@@ -93,7 +93,7 @@ final class Configure {
             } else if (variant.buildVariant.hasAxisOf(buildTypeFactory.named('debug'))) {
                 task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/D_DEBUG')))
                 task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/MTd')))
-                task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/DEBUG', '/ZI', '/FS')))
+                task.compilerArgs.addAll(task.toolChain.map(whenVisualCpp('/DEBUG', '/ZI', '/FS', "/Fd${task.temporaryDir}\\")))
             }
 
             def configuration = new NativeConfiguration()
