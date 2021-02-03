@@ -4,6 +4,7 @@ plugins {
     id 'dev.nokee.c-language'
     id 'code-sign'
 
+    id 'glm.windows-subsystem'
     id 'glm.installation-manifest-base'
 }
 
@@ -24,9 +25,6 @@ application { app->
         configureEach(CppHeaderSet) { from(projectDir) }
         configureEach(CHeaderSet) { from(projectDir) }
     }
-
-    // TODO(daniel): reenable subsystem windows or add a project that shows usage for subsystem windows
-//    addVSLinkerOption("/subsystem:windows").call(app)
 
     dependencies {
         implementation project(':static_lib')
