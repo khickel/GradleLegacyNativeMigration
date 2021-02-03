@@ -163,6 +163,25 @@ class InstallerFunctionalTest extends AbstractFunctionalTest {
         that(file('build/installer'), hasDescendants('readme'))
     }
 
+    def "can include and exclude files from a manifest directory"() {
+        buildFile << '''
+            installers.debug {
+                manifest(project(':manifest')) {
+                    from('b') {
+                        include('b1.txt')
+                    }
+                    from('c') {
+                        exclude('c2.txt')
+                    }
+                }
+            }
+        '''
+
+        expect:
+        succeeds('verify')
+        that(file('build/installer'), hasDescendants('b1.txt', 'c1.txt'))
+    }
+
     def "can ensure empty directories are present"() {
         buildFile << '''
             installers.debug {
