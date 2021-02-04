@@ -15,7 +15,7 @@ class PrebuiltLibraryManagementBasePlugin implements Plugin<Project> {
         def extension = project.getExtensions().create("prebuiltLibraryManagement", PrebuiltLibraryManagement)
         extension.libraries.all { NativeLibraryComponent library ->
             ((ExtensiblePolymorphicDomainObjectContainer<NativeVariant>) library.variants).registerFactory(defaultClass(SharedLibraryVariant), { project.objects.newInstance(defaultClass(SharedLibraryVariant), it) })
-            ((ExtensiblePolymorphicDomainObjectContainer<NativeVariant>) library.variants).registerFactory(defaultClass(StaticLibraryVariant), { project.objects.newInstance(defaultClass(SharedLibraryVariant), it) })
+            ((ExtensiblePolymorphicDomainObjectContainer<NativeVariant>) library.variants).registerFactory(defaultClass(StaticLibraryVariant), { project.objects.newInstance(defaultClass(StaticLibraryVariant), it) })
         }
     }
 
