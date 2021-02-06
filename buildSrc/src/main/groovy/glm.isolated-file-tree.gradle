@@ -1,0 +1,4 @@
+def factory = new IsolatedFileTreeFactory(project)
+ext {
+    isolatedFileTree = { args -> factory.create(args) }
+}

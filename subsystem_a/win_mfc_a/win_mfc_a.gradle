@@ -15,7 +15,7 @@ application { app ->
     baseName = 'win_mfc_a'
 
     cppSources.from(fileTree(dir: projectDir, include: '*.cpp'))
-    privateHeaders.from(projectDir)
+    privateHeaders.from(isolatedFileTree(dir: projectDir, include: '*.h'))
 }
 
 installationManifests {

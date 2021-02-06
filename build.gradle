@@ -22,6 +22,7 @@ allprojects {
     apply plugin: 'glm.release-lifecycle'
     apply plugin: 'default-import'
     apply plugin: 'dev.nokee.visual-studio-ide'
+    apply plugin: 'glm.isolated-file-tree'
 
     pluginManager.withPlugin('code-sign') {
         codeSign.certificateDirectory = rootProject.layout.buildDirectory.dir('Certs')
