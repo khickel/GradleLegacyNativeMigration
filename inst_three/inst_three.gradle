@@ -117,6 +117,11 @@ installers {
         emptyDirectory('config/mt2')
     }
 }
+
+// TODO: Thsi project isn't currently producing anything except a staged directory, need to look into that.
+// it should be creating inst_three.zip
+//rootProject.collectDebugInstallers.from(installers.debug.packages*.installerFile)
+
 //
 //
 //// A list of empty directories to be created under targetPath

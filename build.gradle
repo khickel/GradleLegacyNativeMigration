@@ -17,6 +17,15 @@ ext {
 
 }
 
+// These tasks collect all the various installers into a known location.
+def collectDebugInstallers = tasks.register('collectDebugInstallers', Sync).configure {
+    destinationDir = file(rootProject.projectDir.path + '/installers/debug')
+}
+
+def collectReleaseInstallers = tasks.register('collectReleaseInstallers', Sync).configure {
+    destinationDir = file(rootProject.projectDir.path + '/installers/release')
+}
+
 allprojects {
     apply plugin: 'glm.debug-lifecycle'
     apply plugin: 'glm.release-lifecycle'

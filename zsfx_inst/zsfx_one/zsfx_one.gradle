@@ -114,5 +114,8 @@ installers.all { Installer installer ->
     }
 }
 
-tasks.named('debug') { dependsOn(installers.debug.destinationDirectory) }
+rootProject.collectDebugInstallers.from(installers.debug.packages*.installerFile)
+rootProject.collectReleaseInstallers.from(installers.release.packages*.installerFile)
+
+tasks.named('debug') { dependsOn(installers.debug.destinationDirectory)}
 tasks.named('release') { dependsOn(installers.release.destinationDirectory) }

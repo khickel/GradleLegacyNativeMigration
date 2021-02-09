@@ -27,3 +27,9 @@ installers.all { installer ->
     }
     installationManifests.maybeCreate(installer.name).from(installer.packages.zip.installerFile)
 }
+
+rootProject.collectDebugInstallers.from(installers.debug.packages*.installerFile)
+rootProject.collectReleaseInstallers.from(installers.release.packages*.installerFile)
+
+tasks.named('debug') { dependsOn(installers.debug.destinationDirectory)}
+tasks.named('release') { dependsOn(installers.release.destinationDirectory) }
