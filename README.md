@@ -47,3 +47,6 @@ This is related to the recently closed ticket https://github.com/gradle/gradle/i
 * TODO When we add .c files to the solution the way that we are, they don't end up under Source Files for the project in the Solution Explorer, try to fix that.
 
 * TODO Add example for a manual test where stageDebug doesn't recopy the target file if it was manually deleted, unless it had to rebuild the input file. I haven't yet been able to recreate this in this stripped down example.
+
+
+* TODO:KHICKEL seting env vars, include download link for unzipsfx.exe, say how to get openssl.

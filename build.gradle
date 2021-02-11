@@ -14,20 +14,18 @@ ext {
     // Code signing info
     codeSignCert = file("MySPC.pfx")
     codeSignPassword = "passwordx"
-
-    TopProjDir = "${projectDir}/"
-
-    // Names for our task groups
-    debugGroup = "Legacy Native Migration Example Debug"
-    releaseGroup = "Legacy Native Migration Example Release"
-
-    releaseString = "1.1.00"
-    versionTextInputFilename = 'VERSION.txt.in'
-    versionTextInputPath = "${rootDir}/${versionTextInputFilename}"
-
-    // Code signing info
-    codeSignCert = "${rootDir}/MySPC.pfx"
-    codeSignPassword = "passwordx"
+    // TODO:CLEANUP
+    //codeSignCert = "${rootDir}/MySPC.pfx"
+    //codeSignPassword = "passwordx"
+    //
+    // TopProjDir = "${projectDir}/"
+    //
+    // // Names for our task groups
+    // debugGroup = "Legacy Native Migration Example Debug"
+    // releaseGroup = "Legacy Native Migration Example Release"
+    // releaseString = "1.1.00"
+    // versionTextInputFilename = 'VERSION.txt.in'
+    // versionTextInputPath = "${rootDir}/${versionTextInputFilename}"
 }
 
 // These tasks collect all the various installers into a known location.
@@ -54,11 +52,19 @@ allprojects {
     project.pluginManager.withPlugin('glm.installer-base') {
         installers.all {
             packages.withType(PkgZipInstallerPackage).all {
-                ZSFX = providers.environmentVariable('UNZIPSFX_LOCATION').map { new File(it) }
-                    .orElse(provider {
-                            throw new GradleException(
-                                "Please download unzipsfx from <https://sourceforge.net/projects/infozip/files/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip/download>, unzip it, and set the environment variable 'UNZIPSFX_LOCATION'"
-                            ) } )
+                // TODO: This doesn't seem to work properly, I get this error message:
+                // * What went wrong:
+                // Could not determine the dependencies of task ':zsfx_inst:zsfx_one:createPkgZipDebugInstaller'.
+                // > Failed to query the value of task ':zsfx_inst:zsfx_one:createPkgZipDebugInstaller' property 'ZSFX'.
+                //    > Failed to query the value of property 'ZSFX'.
+                //       > Cannot obtain value from provider of environment variable 'UNZIPSFX_LOCATION' at configuration time.
+                //         Use a provider returned by 'forUseAtConfigurationTime()' instead.
+                // ZSFX = providers.environmentVariable('UNZIPSFX_LOCATION').map { new File(it) }
+                //     .orElse(provider {
+                //             throw new GradleException(
+                //                 "Please download unzipsfx from <https://sourceforge.net/projects/infozip/files/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip/download>, unzip it, and set the environment variable 'UNZIPSFX_LOCATION'"
+                //             ) } )
+                ZSFX = new File(System.getenv('UNZIPSFX_LOCATION'))
             }
         }
     }
