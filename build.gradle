@@ -14,6 +14,11 @@ ext {
     // Code signing info
     codeSignCert = file("MySPC.pfx")
     codeSignPassword = "passwordx"
+
+    isWindows = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
+        .currentOperatingSystem.isWindows()
+
+
     // TODO:CLEANUP
     //codeSignCert = "${rootDir}/MySPC.pfx"
     //codeSignPassword = "passwordx"
@@ -26,6 +31,7 @@ ext {
     // releaseString = "1.1.00"
     // versionTextInputFilename = 'VERSION.txt.in'
     // versionTextInputPath = "${rootDir}/${versionTextInputFilename}"
+
 }
 
 // These tasks collect all the various installers into a known location.

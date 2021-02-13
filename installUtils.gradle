@@ -182,7 +182,11 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
 
                 if(debugOn) {println "Debug(${methodName}): Handling map instead of file name for project ${tgtPrj.path}."}
                 if(targetMap.containsKey('codeSign')) {
-                    shouldSign = targetMap['codeSign']
+                    if(isWindows) {
+                        shouldSign = targetMap['codeSign']
+                    } else {
+                        println "codeSign option ignored on Linux for ${tgtPrj.path}."
+                    }
                     if(debugOn) {println "Debug(${methodName}): Debug: shouldSign=${shouldSign}"}
                 } else {
                     if(debugOn) {println "Debug(${methodName}): Debug: shouldSign=false"}
