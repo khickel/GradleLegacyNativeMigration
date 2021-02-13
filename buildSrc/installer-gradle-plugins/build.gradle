@@ -1,0 +1,35 @@
+plugins {
+    id 'dev.gradleplugins.groovy-gradle-plugin'
+    id 'dev.gradleplugins.gradle-plugin-functional-test'
+    id 'java-test-fixtures'
+}
+
+gradlePlugin {
+    plugins {
+        installerProducer {
+            id = 'glm.installation-manifest-base'
+            implementationClass = 'glm.installer.plugins.InstallationManifestBasePlugin'
+        }
+        installerConsumer {
+            id = 'glm.installer-base'
+            implementationClass = 'glm.installer.plugins.InstallerBasePlugin'
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.google.guava:guava:28.2-jre'
+
+    testFixturesImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5-SNAPSHOT')
+    testFixturesImplementation 'org.spockframework:spock-core'
+    testFixturesCompileOnly gradleApi()
+}
+
+functionalTest {
+    dependencies {
+        pluginUnderTestMetadata project(':installer-package-pkgzip')
+        pluginUnderTestMetadata project(':installer-package-zip')
+
+        implementation 'dev.gradleplugins:gradle-runner-kit:0.0.116'
+    }
+}

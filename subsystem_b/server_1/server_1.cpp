@@ -1,4 +1,3 @@
-
 #ifdef WIN32
 #include <windows.h>
 #include <direct.h>
@@ -8,7 +7,6 @@
 
 #include <stdio.h>
 #include <time.h>
-
 
 #include "lib_one.h"
 #include "CamelCase.h"

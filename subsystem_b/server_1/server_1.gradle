@@ -1,27 +1,39 @@
 plugins {
-    id 'cpp-application'
+    id 'dev.nokee.cpp-application'
+    id 'code-sign'
+
+    id 'glm.installation-manifest-base'
 }
 
-// Define a map listing the targetPath,targetFileName for any files that need to be copied to staging area.
-ext.installerFiles = [ (file(project.property('stagingDir'))):'server_1' ]
-
-// Files created by this subproject that need to be part of the legacy_installer build.
-ext.legacyInstaller = ['.':['codeSign':true,'fileBasename':'server_1']]
-
+application(Configure.withDefaultApplicationConfiguration())
 application { app->
 
+    // TODO(nokeedev): Support base name on the extension
     // Set the executable filename
     baseName = 'server_1'
-    
-    // Add *.cpp to the project
-    source.from file('.')
 
-    // Set the project standard C++ compiler/linker options
-    addDefaultCPPApplicationOptions(project, app)
+    // Add *.cpp to the project
+    cppSources.from(fileTree(dir: projectDir, include: '*.cpp'))
 
     dependencies {
         implementation project(':static_lib')
     }
-
 }
 
+installationManifests {
+    create('debug')
+    create('release')
+}
+installationManifests.all {
+    def buildType = name
+    from(application.variants
+            .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
+            .flatMap { it.first().developmentBinary }
+            .flatMap {
+                if (it.buildable) { return it.linkTask }
+                return null // no buildable binaries
+            }
+            .flatMap { it.linkedFile }) {
+        into('bin')
+    }
+}

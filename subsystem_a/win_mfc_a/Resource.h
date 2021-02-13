@@ -8,6 +8,11 @@
 #define IDS_ABOUTBOX					101
 #define IDD_WIN_MFC_A_DIALOG				102
 
+// Force an error if used with _CONSOLE defined.
+#ifdef _CONSOLE
+    #error This project should be built without defining _CONSOLE
+#endif
+
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED

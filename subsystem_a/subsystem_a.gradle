@@ -1,0 +1,9 @@
+plugins {
+    id 'glm.installation-manifest-base'
+}
+
+installationManifests {
+    base {
+        from('config') { into('config') }
+    }
+}

@@ -1,0 +1,47 @@
+plugins {
+    id 'dev.gradleplugins.groovy-gradle-plugin'
+}
+
+dependencies {
+    implementation platform("dev.nokee:nokee-gradle-plugins:${nokeeVersion}")
+    implementation 'commons-io:commons-io:2.6'
+
+    // Expose the dependencies to the main build
+    runtimeOnly project(':installer-gradle-plugins')
+    runtimeOnly project(':installer-package-pkgzip')
+    runtimeOnly project(':installer-package-zip')
+    runtimeOnly project(':lifecycle-gradle-plugins')
+    runtimeOnly project(':prebuilt-library-management')
+}
+
+allprojects {
+    // Configure repositories for all projects
+    repositories {
+        jcenter()
+
+        // For Spock snapshots, because of the TempDir bug
+        maven { url = 'https://oss.sonatype.org/content/repositories/snapshots/' }
+
+        // For Nokee snapshots
+        maven { url = 'https://dl.bintray.com/nokeedev/distributions-snapshots' }
+    }
+
+    // Configure Spock testing
+    pluginManager.withPlugin('java-base') {
+        tasks.withType(Test).configureEach { useJUnitPlatform() }
+    }
+
+    pluginManager.withPlugin('dev.gradleplugins.groovy-gradle-plugin') {
+        dependencies {
+            testImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5-SNAPSHOT')
+            testImplementation 'org.spockframework:spock-core'
+        }
+    }
+
+    pluginManager.withPlugin('dev.gradleplugins.gradle-plugin-functional-test') {
+        dependencies {
+            functionalTestImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5-SNAPSHOT')
+            functionalTestImplementation 'org.spockframework:spock-core'
+        }
+    }
+}

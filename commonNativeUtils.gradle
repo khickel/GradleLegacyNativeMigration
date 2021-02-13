@@ -222,10 +222,6 @@ task showCompilerOutput {
 // we can refactor things to keep the root Gradle file cleaner.
 // See https://stackoverflow.com/questions/18715137/extract-common-methods-from-gradle-build-script
 ext {
-    addDefaultCPPOptions = this.&addDefaultCPPOptions
-    addVSCompilerOption = this.&addVSCompilerOption
-    AddVSExeLinkOption = this.&AddVSExeLinkOption
-    AddVSDllLinkOption = this.&AddVSDllLinkOption
     addDefaultCPPLibraryOptions = this.&addDefaultCPPLibraryOptions
     addDefaultCPPApplicationOptions = this.&addDefaultCPPApplicationOptions
     addWindowsResourceFile = this.&addWindowsResourceFile
