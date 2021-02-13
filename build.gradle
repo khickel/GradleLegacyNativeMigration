@@ -64,7 +64,19 @@ allprojects {
                 //             throw new GradleException(
                 //                 "Please download unzipsfx from <https://sourceforge.net/projects/infozip/files/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip/download>, unzip it, and set the environment variable 'UNZIPSFX_LOCATION'"
                 //             ) } )
-                ZSFX = new File(System.getenv('UNZIPSFX_LOCATION'))
+
+                // I changed the line to the one below, but then it always throws the exception saying that the env var needs to be set.
+                // ZSFX = providers.environmentVariable('UNZIPSFX_LOCATION').forUseAtConfigurationTime().map { new File(it) }
+                def tmpFile
+                if(System.getenv('UNZIPSFX_LOCATION')) { 
+                    tmpFile = new File(System.getenv('UNZIPSFX_LOCATION'))
+                }
+                if(tmpFile == null) {
+                    throw new GradleException(
+                        "Please download unzipsfx from <https://sourceforge.net/projects/infozip/files/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip/download>, unzip it, and set the environment variable 'UNZIPSFX_LOCATION'"
+                    )
+                }
+                ZSFX = tmpFile
             }
         }
     }
