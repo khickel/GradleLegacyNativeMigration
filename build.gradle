@@ -1,112 +1,141 @@
+import glm.installer.pkgzip.PkgZipInstallerPackage
+
 plugins {
     // https://github.com/dorongold/gradle-task-tree
     id "com.dorongold.task-tree" version "1.5"
+    id 'usage'
+
+    id 'glm.installation-manifest-base'
+    id 'glm.prebuilt-library-management-base'
+    id 'glm.prebuilt-repositories'
 }
 
-apply from: "${rootDir}/installUtils.gradle"
-apply from: "${rootDir}/commonNativeUtils.gradle"
-apply from: "${rootDir}/debugging.gradle"
-
-
-ext { 
-    stagingDir = "${projectDir}/staging/"
-
-    TopProjDir = "${projectDir}/"
-
-    // Names for our task groups
-    debugGroup = "Legacy Native Migration Example Debug"
-    releaseGroup = "Legacy Native Migration Example Release"
-
-    releaseString = "1.1.00"
-    versionTextInputFilename = 'VERSION.txt.in'
-    versionTextInputPath = "${rootDir}/${versionTextInputFilename}"
-
+ext {
     // Code signing info
-    codeSignCert = "${rootDir}/MySPC.pfx"
+    codeSignCert = file("MySPC.pfx")
     codeSignPassword = "passwordx"
+    // TODO:CLEANUP
+    //codeSignCert = "${rootDir}/MySPC.pfx"
+    //codeSignPassword = "passwordx"
+    //
+    // TopProjDir = "${projectDir}/"
+    //
+    // // Names for our task groups
+    // debugGroup = "Legacy Native Migration Example Debug"
+    // releaseGroup = "Legacy Native Migration Example Release"
+    // releaseString = "1.1.00"
+    // versionTextInputFilename = 'VERSION.txt.in'
+    // versionTextInputPath = "${rootDir}/${versionTextInputFilename}"
 }
 
-// Default task if none specified on the command line, tell the user how to run things.
-task usage {
-    doLast {
-        println ""
-        println "Usage: "
-        println "You can run gradlew with one of the following tasks as an argument:"
-        println "  debug - do a full debug build."
-        println "  release - do a full release build."
-        println ""
-        println "You can run the same command in any subdirectory to target only that dir and whatever it depends on."
-        println "You can run gradlew tasks to see the list of known tasks."
-        println "You can add \" taskTree --no-repeat\" in any directory to get a tree dump of the task dependencies."
-        println ""
-    }
+// These tasks collect all the various installers into a known location.
+def collectDebugInstallers = tasks.register('collectDebugInstallers', Sync).configure {
+    destinationDir = file(rootProject.projectDir.path + '/installers/debug')
 }
 
-// Common configuration for all projects including the top level.
+def collectReleaseInstallers = tasks.register('collectReleaseInstallers', Sync).configure {
+    destinationDir = file(rootProject.projectDir.path + '/installers/release')
+}
+
 allprojects {
-    apply plugin: 'visual-studio'
+    apply plugin: 'glm.debug-lifecycle'
+    apply plugin: 'glm.release-lifecycle'
+    apply plugin: 'default-import'
+    apply plugin: 'dev.nokee.visual-studio-ide'
+    apply plugin: 'glm.isolated-file-tree'
 
-    defaultTasks 'usage'
-
-    // Create tasks to "do everything" for debug and release builds.
-    // sub projects and methods will set up dependencies.
-    it.tasks.create('debug') {
-        group(debugGroup)
-        description('Run all tasks to do a debug build')
-    }
-    it.tasks.create('release') {
-        group(releaseGroup)
-        description('Run all tasks to do a release build')
+    pluginManager.withPlugin('code-sign') {
+        codeSign.certificateDirectory = rootProject.layout.buildDirectory.dir('Certs')
     }
 
-    ////////////////////////////////////////////////////////////////
-    // Add the .c files to the Visual Studio project (.c files aren't handled by the native Gradle plugins )
-    // Based on https://docs.gradle.org/current/dsl/org.gradle.ide.visualstudio.VisualStudioProject.html
+    // Make sure that we know where to find unzipsfx.exe
+    project.pluginManager.withPlugin('glm.installer-base') {
+        installers.all {
+            packages.withType(PkgZipInstallerPackage).all {
+                // TODO: This doesn't seem to work properly, I get this error message:
+                // * What went wrong:
+                // Could not determine the dependencies of task ':zsfx_inst:zsfx_one:createPkgZipDebugInstaller'.
+                // > Failed to query the value of task ':zsfx_inst:zsfx_one:createPkgZipDebugInstaller' property 'ZSFX'.
+                //    > Failed to query the value of property 'ZSFX'.
+                //       > Cannot obtain value from provider of environment variable 'UNZIPSFX_LOCATION' at configuration time.
+                //         Use a provider returned by 'forUseAtConfigurationTime()' instead.
+                // ZSFX = providers.environmentVariable('UNZIPSFX_LOCATION').map { new File(it) }
+                //     .orElse(provider {
+                //             throw new GradleException(
+                //                 "Please download unzipsfx from <https://sourceforge.net/projects/infozip/files/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip/download>, unzip it, and set the environment variable 'UNZIPSFX_LOCATION'"
+                //             ) } )
 
-    // Daniel from Nokeedev says I might be better off like this (but what I have here seems to work, so we'll go with that for now):
-    // The model block can be a bit troublesome as there is a transformation applied to it.
-    // You can also create a RuleSource plugin which you can then apply to all projects.
-    // Here is an example of a RuleSource plugin:
-    //  https://docs.gradle.org/current/userguide/software_model.html#example_applying_a_rule_source_plugin
-
-    model {
-        visualStudio {
-            projects.all { prj->
-                // Trying this, based on the page at https://mrhaki.blogspot.com/2012/09/gradle-goodness-customize-idea-project.html. 
-                prj.projectFile.withXml { xmlProvider ->
-                    def xmlNodes = xmlProvider.asNode()
-
-                    // This finds all descendents of the root that are of type ItemGroup
-                    xmlNodes.ItemGroup.findAll { ig ->
-                        ig.@Label == "Sources"
-                    }.each { ig ->
-                        // Add all the sources, preferably from the project.
-                        tasks.withType(CppCompile).configureEach { task ->
-                            task.source.getFiles().each { f ->
-                                // If the file is not already listed, then add it.
-                                if(ig.'ClCompile'.find{ it.'@Include' == f.getName()} == null) {
-                                    ig.appendNode('ClCompile', [Include: f.getName()])
-                                }
-                            }
-                        }
-                    }
+                // I changed the line to the one below, but then it always throws the exception saying that the env var needs to be set.
+                // ZSFX = providers.environmentVariable('UNZIPSFX_LOCATION').forUseAtConfigurationTime().map { new File(it) }
+                def tmpFile
+                if(System.getenv('UNZIPSFX_LOCATION')) { 
+                    tmpFile = new File(System.getenv('UNZIPSFX_LOCATION'))
                 }
+                if(tmpFile == null) {
+                    throw new GradleException(
+                        "Please download unzipsfx from <https://sourceforge.net/projects/infozip/files/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip/download>, unzip it, and set the environment variable 'UNZIPSFX_LOCATION'"
+                    )
+                }
+                ZSFX = tmpFile
             }
         }
     }
-
-    // Find all subprojects that have an installerFiles property and set them up to copy the built executables to the staging area for the installer.
-    afterEvaluate { prj ->
-        if(prj.hasProperty('installerFiles')) {
-            addProjOutputCopyFilesTask(prj, prj.parent, 'stage', 'installerFiles', null, "Stage build output to a local testing directory", false)
-       }
-    }
-
 }
 
+project(':zsfx_inst') {
+    subprojects {
+        ext.versionTextInputFilename = 'VERSION.txt.in'
+        ext.releaseString = '1.1.00'
+    }
+}
 
-subprojects {
-    it.tasks.create('usage') {
-        dependsOn(":usage")
+installationManifests {
+    base {
+        from('LICENSE')
+        from('README.md')
+        from('VERSION.txt.in')
+    }
+}
+
+prebuiltLibraryManagement {
+
+    def openSSLRoot = providers.environmentVariable('GLM_OPENSSL_ROOT').forUseAtConfigurationTime().map { new File(it) }
+        .orElse(provider {
+                throw new GradleException(
+                    "Please set the environment variable 'GLM_OPENSSL_ROOT' to the top of an OpenSSL installation."
+                ) } )
+        .get()
+
+    def openSSLLibFile = new File(openSSLRoot, 'lib\\libcrypto.lib')
+    if(!openSSLLibFile.exists()) {
+        throw new GradleException( "The environment variable GLM_OPENSSL_ROOT does not seem to specify a valid location, ${openSSLLibFile} does not exist." )
+    }
+    libraries {
+        'libcrypto' {
+            groupId = 'system.OpenSSL'
+            artifactId = 'libcrypto'
+            version = '1.1.1h'
+            variants {
+                x86Shared(SharedLibraryVariant) {
+                        includeRoot = new File(openSSLRoot, 'include')
+                        importLibraryFile = new File(openSSLRoot, 'lib/libcrypto.lib')
+                        runtimeLibraryFile = new File(openSSLRoot, 'libcrypto-1_1.dll')
+                        attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                }
+            }
+        }
+        'libssl' {
+            groupId = 'system.OpenSSL'
+            artifactId = 'libssl'
+            version = '1.1.1h'
+            variants {
+                x86Shared(SharedLibraryVariant) {
+                        includeRoot = new File(openSSLRoot, 'include')
+                        importLibraryFile = new File(openSSLRoot, 'lib/libssl.lib')
+                        runtimeLibraryFile = new File(openSSLRoot, 'libssl-1_1.dll')
+                        attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                }
+            }
+        }
     }
 }

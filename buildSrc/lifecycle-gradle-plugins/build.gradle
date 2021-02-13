@@ -1,0 +1,24 @@
+plugins {
+    id 'dev.gradleplugins.groovy-gradle-plugin'
+}
+
+gradlePlugin {
+    plugins {
+        base {
+            id = 'glm.build-type-lifecycle-base'
+            implementationClass = 'glm.lifecycle.plugins.BuildTypeLifecycleBasePlugin'
+        }
+        debugLifecycle {
+            id = 'glm.debug-lifecycle'
+            implementationClass = 'glm.lifecycle.plugins.DebugLifecyclePlugin'
+        }
+        releaseLifecycle {
+            id = 'glm.release-lifecycle'
+            implementationClass = 'glm.lifecycle.plugins.ReleaseLifecyclePlugin'
+        }
+    }
+}
+
+dependencies {
+    implementation platform("dev.nokee:nokee-gradle-plugins:${nokeeVersion}")
+}

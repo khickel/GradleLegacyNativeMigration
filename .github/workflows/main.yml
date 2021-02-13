@@ -1,0 +1,26 @@
+name: CI
+
+on: push
+
+jobs:
+  assemble:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+        lifecycleTask: [ assemble, debug, release, 'debugInstaller --build-cache', releaseInstaller ]
+    steps:
+      -   uses: actions/checkout@v2
+      -   uses: actions/setup-java@v1
+          with:
+            java-version: '8'
+      -   name: Build all code
+          id: gradle
+          uses: eskatos/gradle-command-action@v1
+          with:
+            arguments: ${{ matrix.lifecycleTask }} --scan --continue
+            wrapper-cache-enabled: true
+            dependencies-cache-enabled: true
+          env:
+            CI: true

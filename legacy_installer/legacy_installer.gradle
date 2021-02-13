@@ -1,62 +1,35 @@
-def targetPath = projectDir.path + '/Source'
-def varName = 'legacyInstaller'
-def targetFilename = varName + '.zip'
+plugins {
+    id 'glm.installer-base'
+    id 'glm.installation-manifest-base'
+    id 'glm.zip-installer-package'
+}
 
-tasks.create(varName + 'Debug')
-tasks.create(varName + 'Release')
-    
-// Find all subprojects that have a "legacyInstaller" property and set them up to copy the built executables to the staging area for the installer creation.
-def thisProj = project
-getRootProject().allprojects {
+installers {
+    create('debug')
+    create('release')
+}
 
-    // TODO:PROBLEM: Gradle 6.5.1 shows this warning:
-    // Using method Project.afterEvaluate(Closure) when the project is already evaluated has been deprecated.
-    // This will fail with an error in Gradle 7.0. The configuration given is ignored because the project has already been evaluated.
-    // To apply this configuration, remove afterEvaluate.
-    // However, if I remove it, then it is too early to find sub projects with this property.
-    afterEvaluate { prj ->
-        if(prj.hasProperty(varName)) {
-            //println "legacy_installer:DEBUG: Project ${prj.name} DOES have something to contribute to legacy_installer."
-            addProjOutputCopyFilesTask(prj, thisProj, varName, varName, targetPath, "Build the legacy installer", true)
-        } else {
-            //println "legacy_installer:DEBUG: Project ${prj.name} does NOT have anything to contribute to legacy_installer."
-        }
+installers.all {
+    manifest(project(':subsystem_a:util_1')) {
+        from('bin')
+    }
+    manifest(project(':subsystem_b:server_1')) {
+        from('bin')
+    }
+    manifest(project(':subsystem_a:win_mfc_a')) {
+        from('bin')
     }
 }
 
-task debugBuildInstaller() {
-    // We'll use zip here to simulate some installer, such as install4j or InstallAnywhere or whatever.
-    // That's why we aren't using the gradle zip facility here.
-    // TODO: need a way to make this depend on the files in the Source directory, so that it doesn't run unless those files change.
-    //   but better would be if it treated every project that had a "legacyInstaller" property as an input.
-    inputs.files('Source/server_1.exe', 'Source/util_1_renamed.exe')
-    dependsOn(varName + "Debug_CopyAll")
-    outputs.files(targetFilename, project.property('stagingDir') + targetFilename)
-    doLast {
-        exec { commandLine "zip", "-r", targetFilename, "Source" }
-        copy {
-            from targetFilename
-            into project.property('stagingDir')
-        }
+installers.all { installer ->
+    installer.packages.zip {
+        installerBaseName = "legacyInstaller"
     }
+    installationManifests.maybeCreate(installer.name).from(installer.packages.zip.installerFile)
 }
-(tasks.findByName(varName + "Debug") ?: tasks.create(varName + "Debug")).dependsOn(debugBuildInstaller)
 
-task releaseBuildInstaller() {
-    // We'll use zip here to simulate some installer, such as install4j or InstallAnywhere or whatever.
-    // That's why we aren't using the gradle zip facility here.
-    // TODO: need a way to make this depend on the files in the Source directory so that it doesn't run unless those files change.
-    //   but better would be if it treated every project that had a "legacyInstaller" property as an input.
-    inputs.files('Source')
-    dependsOn(varName + "Release_CopyAll")
-    outputs.files(targetFilename, project.property('stagingDir') + targetFilename)
-    doLast {
-        exec { commandLine "zip", "-r", targetFilename, "Source" }
-        exec { commandLine "zip", targetFilename, "legacy_installer.gradle" }
-        copy {
-            from targetFilename
-            into project.property('stagingDir')
-        }
-    }
-}
-(tasks.findByName(varName + "Release") ?: tasks.create(varName + "Release")).dependsOn(debugBuildInstaller)
+rootProject.collectDebugInstallers.from(installers.debug.packages*.installerFile)
+rootProject.collectReleaseInstallers.from(installers.release.packages*.installerFile)
+
+tasks.named('debug') { dependsOn(installers.debug.destinationDirectory)}
+tasks.named('release') { dependsOn(installers.release.destinationDirectory) }

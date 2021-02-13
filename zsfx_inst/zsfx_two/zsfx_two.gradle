@@ -1,9 +1,16 @@
+import glm.installer.Installer
+import glm.installer.pkgzip.PkgZipInstallerPackage
+
 import java.text.SimpleDateFormat
 import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
-    id 'cpp-application'
-    id 'windows-resources'
+    id 'dev.nokee.cpp-application'
+    id 'glm.windows-resources'
+    id 'glm.afx-runtime'
+
+    id 'glm.installation-manifest-base'
+    id 'glm.pkgzip-installer-package'
 }
 
 ext {
@@ -11,10 +18,6 @@ ext {
 
     productName = 'SelfExtractingZipBasedInstaller_Two'
     productDescription = 'GLM sample.'
-    programDescription = "ZSFX_Two - Installer"
-    defaultPath = "C:\\\\Program Files\\\\ZSFX_Two"
-    serviceName = "GLM zsfx two"
-    runProgram = "dummy\\\\dummy.exe"
 
     ZPKG = file("${buildDir}/pkg.zip").path
 
@@ -24,92 +27,97 @@ ext {
     installerFilePath = file("${projectDir}/${installerFileName}").path
 }
 
-def varName = 'zsfx_two'
-
-tasks.create(varName + 'Debug')
-tasks.create(varName + 'Release')
-
-def createPkgZipTask
-
-application { app->
+application(Configure.withDefaultApplicationConfiguration())
+application(Configure.addParamH(tasks))
+application { app ->
+    targetMachines = [machines.windows.x86]
     baseName = 'zsfx_two'
 
-    source.from fileTree(dir:"../zsfx_base", include:"*.cpp")
-    source.from fileTree(dir:".", include:"parms.h")
+    cppSources.from fileTree(dir: '../zsfx_base', include: '*.cpp')
+    windowsResources.from(fileTree(dir: '../zsfx_base', include: '*.rc'))
 
-    // Set the project standard C++ compiler/linker options
-    addDefaultCPPApplicationOptions(project, app)
-    addVSCompilerOption(project, "/I${projectDir}")
-
-    addAFXOptions(project)
-
-    // Add *.rc from this subproject directory to the link.
-    addWindowsResourceFile(project, app, "../zsfx_base")
-
-    // Find all subprojects that have a "zsfx_two" property and set them up to copy the built executables to the staging area for the installer.
-    def thisProj = project
-    getRootProject().allprojects {
-        afterEvaluate { prj ->
-            if(prj.hasProperty(varName)) {
-                addProjOutputCopyFilesTask(prj, thisProj, varName, varName, targetPath, "Build the ZSFX Two installer", true)
-            }
-        }
-    }
-
-    def copyTasks = [
-        tasks.register("copyLicenseTextFile", Copy) {
-            from "${getRootProject().projectDir}/LICENSE"
-            into "${targetPath}/wintools"
-            rename 'LICENSE', 'ZSFX_TWO_LICENSE.txt'
-        }
-    ]
-
-    def date = new Date()
-    def day_date_format = new SimpleDateFormat("EEE MM/dd/yyyy")
-    def year_format = new SimpleDateFormat("yyyy")
-    String dateStr = day_date_format.format(date)
-    String yearStr = year_format.format(date)
-    String relStr = "${releaseString}"
-    def createVersionTextFileTask = tasks.register("createVersionTextFile", Copy) {
-        from versionTextInputPath
-        into "${targetPath}/wintools" 
-        rename versionTextInputFilename, 'VERSION.txt'
-        filter(ReplaceTokens, beginToken: '@', endToken: '@', tokens: [
-            'DATE_WITH_DAY' : dateStr,
-            'CURRENT_YEAR' : yearStr,
-            'RELEASE_STRING': relStr,
-            'PRODUCT_NAME': productName,
-            'PRODUCT_DESCRIPTION': productDescription,
-            'UNICODE_INFO' : '',
-            'PLATFORM' : '32-Bit Windows Version\nX32 '
-        ])
-        filteringCharset = 'UTF-8'
-    }
-
-    createPkgZipTask = tasks.register("createPkgZip", Exec) {
-        dependsOn(copyTasks, createVersionTextFile)
-        inputs.files(
-            "${targetPath}/wintools/util_1.exe",
-            "${targetPath}/wintools/LICENSE.txt",
-            "${targetPath}/wintools/VERSION.txt",
-        )
-
-        outputs.files(ZPKG)
-        delete ZPKG  // If the file already exists, the 7z command fails.
-        workingDir targetPath
-        commandLine "7z", "a", "-r", "${ZPKG}", "wintools/*"
+    parmsH {
+        programDescription = "ZSFX_Two - Installer"
+        defaultPath = "C:\\\\Program Files\\\\ZSFX_Two"
+        serviceName = "GLM zsfx two"
+        runProgram = "dummy\\\\dummy.exe"
     }
 }
 
-def instTaskMap = createZipInstallerTasks(project,
-                                          installerFileName, installerFilePath,
-                                          productName, productDescription,
-                                          programDescription, defaultPath,
-                                          serviceName, runProgram,
-                                          createPkgZip, targetPath, "**/*",
-                                          false)
-def debugInstallerTask = instTaskMap['debugInstallerTask']
-tasks.findByName('debug').dependsOn(debugInstallerTask)
-def releaseInstallerTask = instTaskMap['releaseInstallerTask']
-tasks.findByName('release').dependsOn(releaseInstallerTask)
+installationManifests {
+    create('debug')
+    create('release')
+}
+installationManifests.all {
+    def buildType = name
+    from(application.variants
+            .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
+            .flatMap { it.first().developmentBinary }
+            .flatMap {
+                if (it.buildable) { return it.linkTask }
+                return null // no buildable binaries
+            }
+            .flatMap { it.linkedFile }) {
+        into('bin')
+    }
+}
 
+installers {
+    create('debug')
+    create('release')
+}
+installers.all { Installer installer ->
+    manifest(project(':'), 'base') {
+        into('wintools') {
+            from('LICENSE') { rename('LICENSE', 'ZSFX_TWO_LICENSE.txt') }
+            from(versionTextInputFilename) {
+                rename(versionTextInputFilename, 'VERSION.txt')
+
+                def date = new Date()
+                def day_date_format = new SimpleDateFormat("EEE MM/dd/yyyy")
+                def year_format = new SimpleDateFormat("yyyy")
+                String dateStr = day_date_format.format(date)
+                String yearStr = year_format.format(date)
+                String relStr = "${releaseString}"
+                filter(ReplaceTokens, beginToken: '@', endToken: '@', tokens: [
+                        'DATE_WITH_DAY' : dateStr,
+                        'CURRENT_YEAR' : yearStr,
+                        'RELEASE_STRING': relStr,
+                        'PRODUCT_NAME': productName,
+                        'PRODUCT_DESCRIPTION': productDescription,
+                        'UNICODE_INFO' : '',
+                        'PLATFORM' : '32-Bit Windows Version\nX32 '
+                ])
+                filteringCharset = 'UTF-8'
+            }
+        }
+    }
+    manifest(project(':subsystem_a:util_1')) {
+        from('bin') { into('wintools') }
+    }
+
+    packages.pkgZip(PkgZipInstallerPackage) { PkgZipInstallerPackage pkg ->
+        pkg.BDRY = file('../zsfx_base/boundary.txt')
+        // This is now set in build.gradle.
+        //pkg.ZSFX = file('../zsfx_base/unzipsfx.exe')
+        pkg.CSETUP = installer.destinationDirectory.file('wintools/CSetup.exe')
+        pkg.ZNST = application.variants
+                .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(installer.name)) }
+                .flatMap { it.first().developmentBinary }
+                .flatMap {
+                    if (it.buildable) { return it.linkTask }
+                    return null // no buildable binaries
+                }
+                .flatMap { it.linkedFile }
+        pkg.installerBaseName = project.name
+        pkg.codeSignCert.fileProvider(provider { rootProject.property('codeSignCert') })
+        pkg.codeSignPassword = provider { rootProject.property('codeSignPassword') }
+        pkg.zipInputSpec = 'wintools/*'
+    }
+}
+
+rootProject.collectDebugInstallers.from(installers.debug.packages*.installerFile)
+rootProject.collectReleaseInstallers.from(installers.release.packages*.installerFile)
+
+tasks.named('debug') { dependsOn(installers.debug.destinationDirectory)}
+tasks.named('release') { dependsOn(installers.release.destinationDirectory) }

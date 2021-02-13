@@ -1,0 +1,21 @@
+assert project.parent == null : 'Please apply this plugin on the root project'
+
+// Default task if none specified on the command line, tell the user how to run things.
+class UsageTask extends DefaultTask {
+    @TaskAction
+    void showUsage() {
+        println ""
+        println "Usage: "
+        println "You can run gradlew with one of the following tasks as an argument:"
+        println "  debug - do a full debug build."
+        println "  release - do a full release build."
+        println ""
+        println "You can run the same command in any subdirectory to target only that dir and whatever it depends on."
+        println "You can run gradlew tasks to see the list of known tasks."
+        println "You can add \" taskTree --no-repeat\" in any directory to get a tree dump of the task dependencies."
+        println ""
+    }
+}
+
+tasks.register('usage', UsageTask)
+defaultTasks 'usage'

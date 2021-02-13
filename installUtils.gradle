@@ -7,7 +7,7 @@
 
 def getDebugState(Project prj) {
     // May be enchanced to enable debugging for certain project names.
-    def rv = false
+    def rv = true//false
     return rv
 }
 
@@ -40,7 +40,7 @@ def getOrCreateAggregateTaskForSubproject(Project prj, String taskNamePrefix, St
             newTask.description = fullDesc
             if(debugOn) { println "Debug(${methodName}): Created aggregate project task ${newTask.name} for project ${tPrj.path}, group=" + newTask.group }
         }
-        
+
         // Make the new task at this level depend on the child task (from the previous loop iteration), if there is one.
         if(childTask){
             if(debugOn) { println "Debug(${methodName}): Setting aggregate project task named ${tPrj.path}:${newTask.name} to depend on child prj task ${childTask.name} for original input project ${prj.path}"}
@@ -55,7 +55,7 @@ def getOrCreateAggregateTaskForSubproject(Project prj, String taskNamePrefix, St
         tPrj = tPrj.parent
         childTask = newTask
     }
-    
+
     def rv = prj.tasks.findByName(taskName)
     if(debugOn) {println "Debug(${methodName}): returning task ${prj.path}:${rv.name}."}
     return rv
@@ -134,30 +134,30 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
         if(basePath == null) {
             if(path instanceof java.io.File) {
                 targetPath = path
-                if(debugOn) { 
+                if(debugOn) {
                     println "Debug(${methodName}): resolved basePath:null and file path:${path.path} to : ${targetPath.path} for project ${tgtPrj.path}"
                 }
             } else {
                 targetPath = file(path)
-                if(debugOn) { 
+                if(debugOn) {
                     println "Debug(${methodName}): resolved basePath:null and file string:${path} to : ${targetPath.path} for project ${tgtPrj.path}"
                 }
             }
         } else {
             if(path instanceof java.io.File) {
                 targetPath = file(basePath + '/' + path.path)
-                if(debugOn) { 
+                if(debugOn) {
                     println "Debug(${methodName}): resolved basePath:${basePath} and file path:${path.path} to : ${targetPath.path} for project ${tgtPrj.path}"
                 }
             } else {
                 targetPath = file(basePath + '/' + path)
-                if(debugOn) { 
+                if(debugOn) {
                     println "Debug(${methodName}): resolved basePath:${basePath} and file string:${path} to : ${targetPath.path} for project ${tgtPrj.path}"
                 }
             }
         }
 
-        if(debugOn) { 
+        if(debugOn) {
             println "Debug(${methodName}): handling project ${prj.name}, ${projMapPropName} index ${idx}, target file name=${fileBasename}, target path=${targetPath.path} for project ${tgtPrj.path}"
         }
 
@@ -179,7 +179,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
             if(fname instanceof Map) {
                 def targetMap = fname
                 fname = null
-                
+
                 if(debugOn) {println "Debug(${methodName}): Handling map instead of file name for project ${tgtPrj.path}."}
                 if(targetMap.containsKey('codeSign')) {
                     shouldSign = targetMap['codeSign']
@@ -203,7 +203,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                     src_path = targetMap['src_path']
                     if(debugOn) {println "Debug(${methodName}): src_path=${src_path} for project ${tgtPrj.path}"}
                 }
-            } else if (fname instanceof String) { 
+            } else if (fname instanceof String) {
                 if(debugOn) { println "Debug(${methodName}): fname=${fname} for project ${tgtPrj.path}"}
             }
             if(outputFilename == null) {
@@ -224,7 +224,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                 }
 
                 if(prj.hasProperty('library')) {
-                    if(isWindows){ 
+                    if(isWindows){
                         targetFilename += ".dll"
                         outputFilename += ".dll"
                     } else {
@@ -259,7 +259,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                 //outputs.file(targetPath.path + "/" + targetFilename)
                 setDescription("Copy file ${src_path}/${targetFilename} to path ${targetPath.path}.")
                 doLast {
-                    if(debugOn) { 
+                    if(debugOn) {
                         println "Debug(${methodName}): ${it.name} in copyTask, copying debug file named ${targetFilename} to ${targetPath.path}"
                         dumpTaskToJson(tgtPrj,it, file(tgtPrj.projectDir), "${it.name}_from_copyTask.json")
                     }
@@ -267,7 +267,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
             }
             def newDebugTask = tgtPrj.tasks.register(dbgTaskName) {
                 if(addExeOrDllSuffix) {
-                    if(debugOn) { 
+                    if(debugOn) {
                         println "Debug(${methodName}): Registering debug task named ${tgtPrj.path}:${name} for file named ${targetFilename}, with inputs from ${newDebugCopyTask}, inputs=${inputs.files(newDebugCopyTask)}"
                         String ifiles = ""
                         it.inputs.files.each { f ->
@@ -277,8 +277,8 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                         dumpTaskToJson(tgtPrj,it, file(tgtPrj.projectDir), "${it.name}_from_generic_task_1.json")
                     }
                     inputs.files(newDebugCopyTask)
-                        .withPropertyName("inputs")
-                        .withPathSensitivity(PathSensitivity.RELATIVE)
+                            .withPropertyName("inputs")
+                            .withPathSensitivity(PathSensitivity.RELATIVE)
                 } else {
                     // For use with a .cnf file or something like that.  We don't want to depend on the link task,
                     // we want to depend on the file itself.
@@ -292,7 +292,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                 doLast {
                     if(debugOn) {
                         println "Debug(${methodName}): ${it.name} in debug copy/sign task, copying file ${targetFilename} " +
-                            "to ${targetPath.path}/${outputFilename} using task ${newDebugCopyTask.name}."
+                                "to ${targetPath.path}/${outputFilename} using task ${newDebugCopyTask.name}."
                         dumpTaskToJson(tgtPrj,it, file(tgtPrj.projectDir), "${it.name}_from_generic_task_3.json")
                     }
                     copy {
@@ -303,7 +303,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                     if(shouldSign) {
                         if(debugOn) {println "Debug(${methodName}): ${it.name} in newDebugTask register call, should sign is on for file ${targetFilename} to ${targetPath.path}."}
                         exec { commandLine 'signtool', 'sign', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
-                              '/p', getRootProject().property('codeSignPassword'), "${targetPath.path}/${targetFilename}" }
+                                '/p', getRootProject().property('codeSignPassword'), "${targetPath.path}/${targetFilename}" }
                     }
                 }
             }
@@ -311,14 +311,14 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
             // Map of the copy/sign task to a map with the code sign setting, and the copy task, which will have the input set later based on the build variant.
             if(debugOn) {println "Debug: pushing debug task ${newDebugTask.name}, shouldSign=${shouldSign}, copy only task named ${newDebugCopyTask.name}, file ${targetFilename}, outputFilename ${outputFilename}, targetPath ${targetPath.path} for project=${tgtPrj.path}"}
             debugTasks[newDebugTask] = [
-                'codeSign':shouldSign,
-                'copyTask':newDebugCopyTask,
-                'addExeOrDllSuffix':addExeOrDllSuffix
+                    'codeSign':shouldSign,
+                    'copyTask':newDebugCopyTask,
+                    'addExeOrDllSuffix':addExeOrDllSuffix
             ]
 
 
             //////////////// Release Tasks
-            
+
             def relTaskName = "${taskPrefix}ReleaseCopy_${prj.name}_${idx}_${idx2}"
             if(debugOn) {println "Debug(${methodName}): about to register release copy task name ${tgtPrj.path}:${relTaskName} for file name ${fname}"}
             def newReleaseCopyTask = tgtPrj.tasks.register(relTaskName + '_CopyOnly', Copy) {
@@ -326,11 +326,11 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
 
                 // This causes the exec task to have the Source directory as an input, which isn't good.
                 //into targetPath.path
-                
+
                 // I don't think this is needed.
                 //outputs.file(targetPath.path + "/" + targetFilename)
                 doLast {
-                    if(debugOn) { 
+                    if(debugOn) {
                         println "Debug(${methodName}): ${it.name} in copyTask, copying release file named ${targetFilename} to ${targetPath.path}"
                         dumpTaskToJson(tgtPrj,it, file(tgtPrj.projectDir), "${it.name}_from_copyTask.json")
                     }
@@ -338,12 +338,12 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
             }
             def newReleaseTask = tgtPrj.tasks.register(relTaskName) {
                 if(addExeOrDllSuffix) {
-                    if(debugOn) { 
+                    if(debugOn) {
                         println "Debug(${methodName}): Registering release task named ${tgtPrj.path}:${name} for file named ${targetFilename}, with inputs from ${newReleaseCopyTask}, inputs=${inputs.files(newReleaseCopyTask)}"
                     }
                     inputs.files(newReleaseCopyTask)
-                        .withPropertyName("inputs")
-                        .withPathSensitivity(PathSensitivity.RELATIVE)
+                            .withPropertyName("inputs")
+                            .withPathSensitivity(PathSensitivity.RELATIVE)
                 } else {
                     // For use with a .cnf file or something like that.  We don't want to depend on the link task,
                     // we want to depend on the file itself.
@@ -367,16 +367,16 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                     if(shouldSign) {
                         if(debugOn) {println "Debug(${methodName}): ${it.name} in newReleaseTask register call, should sign is on for file ${targetFilename} to ${targetPath.path}."}
                         exec { commandLine 'signtool', 'sign', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
-                              '/p', getRootProject().property('codeSignPassword'), "${targetPath.path}/${targetFilename}" }
+                                '/p', getRootProject().property('codeSignPassword'), "${targetPath.path}/${targetFilename}" }
                     }
                 }
             }
             // Map of the copy/sign task to a map with the code sign setting, and the copy task, which will have the input set later based on the build variant.
             if(debugOn) {println "Debug: pushing release task ${newReleaseTask.name}, shouldSign=${shouldSign}, copy only task named ${newReleaseCopyTask.name}, file ${targetFilename}, outputFilename ${outputFilename}, targetPath ${targetPath.path} for project=${tgtPrj.path}"}
             releaseTasks[newReleaseTask] = [
-                'codeSign':shouldSign,
-                'copyTask':newReleaseCopyTask,
-                'addExeOrDllSuffix':addExeOrDllSuffix
+                    'codeSign':shouldSign,
+                    'copyTask':newReleaseCopyTask,
+                    'addExeOrDllSuffix':addExeOrDllSuffix
             ]
         }
     }
@@ -386,13 +386,13 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
         if (binary.name.endsWith('Debug')) {
             if(debugOn) {println "Debug(${methodName}): about to configure ${debugTasks.size()} debug tasks."}
             debugTasks.each { et, optionMap ->
-                def copyTask = optionMap['copyTask'] 
+                def copyTask = optionMap['copyTask']
                 if(debugOn) { println "Debug: configuring debug task ${et.name}, copytask=${copyTask.name}" }
                 if(optionMap['addExeOrDllSuffix']) {
                     copyTask.configure {
-                        if(debugOn) { 
+                        if(debugOn) {
                             println "Debug(${methodName}): Updating debug copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
-                                binary.linkTask.get().linkedFile.getAsFile().get().path
+                                    binary.linkTask.get().linkedFile.getAsFile().get().path
                             String ifiles = ""
                             it.inputs.files.each { f ->
                                 ifiles += ",${f.path} "
@@ -410,7 +410,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                         inputs.file(binary.linkTask.get().linkedFile)
                     }
                 }
-                
+
                 if(debugOn) {
                     println "Debug(${methodName}): Updating debug task ${tgtPrj.path}:${dbgCopyAllTask.name} which now also dependsOn ${et.name}"
                 }
@@ -421,13 +421,13 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
         if (binary.name.endsWith('Release')) {
             if(debugOn) {println "Debug: about to configure ${releaseTasks.size()} debug tasks."}
             releaseTasks.each { et, optionMap ->
-                def copyTask = optionMap['copyTask'] 
+                def copyTask = optionMap['copyTask']
                 if(debugOn) {println "Debug: configuring release task ${et.name}, copytask=${copyTask.name}"}
                 if(optionMap['addExeOrDllSuffix']) {
                     copyTask.configure {
-                        if(debugOn) { 
+                        if(debugOn) {
                             println "Debug(${methodName}): Updating release copy task ${prj.path}:${et.name} for binary ${binary.name}, adding dependency on linker task named ${binary.linkTask.get().name}, setting from file " +
-                                binary.linkTask.get().linkedFile.getAsFile().get().name
+                                    binary.linkTask.get().linkedFile.getAsFile().get().name
                         }
                         inputs.file(binary.linkTask.get().linkedFile)
                         it.dependsOn binary.linkTask
@@ -442,7 +442,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                         inputs.file(binary.linkTask.get().linkedFile)
                     }
                 }
-                
+
                 if(debugOn) {
                     println "Debug(${methodName}): Updating release task ${tgtPrj.path}:${relCopyAllTask.name} which now also dependsOn ${et.name}"
                 }
@@ -492,7 +492,7 @@ def createZipInstallerTasks(Project prj,
     // For the moment I'm not doing it because (using command_center.gradle as an example),
     // the CCI_stage task then wouldn't have anything to use as an output, so gradle
     // would always run the task, which isn't desireable.
-    
+
     // Task to create the installer itself - debug
     def debugInstallerTask = prj.tasks.register("createDebug${instTaskNameSuffix}") {
         dependsOn(createParmsHeader)
@@ -505,10 +505,10 @@ def createZipInstallerTasks(Project prj,
         dependsOn(prj.tasks.findByName('stageDebug_CopyAll'))
 
         inputs.files(
-            ZNST,
-            BDRY,
-            ZSFX,
-            fileTree(dir:inputPath, include: inputIncludeSpec)
+                ZNST,
+                BDRY,
+                ZSFX,
+                fileTree(dir:inputPath, include: inputIncludeSpec)
         )
         outputs.files(installerFilePath)
         doLast {
@@ -538,7 +538,7 @@ def createZipInstallerTasks(Project prj,
             exec {
                 workingDir instFile.getParentFile()
                 commandLine 'signtool', 'sign', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
-                              '/p', getRootProject().property('codeSignPassword'), instFile.name
+                        '/p', getRootProject().property('codeSignPassword'), instFile.name
             }
         }
     }
@@ -554,10 +554,10 @@ def createZipInstallerTasks(Project prj,
             dependsOn(relCopy)
         }
         inputs.files(
-            ZNST,
-            BDRY,
-            ZSFX,
-            fileTree(dir:inputPath, include: inputIncludeSpec)
+                ZNST,
+                BDRY,
+                ZSFX,
+                fileTree(dir:inputPath, include: inputIncludeSpec)
         )
         outputs.files(installerFilePath)
         doLast {
@@ -570,7 +570,7 @@ def createZipInstallerTasks(Project prj,
             exec {
                 workingDir instFile.getParentFile()
                 commandLine 'signtool', 'sign', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
-                              '/p', getRootProject().property('codeSignPassword'), instFile.name
+                        '/p', getRootProject().property('codeSignPassword'), instFile.name
             }
         }
     }

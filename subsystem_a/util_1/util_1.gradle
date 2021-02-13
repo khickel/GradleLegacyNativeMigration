@@ -1,54 +1,54 @@
 plugins {
-    id 'cpp-application'
+    id 'dev.nokee.native-application'
+    id 'dev.nokee.cpp-language'
+    id 'dev.nokee.c-language'
+    id 'code-sign'
+
+    id 'glm.windows-subsystem'
+    id 'glm.installation-manifest-base'
 }
 
-// Define a map listing the targetPath,targetFileName for any files that need to be copied to staging area.
-//TODO-KFH reinstate this:
-//ext.installerFiles = [ (file(project.property('stagingDir'))):'util_1' ]
+import dev.nokee.language.c.CHeaderSet
+import dev.nokee.language.cpp.CppHeaderSet
 
-// Files created by this subproject that need to be part of the legacy_installer build.
-ext.legacyInstaller = ['.':[
-    // Adding a built file, source filename defaults to util_1.exe because that is the baseName of this sub-project.
-    ['codeSign':true,'fileBasename':'util_1_renamed'],
+ext {
+    windowsSubsystem = 'console'
+}
 
-    // Adding a non-built file to the installer.
-    ['addExeOrDllSuffix':false,
-     'fileBasename':'../doc.txt',
-     'outputFilename':'Documentation.txt']
-]]
-
-ext.zsfx_one = [ 'wintools':'util_1' ]
-//ext.zsfx_one = [ '.':
-//'util_1':'wintools' ]
-ext.zsfx_two = [ 'wintools':'util_1' ]
-
+// Set the project standard C++ compiler/linker options
+application(Configure.withDefaultApplicationConfiguration())
 application { app->
 
     // Set the executable filename
     baseName = 'util_1'
     
-    // Add *.cpp to the project
-    source.from file('.')
-    binaries.configureEach {
-        def compileTask = compileTask.get()
-        // Gradle adds /TP to every visual studio C or C++ compilation command, this seems to be incorrect or  at least undesireable.
-        // By default, visual studio determines it based on the file extension, but once /TP or /TC is specified on the
-        // command line, there is no way to revert back to the default behavior.
-        // For my project, when there is a new Gradle release, I download the source,
-        // then edit the flie listed below, replacing the line in  'return "/TP";' with 'return "";'.
-        // If /TP was not specified then any user that relied on that behavior could
-        // simply add /TP from their .gradle file.
-
-        // To see the (contrived) failure, uncomment the line below.
-        //compileTask.source.from fileTree(dir: ".", include: "*.c")
+    // Add *.cpp/*.c to the project
+    sources {
+        cpp { from(fileTree(dir: '.', include: '*.cpp')) }
+        c { from(fileTree(dir: '.', include: '*.c')) }
+        configureEach(CppHeaderSet) { from(isolatedFileTree(dir: projectDir, include: '*.h')) }
+        configureEach(CHeaderSet) { from(isolatedFileTree(dir: projectDir, include: '*.h')) }
     }
-
-    // Set the project standard C++ compiler/linker options
-    addDefaultCPPApplicationOptions(project, app)
 
     dependencies {
         implementation project(':static_lib')
     }
-
 }
 
+installationManifests {
+    create('debug')
+    create('release')
+}
+installationManifests.all {
+    def buildType = name
+    from(application.variants
+            .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
+            .flatMap { it.first().developmentBinary }
+            .flatMap {
+                if (it.buildable) { return it.linkTask }
+                return null // no buildable binaries
+            }
+            .flatMap { it.linkedFile }) {
+        into('bin')
+    }
+}
