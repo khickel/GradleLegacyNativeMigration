@@ -107,6 +107,36 @@ def allReleaseTask = tasks.register('allRelease').configure{
     dependsOn(rootProject.collectReleaseInstallers)
 }
 
+////////////////////////////////////////////////////////////////
+// Utility function to take a string, add the .exe on the end for windows, empty string for linux, and return the string.
+def exe(String fname) {
+    if(isWindows) {
+        return fname + '.exe'
+    } else {
+        return fname
+    }
+}
+
+////////////////////////////////////////////////////////////////
+// Utility function to take a string, add the .dll on the end for windows, .so for linux, and return the string.
+def dll(String fname) {
+    if(isWindows) {
+        return fname + '.dll'
+    } else {
+        return fname + '.so'
+    }
+}
+
+////////////////////////////////////////////////////////////////
+// Utility function to take a string, add the .lib on the end for windows, .a for linux, and return the string.
+def lib(String fname) {
+    if(isWindows) {
+        return fname + '.lib'
+    } else {
+        return fname + '.a'
+    }
+}
+
 allprojects {
     apply plugin: 'glm.debug-lifecycle'
     apply plugin: 'glm.release-lifecycle'
@@ -176,7 +206,7 @@ prebuiltLibraryManagement {
                 ) } )
         .get()
 
-    def openSSLLibFile = new File(openSSLRoot, 'lib\\libcrypto.lib')
+    def openSSLLibFile = new File(openSSLRoot, lib('lib/libcrypto'))
     if(!openSSLLibFile.exists()) {
         throw new GradleException( "The environment variable GLM_OPENSSL_ROOT does not seem to specify a valid location, ${openSSLLibFile} does not exist." )
     }
@@ -187,10 +217,10 @@ prebuiltLibraryManagement {
             version = '1.1.1h'
             variants {
                 x86Shared(SharedLibraryVariant) {
-                        includeRoot = new File(openSSLRoot, 'include')
-                        importLibraryFile = new File(openSSLRoot, 'lib/libcrypto.lib')
-                        runtimeLibraryFile = new File(openSSLRoot, 'libcrypto-1_1.dll')
-                        attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                    includeRoot = new File(openSSLRoot, 'include')
+                    importLibraryFile = new File(openSSLRoot, lib('lib/libcrypto'))
+                    runtimeLibraryFile = new File(openSSLRoot, dll('libcrypto-1_1'))
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
                 }
             }
         }
@@ -200,10 +230,10 @@ prebuiltLibraryManagement {
             version = '1.1.1h'
             variants {
                 x86Shared(SharedLibraryVariant) {
-                        includeRoot = new File(openSSLRoot, 'include')
-                        importLibraryFile = new File(openSSLRoot, 'lib/libssl.lib')
-                        runtimeLibraryFile = new File(openSSLRoot, 'libssl-1_1.dll')
-                        attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                    includeRoot = new File(openSSLRoot, 'include')
+                    importLibraryFile = new File(openSSLRoot, lib('lib/libssl'))
+                    runtimeLibraryFile = new File(openSSLRoot, dll('libssl-1_1'))
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
                 }
             }
         }
