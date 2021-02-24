@@ -37,10 +37,74 @@ ext {
 // These tasks collect all the various installers into a known location.
 def collectDebugInstallers = tasks.register('collectDebugInstallers', Sync).configure {
     destinationDir = file(rootProject.projectDir.path + '/installers/debug')
+    doLast {
+        println "Debug installers collected to ${destinationDir}."
+    }
 }
 
 def collectReleaseInstallers = tasks.register('collectReleaseInstallers', Sync).configure {
     destinationDir = file(rootProject.projectDir.path + '/installers/release')
+    doLast {
+        println "Release installers collected to ${destinationDir}."
+    }
+}
+
+// TODO:GLM
+// TODO:Confluence
+// Create an 'all' task that builds everything, debug and release, including building and collecting the installers.
+def allTask = tasks.register('all').configure{ allT ->
+    subprojects.each { sp ->
+        def tsk
+        tsk = sp.tasks.findByName('debug')
+        if(tsk) { allT.dependsOn(tsk) }
+
+        tsk = sp.tasks.findByName('debugInstaller')
+        if(tsk) {
+            allT.dependsOn(tsk)
+            rootProject.collectDebugInstallers.from(sp.installers.debug.packages*.installerFile)
+        }
+        
+        tsk = sp.tasks.findByName('release')
+        if(tsk) { allT.dependsOn(tsk) }
+
+        tsk = sp.tasks.findByName('releaseInstaller')
+        if(tsk) {
+            allT.dependsOn(tsk)
+            rootProject.collectReleaseInstallers.from(sp.installers.release.packages*.installerFile)
+        }
+    }
+
+    dependsOn(rootProject.collectDebugInstallers)
+    dependsOn(rootProject.collectReleaseInstallers)
+}
+// Create allDebug and allRelease tasks that do everything for that variant.
+def allDebugTask = tasks.register('allDebug').configure{
+    subprojects.each { sp ->
+        def tsk
+        tsk = sp.tasks.findByName('debug')
+        if(tsk) { it.dependsOn(tsk) }
+
+        tsk = sp.tasks.findByName('debugInstaller')
+        if(tsk) {
+            it.dependsOn(tsk)
+            rootProject.collectDebugInstallers.from(sp.installers.debug.packages*.installerFile)
+        }
+    }
+    dependsOn(rootProject.collectDebugInstallers)
+}
+def allReleaseTask = tasks.register('allRelease').configure{ 
+    subprojects.each { sp ->
+        def tsk
+        tsk = sp.tasks.findByName('release')
+        if(tsk) { it.dependsOn(tsk) }
+
+        tsk = sp.tasks.findByName('releaseInstaller')
+        if(tsk) {
+            it.dependsOn(tsk)
+            rootProject.collectReleaseInstallers.from(sp.installers.release.packages*.installerFile)
+        }
+    }
+    dependsOn(rootProject.collectReleaseInstallers)
 }
 
 allprojects {
