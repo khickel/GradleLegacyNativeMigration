@@ -43,11 +43,8 @@ installationManifests.all {
     def buildType = name
     from(application.variants
             .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
-            .flatMap { it.first().developmentBinary }
-            .flatMap {
-                if (it.buildable) { return it.linkTask }
-                return null // no buildable binaries
-            }
+            .map { it.find { it.developmentBinary.get().buildable } }
+            .flatMap { it.developmentBinary.get().linkTask }
             .flatMap { it.linkedFile }) {
         into('bin')
     }
