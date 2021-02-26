@@ -125,7 +125,7 @@ final class GradleMetadataCache implements Callable<URI> {
     private static String relativize(File moduleDirectory, File target) {
         def pathBackToRoot = []
 
-        def n = moduleDirectory.absolutePath.replace('\\', '/').split('/').length
+        def n = moduleDirectory.absolutePath.substring(1).replace('\\', '/').split('/').length
         n.times {
             pathBackToRoot << '..'
         }
