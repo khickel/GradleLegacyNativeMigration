@@ -143,7 +143,7 @@ allprojects {
                 }
                 if(tmpFile == null) {
                     throw new GradleException(
-                        "Please download unzipsfx from <https://sourceforge.net/projects/infozip/files/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip/download>, unzip it, and set the environment variable 'UNZIPSFX_LOCATION'"
+                        "Please download unzipsfx with the command 'curl -o unzip.zip <https://managedway.dl.sourceforge.net/project/infozip/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip>', unzip it into a directory, and set the environment variable 'UNZIPSFX_LOCATION' to that location."
                     )
                 }
                 ZSFX = tmpFile
