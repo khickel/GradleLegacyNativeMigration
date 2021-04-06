@@ -5,6 +5,12 @@
 #include <io.h>
 #endif
 
+////// If you have the sonarlint VS extension installed, uncomment one
+// of the lines below and open this file in VS, you'll see SonarLint crash in subprocess.exe.
+//#include <boost/asio.hpp>
+//#include <boost/asio/io_context.hpp>
+//#include <boost/asio/ip/udp.hpp>
+
 #include <stdio.h>
 #include <time.h>
 
