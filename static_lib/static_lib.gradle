@@ -8,6 +8,7 @@ plugins {
 }
 
 library(Configure.withDefaultLibraryConfiguration())
+library(Configure.withOpenSSLLibraryConfiguration())
 library { lib->
     targetLinkages = [linkages.static]
 
@@ -19,9 +20,11 @@ library { lib->
     }
 
      dependencies {
-         implementation 'system.OpenSSL:libcrypto:1.1.1h'
-         implementation 'system.OpenSSL:libssl:1.1.1h'
+        implementation 'system.OpenSSL:libcrypto:1.1.1h'
+        implementation 'system.OpenSSL:libssl:1.1.1h'
+        implementation 'system.PCRE:libpcre:current'
      }
+    buildWithBoost(project)
 
     // TODO-KFH temp change to try to figure out what is bringing in DriverSpec.h
     // TODO(nokeedev): Figuring out where a header comes from should be made easy with Nokee by exposing the data it already acquire during compilation

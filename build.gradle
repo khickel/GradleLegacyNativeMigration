@@ -8,6 +8,8 @@ plugins {
     id 'glm.installation-manifest-base'
     id 'glm.prebuilt-library-management-base'
     id 'glm.prebuilt-repositories'
+
+    id 'dev.nokeesamples.sonarqube'
 }
 
 ext {
@@ -113,6 +115,7 @@ allprojects {
     apply plugin: 'default-import'
     apply plugin: 'dev.nokee.visual-studio-ide'
     apply plugin: 'glm.isolated-file-tree'
+    apply plugin: 'dev.nokeesamples.sonarqube'
 
     pluginManager.withPlugin('code-sign') {
         codeSign.certificateDirectory = rootProject.layout.buildDirectory.dir('Certs')
@@ -152,6 +155,31 @@ allprojects {
     }
 }
 
+tasks.named('sonarqube') {
+    it.properties.putAll([
+        'sonar.projectKey': 'test',
+        'sonar.sources': '.',
+
+        // Set these env vars for your server information.
+        'sonar.host.url': System.getenv('GLM_SONAR_URL'),
+        'sonar.login' : System.getenv('GLM_SONAR_TOKEN'),
+
+        'sonar.projectVersion': '1.1.00',
+        'sonar.buildString': '1.1.00',
+        'sonar.cfamily.threads' : '2',
+        'sonar.cfamily.cache.enabled' : 'false',
+        //'sonar.cfamily.cache.path' : System.getenv('TEMP') + '\\sqube_cache',
+        
+        'sonar.projectBaseDir': project.rootDir.absolutePath,
+        'sonar.scm.exclusions.disabled': 'true',
+        'sonar.exclusions' : '**/*.java,**/*.js',
+        'sonar.scm.provider': 'git',
+
+        //'sonar.sourceEncoding': 'UTF-8',
+        //'sonar.sourceEncoding': 'US-ASCII',
+    ])
+}
+
 project(':zsfx_inst') {
     subprojects {
         ext.versionTextInputFilename = 'VERSION.txt.in'
@@ -167,6 +195,113 @@ installationManifests {
     }
 }
 
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+// Variables and routines for building with Boost
+// Location where to find boost, based on environment variable.
+ext {
+    libBoostIncludePath = 'NOT_SET'
+    libBoostLibPathDebug = 'NOT_SET'
+    libBoostLibPathRelease = 'NOT_SET'
+    libBoostLibName = 'NOT_SET'
+}
+
+// If using vcpkg, find Boost.
+ext {
+    vcpkgInstalledPath = file(System.getenv('GLM_VCPKG_PATH'))
+}
+libBoostIncludePath = file(vcpkgInstalledPath.getPath() + '/include')
+libBoostLibPathDebug = file(vcpkgInstalledPath.getPath() + '/debug/lib')
+libBoostLibPathRelease = file(vcpkgInstalledPath.getPath() + '/lib')
+// TODO: Convert this to an array, check each item, then use that array in the link flags below.
+if(isWindows) {
+    libBoostLibName = 'boost_date_time-vc140-mt-gd.lib'
+} else {
+    libBoostLibName = 'libboost_date_time.a'
+}
+
+// Doesn't seem to work with Nokee, from https://stackoverflow.com/questions/10422054/is-there-a-way-to-list-task-dependencies-in-gradle
+// gradle.taskGraph.whenReady {taskGraph ->
+//     println "Found task graph: " + taskGraph
+//     println "Found " + taskGraph.allTasks.size() + " tasks."
+//     taskGraph.allTasks.forEach { task ->
+//         println()
+//         println("----- " + task + " -----")
+//         println("depends on tasks: " + task.dependsOn)
+//         println("inputs: ")
+//         task.inputs.getFiles().getFiles().collect { f -> println(" - " + f)}
+//         println("outputs: ")
+//         task.outputs.getFiles().getFiles().collect { f -> println(" + " + f)}
+//     }
+// }
+
+// Check that we can find Boost.
+gradle.taskGraph.whenReady { taskGraph ->
+    if (!taskGraph.hasTask(":help")) {
+        // Check that we can find a Boost header file.
+        def h_file = file(libBoostIncludePath.getPath() + '/boost/asio/io_context.hpp')
+        if (!h_file.exists()) {
+            throw new GradleException("Unable to find Boost header file ${h_file}.");
+        }
+        // Check that we can find the Boost library file.
+        def l_file = file(libBoostLibPathDebug.getPath() + '/' + libBoostLibName)
+        if (!l_file.exists()) {
+            throw new GradleException("Unable to find Boost library file ${l_file}.");
+        }
+    }
+}
+
+// Given the project add the information needed to compile and link with Boost.
+// TODO:
+//  For the moment, I left this in, rather than converting it to a prebuild-library.
+//  The first reason is that, each consumer of this library will(may?) need to add /DBOOST_NETWORK_ENABLE_HTTPS,
+//    and there currently isn't any way to do that from a prebuilt-library.
+//    for the future look at this example Daniel from Nokee wrote when he worked at Gradle....
+//    https://github.com/gradle/native-samples/tree/master/cpp/publish-macros
+//  The other reason is that when using the boost from AMI_BOOST_X86 env var,
+//    you only need to add /LIBPATH to the link line, not every library that
+//    you want to link with ( I think you do have to for vcpkg, but I need to check that).
+//    and there's no way to add a libpath with the prebuilt-library stuff as it is.
+def buildWithBoost(Project project) {
+    // We need to define BOOST_NETWORK_ENABLE_HTTPS and the include path.
+    project.tasks.withType(CppCompile).configureEach { task->
+        task.compilerArgs.addAll toolChain.map { tc ->
+            if (tc in VisualCpp) {
+                return [
+                    '/DBOOST_NETWORK_ENABLE_HTTPS',
+                    "/I${libBoostIncludePath}"
+                ]
+            }
+        }
+    }
+
+    // Add the library path
+    project.tasks.withType(LinkExecutable).configureEach{ task->
+        task.linkerArgs.addAll toolChain.map { tc ->
+            if (tc in VisualCpp) {
+                // Figure out which lib path to use based on the task name, there ought to be a better way.
+                def lp = libBoostLibPathDebug
+                def lf_modifier = '-gd'
+                if(task.name.contains('Release')) {
+                    lp = libBoostLibPathRelease
+                    lf_modifier = ''
+                }
+                return [
+                    "/LIBPATH:${lp}",
+                    "boost_filesystem-vc140-mt${lf_modifier}.lib",
+                    "boost_serialization-vc140-mt${lf_modifier}.lib",
+                    "boost_thread-vc140-mt${lf_modifier}.lib",
+                    "boost_log-vc140-mt${lf_modifier}.lib",
+                    "boost_log_setup-vc140-mt${lf_modifier}.lib",
+                    'Crypt32.lib'
+                ]
+            }
+        }
+    }
+}
+
+////////////////////////////////////////////////
 prebuiltLibraryManagement {
 
     def openSSLRoot = providers.environmentVariable('GLM_OPENSSL_ROOT').forUseAtConfigurationTime().map { new File(it) }
@@ -180,6 +315,14 @@ prebuiltLibraryManagement {
     if(!openSSLLibFile.exists()) {
         throw new GradleException( "The environment variable GLM_OPENSSL_ROOT does not seem to specify a valid location, ${openSSLLibFile} does not exist." )
     }
+
+    def libPCRERootPath = file(System.getenv('GLM_VCPKG_PATH'))
+    def libPCRELibPath = file(libPCRERootPath.getPath() + '/lib')
+    def libPCRELibName = 'libpcre.a'
+    if(isWindows) {
+        libPCRELibName = 'pcre.lib'
+    }
+
     libraries {
         'libcrypto' {
             groupId = 'system.OpenSSL'
@@ -204,6 +347,25 @@ prebuiltLibraryManagement {
                         importLibraryFile = new File(openSSLRoot, 'lib/libssl.lib')
                         runtimeLibraryFile = new File(openSSLRoot, 'libssl-1_1.dll')
                         attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                }
+            }
+        }
+        'libpcre' {
+            groupId = 'system.PCRE'
+            artifactId = 'libpcre'
+            version = 'current'
+            variants {
+                x86DebugStatic(StaticLibraryVariant) {
+                    includeRoot = new File(libPCRERootPath.path)
+                    libraryFile = new File(libPCRELibPath, libPCRELibName)
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
+                    attributes.put(Attribute.of('dev.nokee.buildType', String), 'debug')
+                }
+                x86ReleaseStatic(StaticLibraryVariant) {
+                    includeRoot = libPCRERootPath
+                    libraryFile = new File(libPCRELibPath, libPCRELibName)
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
+                    attributes.put(Attribute.of('dev.nokee.buildType', String), 'release')
                 }
             }
         }

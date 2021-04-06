@@ -11,6 +11,8 @@ build/
 *.sln
 .vs/
 
+.scannerwork/
+
 *.zip
 *.json
 *.exe

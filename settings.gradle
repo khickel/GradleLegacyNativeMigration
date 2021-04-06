@@ -1,6 +1,8 @@
 rootProject.name = 'LegacyNativeExample'
 
 
+includeBuild 'gradle/plugins/sonarqube-gradle-plugin'
+
 include 'static_lib'
 include 'subsystem_a:util_1'
 if(org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem.isWindows()) {
