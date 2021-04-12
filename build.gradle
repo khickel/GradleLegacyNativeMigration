@@ -150,6 +150,16 @@ allprojects {
             }
         }
     }
+    // KHickel 02-10-2021 Change the build directory for each project to be underneath
+    // rootProject.directory/build.
+    // "ofs" means "Out oF Source" (e.g. not in the source tree).
+    // The prj.name is the subproject name, which makes it easier to find something like
+    // an outputs.txt/options.txt for a subproject when you want to.
+    // And the md5 sum is added to make sure that the directories are unique to a subproject.
+    // This avoids a problem when Gradle decides to include all the source directories in the include path.
+    // If the build directory is below the source directory, then you start to get spurious rebuilds of
+    // projects, this change avoids that.
+    layout.buildDirectory.set(rootProject.file("build/ofs" + it.path.replaceAll(/:/, '-') + "-" + it.path.md5()))
 }
 
 project(':zsfx_inst') {
