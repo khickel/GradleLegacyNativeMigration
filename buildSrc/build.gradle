@@ -12,6 +12,7 @@ dependencies {
     runtimeOnly project(':installer-package-zip')
     runtimeOnly project(':lifecycle-gradle-plugins')
     runtimeOnly project(':prebuilt-library-management')
+    runtimeOnly project(':code-signing')
 }
 
 allprojects {
