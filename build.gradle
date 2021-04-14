@@ -116,10 +116,6 @@ allprojects {
     apply plugin: 'dev.nokee.visual-studio-ide'
     apply plugin: 'glm.isolated-file-tree'
 
-    pluginManager.withPlugin('code-sign') {
-        codeSign.certificateDirectory = rootProject.layout.buildDirectory.dir('Certs')
-    }
-
     // Make sure that we know where to find unzipsfx.exe
     project.pluginManager.withPlugin('glm.installer-base') {
         installers.all {

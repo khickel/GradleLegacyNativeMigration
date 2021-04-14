@@ -1,6 +1,5 @@
 plugins {
     id 'dev.nokee.cpp-application'
-    id 'code-sign'
 
     id 'glm.installation-manifest-base'
 }
