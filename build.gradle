@@ -1,5 +1,7 @@
 import glm.installer.pkgzip.PkgZipInstallerPackage
 
+import static PrebuiltLibraryUtils.*
+
 plugins {
     // https://github.com/dorongold/gradle-task-tree
     id "com.dorongold.task-tree" version "1.5"
@@ -178,18 +180,7 @@ installationManifests {
 }
 
 prebuiltLibraryManagement {
-
-    def openSSLRoot = providers.environmentVariable('GLM_OPENSSL_ROOT').forUseAtConfigurationTime().map { new File(it) }
-        .orElse(provider {
-                throw new GradleException(
-                    "Please set the environment variable 'GLM_OPENSSL_ROOT' to the top of an OpenSSL installation."
-                ) } )
-        .get()
-
-    def openSSLLibFile = new File(openSSLRoot, 'lib\\libcrypto.lib')
-    if(!openSSLLibFile.exists()) {
-        throw new GradleException( "The environment variable GLM_OPENSSL_ROOT does not seem to specify a valid location, ${openSSLLibFile} does not exist." )
-    }
+    def openSSLRoot = objects.directoryProperty().fileProvider(openSslRoot(providers))
     libraries {
         'libcrypto' {
             groupId = 'system.OpenSSL'
@@ -197,9 +188,9 @@ prebuiltLibraryManagement {
             version = '1.1.1h'
             variants {
                 x86Shared(SharedLibraryVariant) {
-                        includeRoot = new File(openSSLRoot, 'include')
-                        importLibraryFile = new File(openSSLRoot, 'lib/libcrypto.lib')
-                        runtimeLibraryFile = new File(openSSLRoot, 'libcrypto-1_1.dll')
+                        includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                        importLibraryFile = openSSLRoot.file('lib/libcrypto.lib').map(assertFileExists())
+                        runtimeLibraryFile = openSSLRoot.file('libcrypto-1_1.dll').map(assertFileExists())
                         attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
                 }
             }
@@ -210,9 +201,9 @@ prebuiltLibraryManagement {
             version = '1.1.1h'
             variants {
                 x86Shared(SharedLibraryVariant) {
-                        includeRoot = new File(openSSLRoot, 'include')
-                        importLibraryFile = new File(openSSLRoot, 'lib/libssl.lib')
-                        runtimeLibraryFile = new File(openSSLRoot, 'libssl-1_1.dll')
+                        includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                        importLibraryFile = openSSLRoot.dir('lib/libssl.lib').map(assertFileExists())
+                        runtimeLibraryFile = openSSLRoot.dir('libssl-1_1.dll').map(assertFileExists())
                         attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
                 }
             }
