@@ -5,8 +5,8 @@ import dev.nokee.platform.base.Variant
 import dev.nokee.platform.base.VariantAwareComponent
 import dev.nokee.platform.nativebase.TargetBuildTypeAwareComponent
 import glm.codesigning.CodeSigningExtension
-import glm.codesigning.SignCode
 import glm.codesigning.SignedBinary
+import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -14,6 +14,7 @@ import org.gradle.api.plugins.AppliedPlugin
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Property
 
+@CompileStatic
 abstract /*final*/ class CodeSigningPlugin implements Plugin<Project> {
     void apply(Project project) {
         project.pluginManager.apply(CodeSigningBasePlugin)
@@ -34,13 +35,13 @@ abstract /*final*/ class CodeSigningPlugin implements Plugin<Project> {
     }
 
     private static Action<AppliedPlugin> configureCodeSigning(Project project, CodeSigningExtension extension, String entryPointName) {
-        return {
+        return { AppliedPlugin p ->
             configureCodeSigning(project, extension, ((VariantAwareComponent<Variant>) project.extensions.getByName(entryPointName)))
         } as Action<AppliedPlugin>
     }
 
     private static void configureCodeSigning(Project project, CodeSigningExtension extension, VariantAwareComponent<Variant> component) {
-        extension.singingCertificate.set(project.rootProject.file('MySPC.pfx'))
+        extension.signingCertificate.set(project.rootProject.file('MySPC.pfx'))
 
         def buildTypes = ((TargetBuildTypeAwareComponent) component).buildTypes
         def releaseBuildType = buildTypes.named('release')

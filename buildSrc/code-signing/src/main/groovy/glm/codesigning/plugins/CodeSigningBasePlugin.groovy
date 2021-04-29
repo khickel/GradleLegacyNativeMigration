@@ -3,23 +3,17 @@ package glm.codesigning.plugins
 import dev.nokee.platform.base.Binary
 import dev.nokee.platform.base.Variant
 import dev.nokee.platform.base.VariantAwareComponent
-import dev.nokee.platform.nativebase.ExecutableBinary
-import dev.nokee.platform.nativebase.SharedLibraryBinary
+import dev.nokee.platform.base.internal.BaseVariant
+import dev.nokee.platform.nativebase.*
 import glm.codesigning.CodeSigningExtension
-import glm.codesigning.SignCode
 import glm.codesigning.SignedBinary
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
-import org.gradle.api.Buildable
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
 import org.gradle.api.plugins.AppliedPlugin
 import org.gradle.api.plugins.ExtensionAware
-import org.gradle.api.tasks.TaskDependency
-import org.gradle.api.tasks.TaskProvider
-
-import javax.annotation.Nullable
+import org.gradle.api.specs.Spec
 
 @CompileStatic
 abstract /*final*/ class CodeSigningBasePlugin implements Plugin<Project> {
@@ -41,20 +35,25 @@ abstract /*final*/ class CodeSigningBasePlugin implements Plugin<Project> {
     }
 
     private static Action<AppliedPlugin> configureCodeSigning(Project project, CodeSigningExtension extension, String entryPointName) {
-        return {
-            configureCodeSigning(extension, (VariantAwareComponent<? extends Variant>) project.extensions.getByName(entryPointName))
+        return { AppliedPlugin pid ->
+            configureCodeSigning(project, extension, (VariantAwareComponent<? extends Variant>) project.extensions.getByName(entryPointName))
         } as Action<AppliedPlugin>
     }
 
-    private static void configureCodeSigning(CodeSigningExtension extension, VariantAwareComponent<Variant> component) {
+    private static void configureCodeSigning(Project project, CodeSigningExtension extension, VariantAwareComponent<Variant> component) {
         component.variants.configureEach { Variant variant ->
-            variant.binaries.configureEach(ExecutableBinary) { ExecutableBinary binary ->
-                def signedBinary = new SignedBinary(extension.sign(binary))
+            def identifier = ((BaseVariant) variant).identifier.name
+            if (variant instanceof NativeApplication) {
+                def binary = variant.binaries.filter({ it instanceof ExecutableBinary } as Spec<Binary>).map { (NativeBinary) it.first() }
+                def signedBinary = new SignedBinary(extension.sign("executable${identifier.capitalize()}", binary), binary)
                 ((ExtensionAware) variant).extensions.add('signedBinary', signedBinary)
-            }
-            variant.binaries.configureEach(SharedLibraryBinary) { SharedLibraryBinary binary ->
-                def signedBinary = new SignedBinary(extension.sign(binary))
-                ((ExtensionAware) variant).extensions.add('signedBinary', signedBinary)
+            } else if (variant instanceof NativeLibrary) {
+                def linkages = ((TargetLinkageAwareComponent) component).linkages
+                if (variant.buildVariant.hasAxisOf(linkages.shared)) {
+                    def binary = variant.binaries.filter({ it instanceof SharedLibraryBinary } as Spec<Binary>).map { (NativeBinary) it.first() }
+                    def signedBinary = new SignedBinary(extension.sign("sharedLibrary${identifier.capitalize()}", binary), binary)
+                    ((ExtensionAware) variant).extensions.add('signedBinary', signedBinary)
+                }
             }
         }
     }
