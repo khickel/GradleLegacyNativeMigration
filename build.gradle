@@ -201,3 +201,11 @@ prebuiltLibraryManagement {
         }
     }
 }
+
+allprojects {
+    pluginManager.withPlugin('glm.code-signing') {
+        codeSigning.signtool.fileValue(new File('C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.18362.0\\x64\\signtool.exe'))
+        codeSigning.signingCertificate = rootProject.file('MySPC.pfx')
+        codeSigning.signingCertificatePassword = 'passwordx'
+    }
+}
