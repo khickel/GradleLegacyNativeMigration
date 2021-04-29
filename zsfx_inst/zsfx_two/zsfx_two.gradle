@@ -53,8 +53,7 @@ installationManifests.all {
     from(application.variants
             .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
             .map { it.find { it.developmentBinary.get().buildable } }
-            .flatMap { it.developmentBinary.get().linkTask }
-            .flatMap { it.linkedFile }) {
+            .flatMap(Binaries.selectDevelopmentBinaryFile())) {
         into('bin')
     }
 }
@@ -101,8 +100,7 @@ installers.all { Installer installer ->
         pkg.ZNST = application.variants
                 .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(installer.name)) }
                 .map { it.find { it.developmentBinary.get().buildable } }
-                .flatMap { it.developmentBinary.get().linkTask }
-                .flatMap { it.linkedFile }
+                .flatMap(Binaries.selectDevelopmentBinaryFile())
         pkg.installerBaseName = project.name
         pkg.codeSignCert.fileProvider(provider { rootProject.property('codeSignCert') })
         pkg.codeSignPassword = provider { rootProject.property('codeSignPassword') }

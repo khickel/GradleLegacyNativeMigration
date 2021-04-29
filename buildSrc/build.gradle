@@ -5,6 +5,7 @@ plugins {
 dependencies {
     implementation platform("dev.nokee:nokee-gradle-plugins:${nokeeVersion}")
     implementation 'commons-io:commons-io:2.6'
+    implementation project(':code-signing')
 
     // Expose the dependencies to the main build
     runtimeOnly project(':installer-gradle-plugins')

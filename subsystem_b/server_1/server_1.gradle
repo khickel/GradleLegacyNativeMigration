@@ -29,8 +29,7 @@ installationManifests.all {
     from(application.variants
             .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
             .map { it.find { it.developmentBinary.get().buildable } }
-            .flatMap { it.developmentBinary.get().linkTask }
-            .flatMap { it.linkedFile }) {
+            .flatMap(Binaries.selectDevelopmentBinaryFile())) {
         into('bin')
     }
 }
