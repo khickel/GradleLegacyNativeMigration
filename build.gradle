@@ -193,8 +193,8 @@ prebuiltLibraryManagement {
             variants {
                 x86Shared(SharedLibraryVariant) {
                         includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
-                        importLibraryFile = openSSLRoot.dir('lib/libssl.lib').map(assertFileExists())
-                        runtimeLibraryFile = openSSLRoot.dir('libssl-1_1.dll').map(assertFileExists())
+                        importLibraryFile = openSSLRoot.file('lib/libssl.lib').map(assertFileExists())
+                        runtimeLibraryFile = openSSLRoot.file('libssl-1_1.dll').map(assertFileExists())
                         attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
                 }
             }
