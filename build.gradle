@@ -135,7 +135,7 @@ allprojects {
 
                 // I changed the line to the one below, but then it always throws the exception saying that the env var needs to be set.
                 // ZSFX = providers.environmentVariable('UNZIPSFX_LOCATION').forUseAtConfigurationTime().map { new File(it) }
-                ZSFX = providers.environmentVariable('UNZIPSFX_LOCATION').forUseAtConfigurationTime().map { new File(it) }.orElse(provider {
+                ZSFX.fileProvider providers.environmentVariable('UNZIPSFX_LOCATION').forUseAtConfigurationTime().map { new File(it) }.orElse(provider {
                     throw new GradleException(
                             "Please download unzipsfx with the command 'curl -o unzip.zip <https://managedway.dl.sourceforge.net/project/infozip/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip>', unzip it into a directory, and set the environment variable 'UNZIPSFX_LOCATION' to that location."
                     )
