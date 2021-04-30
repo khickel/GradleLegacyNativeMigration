@@ -178,11 +178,16 @@ prebuiltLibraryManagement {
             artifactId = 'libcrypto'
             version = '1.1.1h'
             variants {
-                x86Shared(SharedLibraryVariant) {
-                        includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
-                        importLibraryFile = openSSLRoot.file('lib/libcrypto.lib').map(assertFileExists())
-                        runtimeLibraryFile = openSSLRoot.file('libcrypto-1_1.dll').map(assertFileExists())
-                        attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                // x86Shared(SharedLibraryVariant) {
+                //         includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                //         importLibraryFile = openSSLRoot.file('lib/libcrypto.lib').map(assertFileExists())
+                //         runtimeLibraryFile = openSSLRoot.file('libcrypto-1_1.dll').map(assertFileExists())
+                //         attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                // }
+                x86Static(StaticLibraryVariant) {
+                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                    libraryFile = openSSLRoot.file('lib/libcrypto.lib').map(assertFileExists())
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
                 }
             }
         }
@@ -191,11 +196,16 @@ prebuiltLibraryManagement {
             artifactId = 'libssl'
             version = '1.1.1h'
             variants {
-                x86Shared(SharedLibraryVariant) {
+                // x86Shared(SharedLibraryVariant) {
+                //         includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                //         importLibraryFile = openSSLRoot.file('lib/libssl.lib').map(assertFileExists())
+                //         runtimeLibraryFile = openSSLRoot.file('libssl-1_1.dll').map(assertFileExists())
+                //         attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                // }
+                 x86Static(StaticLibraryVariant) {
                         includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
-                        importLibraryFile = openSSLRoot.file('lib/libssl.lib').map(assertFileExists())
-                        runtimeLibraryFile = openSSLRoot.file('libssl-1_1.dll').map(assertFileExists())
-                        attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                        libraryFile = openSSLRoot.file('lib/libssl.lib').map(assertFileExists())
+                        attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
                 }
             }
         }
