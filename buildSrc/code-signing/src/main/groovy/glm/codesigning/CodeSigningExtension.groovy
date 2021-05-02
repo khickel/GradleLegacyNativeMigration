@@ -15,6 +15,7 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.nativeplatform.tasks.AbstractLinkTask
@@ -61,7 +62,8 @@ abstract /*final*/ class CodeSigningExtension {
             task.getUnsignedFile().set(linkedFile)
             task.getSignedFile().set(layout.buildDirectory.flatMap { Directory buildDir ->
                 return buildDir.file(linkedFile
-                        .map(extractOutputBaseDirectoryPath(buildDir.dir(baseBuildDirectory(linkTask))))
+                        // Flat map to erase task producer from linkedFile provider
+                        .flatMap { RegularFile file -> providers.provider { extractOutputBaseDirectoryPath(buildDir.dir(baseBuildDirectory(linkTask))).transform(file) } }
                         .map(withCodeSignsPrefix()))
             })
             task.signingCertificate.set(signingCertificate)
@@ -90,5 +92,8 @@ abstract /*final*/ class CodeSigningExtension {
     protected abstract TaskContainer getTasks()
 
     @Inject
-    protected abstract ProjectLayout getLayout();
+    protected abstract ProjectLayout getLayout()
+
+    @Inject
+    protected abstract ProviderFactory getProviders()
 }
