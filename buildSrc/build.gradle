@@ -14,6 +14,7 @@ dependencies {
     runtimeOnly project(':lifecycle-gradle-plugins')
     runtimeOnly project(':prebuilt-library-management')
     runtimeOnly project(':code-signing')
+    runtimeOnly project(':publishing-glm')
 }
 
 allprojects {

@@ -2,6 +2,7 @@ plugins {
     id 'glm.installer-base'
     id 'glm.installation-manifest-base'
     id 'glm.zip-installer-package'
+    id 'glm.publishing'
 }
 
 installers {
@@ -33,3 +34,9 @@ rootProject.collectReleaseInstallers.from(installers.release.packages*.installer
 
 tasks.named('debug') { dependsOn(installers.debug.destinationDirectory)}
 tasks.named('release') { dependsOn(installers.release.destinationDirectory) }
+
+publishing {
+    publications.create('installer', GlmPublication) {
+        artifact(installers.release.packages*.installerFile)
+    }
+}
