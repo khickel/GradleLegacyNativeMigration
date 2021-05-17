@@ -45,8 +45,8 @@ abstract class GlmPublishAction implements WorkAction<Parameter> {
 
     private static String fileExtension(String algorithm) {
         switch (algorithm) {
-            case MessageDigestAlgorithms.SHA3_512: return 'sha3-256'
-            case MessageDigestAlgorithms.SHA_256: return 'sha512'
+            case MessageDigestAlgorithms.SHA3_512: return 'sha3-512.txt'
+            case MessageDigestAlgorithms.SHA_256: return 'sha256.txt'
             default: throw new UnsupportedOperationException('Unsupported digest')
         }
     }
