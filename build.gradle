@@ -218,4 +218,10 @@ allprojects {
         codeSigning.signingCertificate = rootProject.file('MySPC.pfx')
         codeSigning.signingCertificatePassword = 'passwordx'
     }
+    pluginManager.withPlugin('glm.publishing') {
+        publishing.repositories.flatDir name: 'installers', dirs: "$rootDir/build/installers"
+        repositories {
+            mavenCentral() // because commons-codec for hashing
+        }
+    }
 }
