@@ -35,7 +35,12 @@ abstract class GlmPublishAction implements WorkAction<Parameter> {
     }
 
     private String forHash(String algorithm) {
-        return "${parameters.artifactFile.asFile.get().name}.${fileExtension(algorithm)}"
+        // Strip off the file extension and append the sha's extension.
+        // This assums that the incoming filename includes an extension, but that is
+        // always the case for this project.
+        String name = parameters.artifactFile.asFile.get().name
+        name = name.take(name.lastIndexOf('.'))
+        return "${name}.${fileExtension(algorithm)}"
     }
 
     private static String fileExtension(String algorithm) {
