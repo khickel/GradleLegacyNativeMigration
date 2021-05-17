@@ -10,6 +10,7 @@ import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.reflect.TypeOf
 import org.gradle.api.tasks.Sync
 
@@ -38,6 +39,9 @@ class InstallerBasePlugin implements Plugin<Project> {
 
                 // Keep empty directories intact
                 task.includeEmptyDirs = true
+
+                // Ensure that we fail when files overwrite each other
+                task.setDuplicatesStrategy(DuplicatesStrategy.FAIL)
 
                 // Additional action that create and assert the specified empty directories
                 task.doLast("empty directories", new Action<Task>() {

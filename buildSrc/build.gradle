@@ -5,6 +5,7 @@ plugins {
 dependencies {
     implementation platform("dev.nokee:nokee-gradle-plugins:${nokeeVersion}")
     implementation 'commons-io:commons-io:2.6'
+    implementation project(':code-signing')
 
     // Expose the dependencies to the main build
     runtimeOnly project(':installer-gradle-plugins')
@@ -12,6 +13,7 @@ dependencies {
     runtimeOnly project(':installer-package-zip')
     runtimeOnly project(':lifecycle-gradle-plugins')
     runtimeOnly project(':prebuilt-library-management')
+    runtimeOnly project(':code-signing')
 }
 
 allprojects {
@@ -23,7 +25,7 @@ allprojects {
         maven { url = 'https://oss.sonatype.org/content/repositories/snapshots/' }
 
         // For Nokee snapshots
-        maven { url = 'https://dl.bintray.com/nokeedev/distributions-snapshots' }
+        maven { url = 'https://repo.nokee.dev/snapshot' }
     }
 
     // Configure Spock testing

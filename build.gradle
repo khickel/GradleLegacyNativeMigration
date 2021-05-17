@@ -1,5 +1,7 @@
 import glm.installer.pkgzip.PkgZipInstallerPackage
 
+import static PrebuiltLibraryUtils.*
+
 plugins {
     // https://github.com/dorongold/gradle-task-tree
     id "com.dorongold.task-tree" version "1.5"
@@ -114,10 +116,6 @@ allprojects {
     apply plugin: 'dev.nokee.visual-studio-ide'
     apply plugin: 'glm.isolated-file-tree'
 
-    pluginManager.withPlugin('code-sign') {
-        codeSign.certificateDirectory = rootProject.layout.buildDirectory.dir('Certs')
-    }
-
     // Make sure that we know where to find unzipsfx.exe
     project.pluginManager.withPlugin('glm.installer-base') {
         installers.all {
@@ -137,16 +135,11 @@ allprojects {
 
                 // I changed the line to the one below, but then it always throws the exception saying that the env var needs to be set.
                 // ZSFX = providers.environmentVariable('UNZIPSFX_LOCATION').forUseAtConfigurationTime().map { new File(it) }
-                def tmpFile
-                if(System.getenv('UNZIPSFX_LOCATION')) { 
-                    tmpFile = new File(System.getenv('UNZIPSFX_LOCATION'))
-                }
-                if(tmpFile == null) {
+                ZSFX.fileProvider providers.environmentVariable('UNZIPSFX_LOCATION').forUseAtConfigurationTime().map { new File(it) }.orElse(provider {
                     throw new GradleException(
-                        "Please download unzipsfx with the command 'curl -o unzip.zip <https://managedway.dl.sourceforge.net/project/infozip/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip>', unzip it into a directory, and set the environment variable 'UNZIPSFX_LOCATION' to that location."
+                            "Please download unzipsfx with the command 'curl -o unzip.zip <https://managedway.dl.sourceforge.net/project/infozip/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip>', unzip it into a directory, and set the environment variable 'UNZIPSFX_LOCATION' to that location."
                     )
-                }
-                ZSFX = tmpFile
+                })
             }
         }
     }
@@ -178,29 +171,23 @@ installationManifests {
 }
 
 prebuiltLibraryManagement {
-
-    def openSSLRoot = providers.environmentVariable('GLM_OPENSSL_ROOT').forUseAtConfigurationTime().map { new File(it) }
-        .orElse(provider {
-                throw new GradleException(
-                    "Please set the environment variable 'GLM_OPENSSL_ROOT' to the top of an OpenSSL installation."
-                ) } )
-        .get()
-
-    def openSSLLibFile = new File(openSSLRoot, 'lib\\libcrypto.lib')
-    if(!openSSLLibFile.exists()) {
-        throw new GradleException( "The environment variable GLM_OPENSSL_ROOT does not seem to specify a valid location, ${openSSLLibFile} does not exist." )
-    }
+    def openSSLRoot = objects.directoryProperty().fileProvider(openSslRoot(providers))
     libraries {
         'libcrypto' {
             groupId = 'system.OpenSSL'
             artifactId = 'libcrypto'
             version = '1.1.1h'
             variants {
-                x86Shared(SharedLibraryVariant) {
-                        includeRoot = new File(openSSLRoot, 'include')
-                        importLibraryFile = new File(openSSLRoot, 'lib/libcrypto.lib')
-                        runtimeLibraryFile = new File(openSSLRoot, 'libcrypto-1_1.dll')
-                        attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                // x86Shared(SharedLibraryVariant) {
+                //         includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                //         importLibraryFile = openSSLRoot.file('lib/libcrypto.lib').map(assertFileExists())
+                //         runtimeLibraryFile = openSSLRoot.file('libcrypto-1_1.dll').map(assertFileExists())
+                //         attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                // }
+                x86Static(StaticLibraryVariant) {
+                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                    libraryFile = openSSLRoot.file('lib/libcrypto.lib').map(assertFileExists())
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
                 }
             }
         }
@@ -209,13 +196,26 @@ prebuiltLibraryManagement {
             artifactId = 'libssl'
             version = '1.1.1h'
             variants {
-                x86Shared(SharedLibraryVariant) {
-                        includeRoot = new File(openSSLRoot, 'include')
-                        importLibraryFile = new File(openSSLRoot, 'lib/libssl.lib')
-                        runtimeLibraryFile = new File(openSSLRoot, 'libssl-1_1.dll')
-                        attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                // x86Shared(SharedLibraryVariant) {
+                //         includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                //         importLibraryFile = openSSLRoot.file('lib/libssl.lib').map(assertFileExists())
+                //         runtimeLibraryFile = openSSLRoot.file('libssl-1_1.dll').map(assertFileExists())
+                //         attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                // }
+                 x86Static(StaticLibraryVariant) {
+                        includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                        libraryFile = openSSLRoot.file('lib/libssl.lib').map(assertFileExists())
+                        attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
                 }
             }
         }
+    }
+}
+
+allprojects {
+    pluginManager.withPlugin('glm.code-signing') {
+        codeSigning.signtool.fileValue(org.gradle.internal.os.OperatingSystem.current().findInPath('signtool.exe'))
+        codeSigning.signingCertificate = rootProject.file('MySPC.pfx')
+        codeSigning.signingCertificatePassword = 'passwordx'
     }
 }

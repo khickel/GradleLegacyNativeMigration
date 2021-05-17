@@ -52,12 +52,8 @@ installationManifests.all {
     def buildType = name
     from(application.variants
             .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
-            .flatMap { it.first().developmentBinary }
-            .flatMap {
-                if (it.buildable) { return it.linkTask }
-                return null // no buildable binaries
-            }
-            .flatMap { it.linkedFile }) {
+            .map { it.find { it.developmentBinary.get().buildable } }
+            .flatMap(Binaries.selectDevelopmentBinaryFile())) {
         into('bin')
     }
 }
@@ -102,12 +98,8 @@ installers.all { Installer installer ->
         pkg.CSETUP = installer.destinationDirectory.file('wintools/CSetup.exe')
         pkg.ZNST = application.variants
                 .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(installer.name)) }
-                .flatMap { it.first().developmentBinary }
-                .flatMap {
-                    if (it.buildable) { return it.linkTask }
-                    return null // no buildable binaries
-                }
-                .flatMap { it.linkedFile }
+                .map { it.find { it.developmentBinary.get().buildable } }
+                .flatMap(Binaries.selectDevelopmentBinaryFile())
         pkg.installerBaseName = project.name
         pkg.codeSignCert.fileProvider(provider { rootProject.property('codeSignCert') })
         pkg.codeSignPassword = provider { rootProject.property('codeSignPassword') }

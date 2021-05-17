@@ -77,7 +77,7 @@ final class GradleMetadataCache implements Callable<URI> {
             builder.name('apiShared')
             builder.attribute(ofAttribute('org.gradle.usage', 'cplusplus-api'))
             variant.attributes.get().forEach { Attribute<?> k, Object v -> builder.attribute(ofAttribute(k.name, v)) }
-            variant.includeRoot.map { RegularFile it -> builder.file(artifactFile(moduleDirectory, it.asFile)) }.orNull
+            variant.includeRoot.map { Directory it -> builder.file(artifactFile(moduleDirectory, it.asFile)) }.orNull
         } as Consumer
     }
 

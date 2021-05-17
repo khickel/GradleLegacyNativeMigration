@@ -2,7 +2,7 @@ plugins {
     id 'dev.nokee.native-application'
     id 'dev.nokee.cpp-language'
     id 'dev.nokee.c-language'
-    id 'code-sign'
+    id 'glm.code-signing'
 
     id 'glm.windows-subsystem'
     id 'glm.installation-manifest-base'
@@ -43,12 +43,8 @@ installationManifests.all {
     def buildType = name
     from(application.variants
             .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
-            .flatMap { it.first().developmentBinary }
-            .flatMap {
-                if (it.buildable) { return it.linkTask }
-                return null // no buildable binaries
-            }
-            .flatMap { it.linkedFile }) {
+            .map { it.find { it.developmentBinary.get().buildable } }
+            .flatMap(Binaries.selectDevelopmentBinaryFile())) {
         into('bin')
     }
 }
