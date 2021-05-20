@@ -44,14 +44,14 @@ abstract /*final*/ class CodeSigningBasePlugin implements Plugin<Project> {
         component.variants.configureEach { Variant variant ->
             def identifier = ((BaseVariant) variant).identifier.name
             if (variant instanceof NativeApplication) {
-                def binary = variant.binaries.filter({ it instanceof ExecutableBinary } as Spec<Binary>).map { (NativeBinary) it.first() }
-                def signedBinary = new SignedBinary(extension.sign("executable${identifier.capitalize()}", binary), binary)
+                def binary = variant.binaries.filter({ it instanceof ExecutableBinary } as Spec<Binary>).map { (ExecutableBinary) it.first() }
+                def signedBinary = new SignedBinary.Executable(extension.sign("executable${identifier.capitalize()}", binary), binary)
                 ((ExtensionAware) variant).extensions.add('signedBinary', signedBinary)
             } else if (variant instanceof NativeLibrary) {
                 def linkages = ((TargetLinkageAwareComponent) component).linkages
                 if (variant.buildVariant.hasAxisOf(linkages.shared)) {
-                    def binary = variant.binaries.filter({ it instanceof SharedLibraryBinary } as Spec<Binary>).map { (NativeBinary) it.first() }
-                    def signedBinary = new SignedBinary(extension.sign("sharedLibrary${identifier.capitalize()}", binary), binary)
+                    def binary = variant.binaries.filter({ it instanceof SharedLibraryBinary } as Spec<Binary>).map { (SharedLibraryBinary) it.first() }
+                    def signedBinary = new SignedBinary.SharedLibrary(extension.sign("sharedLibrary${identifier.capitalize()}", binary), binary)
                     ((ExtensionAware) variant).extensions.add('signedBinary', signedBinary)
                 }
             }
