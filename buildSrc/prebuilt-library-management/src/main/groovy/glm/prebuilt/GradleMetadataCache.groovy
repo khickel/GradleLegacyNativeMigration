@@ -74,7 +74,7 @@ final class GradleMetadataCache implements Callable<URI> {
 
     private Consumer<GradleModuleMetadata.LocalVariant.Builder> api(File moduleDirectory, NativeVariant variant) {
         return { GradleModuleMetadata.LocalVariant.Builder builder ->
-            builder.name('apiShared')
+            builder.name("apiShared${variant.name.capitalize()}")
             builder.attribute(ofAttribute('org.gradle.usage', 'cplusplus-api'))
             variant.attributes.get().forEach { Attribute<?> k, Object v -> builder.attribute(ofAttribute(k.name, v)) }
             variant.includeRoot.map { Directory it -> builder.file(artifactFile(moduleDirectory, it.asFile)) }.orNull
@@ -84,13 +84,13 @@ final class GradleMetadataCache implements Callable<URI> {
     private Consumer<GradleModuleMetadata.LocalVariant.Builder> link(File moduleDirectory, NativeVariant variant) {
         return { GradleModuleMetadata.LocalVariant.Builder builder ->
             if (variant instanceof SharedLibraryVariant) {
-                builder.name('linkShared')
+                builder.name("linkShared${variant.name.capitalize()}")
                 variant.importLibraryFile.map { RegularFile it -> builder.file(artifactFile(moduleDirectory, it.asFile)) }.orNull
             } else if (variant instanceof StaticLibraryVariant) {
-                builder.name('linkStatic')
+                builder.name("linkStatic${variant.name.capitalize()}")
                 variant.libraryFile.map { RegularFile it -> builder.file(artifactFile(moduleDirectory, it.asFile)) }.orNull
             } else {
-                builder.name('link')
+                builder.name("link${variant.name.capitalize()}")
             }
             builder.attribute(ofAttribute('org.gradle.usage', 'native-link'))
             variant.attributes.get().forEach { Attribute<?> k, Object v -> builder.attribute(ofAttribute(k.name, v)) }
@@ -100,12 +100,12 @@ final class GradleMetadataCache implements Callable<URI> {
     private Consumer<GradleModuleMetadata.LocalVariant.Builder> runtime(File moduleDirectory, NativeVariant variant) {
         return { GradleModuleMetadata.LocalVariant.Builder builder ->
             if (variant instanceof SharedLibraryVariant) {
-                builder.name('runtimeShared')
+                builder.name("runtimeShared${variant.name.capitalize()}")
                 variant.runtimeLibraryFile.map { RegularFile it -> builder.file(artifactFile(moduleDirectory, it.asFile)) }.orNull
             } else if (variant instanceof StaticLibraryVariant) {
-                builder.name('runtimeStatic')
+                builder.name("runtimeStatic${variant.name.capitalize()}")
             } else {
-                builder.name('runtime')
+                builder.name("runtime${variant.name.capitalize()}")
             }
             builder.attribute(ofAttribute('org.gradle.usage', 'native-runtime'))
             variant.attributes.get().forEach { Attribute<?> k, Object v -> builder.attribute(ofAttribute(k.name, v)) }
