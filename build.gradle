@@ -186,13 +186,13 @@ prebuiltLibraryManagement {
                 // }
                 x86DebugStatic(StaticLibraryVariant) {
                     includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
-                    libraryFile = openSSLRoot.file('lib/libcrypto.lib').map(assertFileExists())
+                    libraryFile = openSSLRoot.file('debug/lib/libcrypto.lib').map(assertFileExists())
                     attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
                     attributes.put(Attribute.of('dev.nokee.buildType', String), 'debug')
                 }
                 x86ReleaseStatic(StaticLibraryVariant) {
                     includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
-                    libraryFile = openSSLRoot.file('debug/lib/libcrypto.lib').map(assertFileExists())
+                    libraryFile = openSSLRoot.file('lib/libcrypto.lib').map(assertFileExists())
                     attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
                     attributes.put(Attribute.of('dev.nokee.buildType', String), 'release')
                 }
