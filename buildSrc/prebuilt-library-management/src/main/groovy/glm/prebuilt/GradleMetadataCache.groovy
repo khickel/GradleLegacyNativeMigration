@@ -118,7 +118,11 @@ final class GradleMetadataCache implements Callable<URI> {
 
     private Consumer<GradleModuleMetadata.File.Builder> artifactFile(File moduleDirectory, File target) {
         return { GradleModuleMetadata.File.Builder builder ->
-            builder.name(target.name)
+            if (target.isFile()) {
+                builder.name(ByteSource.wrap(target.absolutePath.bytes).hash(Hashing.md5()).toString() + "-" + target.name)
+            } else {
+                builder.name(target.name)
+            }
             builder.url(relativize(moduleDirectory, target))
 
             def byteSource = ByteSource.wrap(target.absolutePath.bytes)
