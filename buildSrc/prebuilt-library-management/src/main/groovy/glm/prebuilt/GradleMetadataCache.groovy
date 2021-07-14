@@ -1,5 +1,9 @@
 package glm.prebuilt
 
+import com.google.common.hash.HashFunction
+import com.google.common.hash.Hashing
+import com.google.common.io.ByteSource
+import com.google.common.io.Files
 import dev.gradleplugins.grava.publish.metadata.GradleModuleMetadata
 import groovy.transform.CompileStatic
 import org.gradle.api.attributes.Attribute
@@ -116,9 +120,14 @@ final class GradleMetadataCache implements Callable<URI> {
         return { GradleModuleMetadata.File.Builder builder ->
             builder.name(target.name)
             builder.url(relativize(moduleDirectory, target))
-            builder.size(0)
-            builder.sha1('TODO')
-            builder.md5('TODO')
+
+            def byteSource = ByteSource.wrap(target.absolutePath.bytes)
+            if (target.isFile()) {
+                byteSource = Files.asByteSource(target)
+            }
+            builder.size(byteSource.size())
+            builder.sha1(byteSource.hash(Hashing.sha1()).toString())
+            builder.md5(byteSource.hash(Hashing.md5()).toString())
         } as Consumer
     }
 

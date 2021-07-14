@@ -19,4 +19,5 @@ gradlePlugin {
 
 dependencies {
     implementation 'dev.gradleplugins:grava-publish:1.0.1'
+    implementation 'com.google.guava:guava:30.1.1-jre'
 }
