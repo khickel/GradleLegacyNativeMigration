@@ -288,7 +288,11 @@ final class GradleMetadataCache implements Callable<URI> {
         for (int i = 0; i < n; i++) {
             pathBackToRoot.append("../");
         }
-        return pathBackToRoot + target.getAbsolutePath().replace('\\', '/');
+        String pathToTarget = target.getAbsolutePath().replace('\\', '/');
+        if (pathToTarget.startsWith("/")) {
+            pathToTarget = pathToTarget.substring(1);
+        }
+        return pathBackToRoot + pathToTarget;
     }
 
     private static String group(NativeLibraryComponent library) {
