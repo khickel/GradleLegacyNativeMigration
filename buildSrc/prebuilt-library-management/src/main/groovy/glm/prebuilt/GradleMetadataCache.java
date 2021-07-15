@@ -1,12 +1,15 @@
 package glm.prebuilt;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Files;
-import org.apache.commons.lang3.StringUtils;
 import dev.gradleplugins.grava.publish.metadata.GradleModuleMetadata;
+import dev.gradleplugins.grava.publish.metadata.GradleModuleMetadataWriter;
 import org.gradle.api.attributes.Attribute;
+import org.gradle.api.attributes.Usage;
 import org.gradle.api.file.Directory;
+import org.gradle.api.file.FileSystemLocation;
 import org.gradle.api.provider.Provider;
 
 import java.io.File;
@@ -16,11 +19,11 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
-import static dev.gradleplugins.grava.publish.metadata.GradleModuleMetadata.Attribute.ofAttribute;
 import static dev.gradleplugins.grava.publish.metadata.GradleModuleMetadata.Component.ofComponent;
 import static dev.gradleplugins.grava.publish.metadata.GradleModuleMetadata.CreatedBy.ofGradle;
 import static dev.gradleplugins.grava.publish.metadata.GradleModuleMetadata.withWriter;
@@ -62,92 +65,220 @@ final class GradleMetadataCache implements Callable<URI> {
     }
 
     private void writeMetadata(NativeLibraryComponent library) {
-        File moduleFile = moduleFile(library);
         try {
-            withWriter(moduleFile, writer -> {
-                File moduleDirectory = moduleFile.getParentFile();
-                GradleModuleMetadata.Builder builder = GradleModuleMetadata.builder();
-                builder.formatVersion("1.1");
-                builder.component(ofComponent(library.getGroupId().get(), library.getArtifactId().get(), library.getVersion().get()));
-                builder.createdBy(ofGradle("4.3", "abc123"));
-                library.getVariants().forEach(it -> {
-                    builder.localVariant(api(moduleDirectory, it))
-                            .localVariant(link(moduleDirectory, it))
-                            .localVariant(runtime(moduleDirectory, it));
-                });
-
-                try {
-                    writer.write(builder.build());
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
+            write(new MainModule(library));
+            for (NativeVariant variant : library.getVariants()) {
+                write(new VariantModule(library, variant));
+            }
         } catch (IOException e) {
+            e.printStackTrace();
             throw new UncheckedIOException(e);
         }
     }
 
-    private Consumer<GradleModuleMetadata.LocalVariant.Builder> api(File moduleDirectory, NativeVariant variant) {
-        return builder -> {
-            builder.name("api" + StringUtils.capitalize(variant.getName()));
-            builder.attribute(ofAttribute("org.gradle.usage", "cplusplus-api"));
-            variant.getAttributes().get().forEach((Attribute<?> k, Object v) -> builder.attribute(ofAttribute(k.getName(), v)));
-            variant.getIncludeRoot().map(it -> builder.file(artifactFile(moduleDirectory, it.getAsFile()))).getOrNull();
-        };
+    private interface ModuleFile {
+        File getFile();
     }
 
-    private Consumer<GradleModuleMetadata.LocalVariant.Builder> link(File moduleDirectory, NativeVariant variant) {
-        return builder -> {
-            if (variant instanceof SharedLibraryVariant) {
-                builder.name("linkShared" + StringUtils.capitalize(variant.getName()));
-                ((SharedLibraryVariant) variant).getImportLibraryFile().map(it -> builder.file(artifactFile(moduleDirectory, it.getAsFile()))).getOrNull();
-            } else if (variant instanceof StaticLibraryVariant) {
-                builder.name("linkStatic" + StringUtils.capitalize(variant.getName()));
-                ((StaticLibraryVariant) variant).getLibraryFile().map(it -> builder.file(artifactFile(moduleDirectory, it.getAsFile()))).getOrNull();
-            } else {
-                builder.name("link" + StringUtils.capitalize(variant.getName()));
-            }
-            builder.attribute(ofAttribute("org.gradle.usage", "native-link"));
-            variant.getAttributes().get().forEach((Attribute<?> k, Object v) -> builder.attribute(ofAttribute(k.getName(), v)));
-        };
+    @SuppressWarnings("unchecked")
+    private static void write(ModuleFile module) throws IOException {
+        File file = module.getFile();
+        Files.createParentDirs(file);
+        withWriter(file, (Consumer<GradleModuleMetadataWriter>) module);
     }
 
-    private Consumer<GradleModuleMetadata.LocalVariant.Builder> runtime(File moduleDirectory, NativeVariant variant) {
-        return builder -> {
-            if (variant instanceof SharedLibraryVariant) {
-                builder.name("runtimeShared" + StringUtils.capitalize(variant.getName()));
-                ((SharedLibraryVariant) variant).getRuntimeLibraryFile().map(it -> builder.file(artifactFile(moduleDirectory, it.getAsFile()))).getOrNull();
-            } else if (variant instanceof StaticLibraryVariant) {
-                builder.name("runtimeStatic" + StringUtils.capitalize(variant.getName()));
-            } else {
-                builder.name("runtime" + StringUtils.capitalize(variant.getName()));
-            }
-            builder.attribute(ofAttribute("org.gradle.usage", "native-runtime"));
-            variant.getAttributes().get().forEach((Attribute<?> k, Object v) -> builder.attribute(ofAttribute(k.getName(), v)));
-        };
-    }
+    private final class MainModule implements ModuleFile, Consumer<GradleModuleMetadataWriter> {
+        private final GradleModuleMetadata.Builder builder = GradleModuleMetadata.builder();
+        private final NativeLibraryComponent library;
 
-    private Consumer<GradleModuleMetadata.File.Builder> artifactFile(File moduleDirectory, File target) {
-        return builder -> {
+        MainModule(NativeLibraryComponent library) {
+            this.library = library;
+        }
+
+        @Override
+        public void accept(GradleModuleMetadataWriter writer) {
+            builder.formatVersion("1.1");
+            builder.component(ofComponent(library.getGroupId().get(), library.getArtifactId().get(), library.getVersion().get()));
+            builder.createdBy(ofGradle("4.3", "abc123"));
+            library.getVariants().forEach(this::registerRemoteVariants);
+
             try {
-                if (target.isFile()) {
-                    builder.name(ByteSource.wrap(target.getAbsolutePath().getBytes(StandardCharsets.UTF_8)).hash(Hashing.md5()).toString() + "-" + target.getName());
-                } else {
-                    builder.name(target.getName());
-                }
-                builder.url(relativize(moduleDirectory, target));
-
-                ByteSource byteSource = ByteSource.wrap(target.getAbsolutePath().getBytes(StandardCharsets.UTF_8));
-                if (target.isFile()) {
-                    byteSource = Files.asByteSource(target);
-                }
-                builder.size(byteSource.size());
-                builder.sha1(byteSource.hash(Hashing.sha1()).toString());
-                builder.md5(byteSource.hash(Hashing.md5()).toString());
+                writer.write(builder.build());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-        };
+        }
+
+        private void registerRemoteVariants(NativeVariant variant) {
+            builder.remoteVariant(api(variant))
+                    .remoteVariant(link(variant))
+                    .remoteVariant(runtime(variant));
+        }
+
+        private Consumer<GradleModuleMetadata.RemoteVariant.Builder> api(NativeVariant variant) {
+            return named("api-" + variant.getName())
+                    .andThen(availableAt(variant))
+                    .andThen(attributes(ImmutableMap.<Attribute<?>, Object>builder()
+                            .put(Usage.USAGE_ATTRIBUTE, Usage.C_PLUS_PLUS_API)
+                            .putAll(variant.getAttributes().get())
+                            .build()));
+        }
+
+        private Consumer<GradleModuleMetadata.RemoteVariant.Builder> link(NativeVariant variant) {
+            return named("link-" + variant.getName())
+                    .andThen(availableAt(variant))
+                    .andThen(attributes(ImmutableMap.<Attribute<?>, Object>builder()
+                            .put(Usage.USAGE_ATTRIBUTE, Usage.NATIVE_LINK)
+                            .putAll(variant.getAttributes().get())
+                            .build()));
+        }
+
+        private Consumer<GradleModuleMetadata.RemoteVariant.Builder> runtime(NativeVariant variant) {
+            return named("runtime-" + variant.getName())
+                    .andThen(availableAt(variant))
+                    .andThen(attributes(ImmutableMap.<Attribute<?>, Object>builder()
+                            .put(Usage.USAGE_ATTRIBUTE, Usage.NATIVE_RUNTIME)
+                            .putAll(variant.getAttributes().get())
+                            .build()));
+        }
+
+        private Consumer<GradleModuleMetadata.RemoteVariant.Builder> attributes(Map<Attribute<?>, Object> attributes) {
+            return builder -> {
+                attributes.forEach((k, v) -> builder.attribute(GradleModuleMetadata.Attribute.ofAttribute(k.getName(), v)));
+            };
+        }
+
+        private Consumer<GradleModuleMetadata.RemoteVariant.Builder> availableAt(NativeVariant variant) {
+            return builder -> builder.availableAt(it -> it.group(library.getGroupId().get())
+                    .module(library.getArtifactId().get() + "_" + variant.getName())
+                    .version(library.getVersion().get())
+                    .url("../../" + library.getArtifactId().get() + "_" + variant.getName() + "/" + library.getVersion().get() + "/" + library.getArtifactId().get() + "_" + variant.getName() + "-" + library.getVersion().get() + ".module"));
+        }
+
+        private Consumer<GradleModuleMetadata.RemoteVariant.Builder> named(String name) {
+            return builder -> builder.name(name);
+        }
+
+        @Override
+        public File getFile() {
+            return cachingDirectory.get().file(group(library) + "/" + library.getArtifactId().get() + "/" + library.getVersion().get() + "/" + library.getArtifactId().get() + "-" + library.getVersion().get() + ".module").getAsFile();
+        }
+    }
+
+    private final class VariantModule implements ModuleFile, Consumer<GradleModuleMetadataWriter> {
+        private final GradleModuleMetadata.Builder builder = GradleModuleMetadata.builder();
+        private final NativeLibraryComponent library;
+        private final NativeVariant variant;
+
+        VariantModule(NativeLibraryComponent library, NativeVariant variant) {
+            this.library = library;
+            this.variant = variant;
+        }
+
+        @Override
+        public void accept(GradleModuleMetadataWriter writer) {
+            builder.formatVersion("1.1");
+            builder.component(ofComponent(library.getGroupId().get(),
+                    getModuleName(),
+                    library.getVersion().get()));
+            builder.createdBy(ofGradle("4.3", "abc123"));
+            registerLocalVariants(variant);
+
+            try {
+                writer.write(builder.build());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        private void registerLocalVariants(NativeVariant variant) {
+            builder.localVariant(api(variant))
+                    .localVariant(link(variant))
+                    .localVariant(runtime(variant));
+        }
+
+        private Consumer<GradleModuleMetadata.LocalVariant.Builder> api(NativeVariant variant) {
+            return named("api-" + variant.getName())
+                    .andThen(file(variant.getIncludeRoot()))
+                    .andThen(attributes(ImmutableMap.<Attribute<?>, Object>builder()
+                            .put(Usage.USAGE_ATTRIBUTE, Usage.C_PLUS_PLUS_API)
+                            .putAll(variant.getAttributes().get())
+                            .build()));
+        }
+
+        private Consumer<GradleModuleMetadata.LocalVariant.Builder> link(NativeVariant variant) {
+            Consumer<GradleModuleMetadata.LocalVariant.Builder> result = named("link-" + variant.getName())
+                    .andThen(attributes(ImmutableMap.<Attribute<?>, Object>builder()
+                            .put(Usage.USAGE_ATTRIBUTE, Usage.NATIVE_LINK)
+                            .putAll(variant.getAttributes().get())
+                            .build()));
+            if (variant instanceof SharedLibraryVariant) {
+                return result.andThen(file(((SharedLibraryVariant) variant).getImportLibraryFile()));
+            } else if (variant instanceof StaticLibraryVariant) {
+                return result.andThen(file(((StaticLibraryVariant) variant).getLibraryFile()));
+            } else {
+                return result;
+            }
+        }
+
+        private Consumer<GradleModuleMetadata.LocalVariant.Builder> runtime(NativeVariant variant) {
+            Consumer<GradleModuleMetadata.LocalVariant.Builder> result = named("runtime-" + variant.getName())
+                    .andThen(attributes(ImmutableMap.<Attribute<?>, Object>builder()
+                            .put(Usage.USAGE_ATTRIBUTE, Usage.NATIVE_RUNTIME)
+                            .putAll(variant.getAttributes().get())
+                            .build()));
+            if (variant instanceof SharedLibraryVariant) {
+                return result.andThen(file(((SharedLibraryVariant) variant).getRuntimeLibraryFile()));
+            } else {
+                return result;
+            }
+        }
+
+        private Consumer<GradleModuleMetadata.LocalVariant.Builder> file(Provider<? extends FileSystemLocation> target) {
+            return builder -> {
+                if (target.isPresent()) {
+                    builder.file(artifactFile(getFile().getParentFile(), target.get().getAsFile()));
+                }
+            };
+        }
+
+        private Consumer<GradleModuleMetadata.File.Builder> artifactFile(File moduleDirectory, File target) {
+            return builder -> {
+                try {
+                    builder.name(target.getName());
+                    builder.url(relativize(moduleDirectory, target));
+
+                    ByteSource byteSource = ByteSource.wrap(target.getAbsolutePath().getBytes(StandardCharsets.UTF_8));
+                    if (target.isFile()) {
+                        byteSource = Files.asByteSource(target);
+                    }
+                    builder.size(byteSource.size());
+                    builder.sha1(byteSource.hash(Hashing.sha1()).toString());
+                    builder.md5(byteSource.hash(Hashing.md5()).toString());
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            };
+        }
+
+        private Consumer<GradleModuleMetadata.LocalVariant.Builder> attributes(Map<Attribute<?>, Object> attributes) {
+            return builder -> {
+                attributes.forEach((k, v) -> builder.attribute(GradleModuleMetadata.Attribute.ofAttribute(k.getName(), v)));
+            };
+        }
+
+        private Consumer<GradleModuleMetadata.LocalVariant.Builder> named(String name) {
+            return builder -> builder.name(name);
+        }
+
+        private String getModuleName() {
+            return library.getArtifactId().get() + "_" + variant.getName();
+        }
+
+        @Override
+        public File getFile() {
+            return cachingDirectory.get().file(group(library) + "/" + getModuleName() + "/" + library.getVersion().get() + "/" + getModuleName() + "-" + library.getVersion().get() + ".module").getAsFile();
+        }
     }
 
     private static String relativize(File moduleDirectory, File target) {
@@ -157,13 +288,11 @@ final class GradleMetadataCache implements Callable<URI> {
         for (int i = 0; i < n; i++) {
             pathBackToRoot.append("../");
         }
-        return pathBackToRoot.toString() + target.getAbsolutePath().replace('\\', '/');
+        return pathBackToRoot + target.getAbsolutePath().replace('\\', '/');
     }
 
-    private File moduleFile(NativeLibraryComponent library) {
-        File result = cachingDirectory.get().file(library.getGroupId().get().replace('.', '/') + "/" + library.getArtifactId().get() + "/" + library.getVersion().get() + "/" + library.getArtifactId().get() + "-" + library.getVersion().get() + ".module").getAsFile();
-        result.getParentFile().mkdirs();
-        return result;
+    private static String group(NativeLibraryComponent library) {
+        return library.getGroupId().get().replace('.', '/');
     }
 
     @Override
