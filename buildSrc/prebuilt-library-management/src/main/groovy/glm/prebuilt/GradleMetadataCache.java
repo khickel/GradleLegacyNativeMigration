@@ -284,15 +284,21 @@ final class GradleMetadataCache implements Callable<URI> {
     private static String relativize(File moduleDirectory, File target) {
         StringBuilder pathBackToRoot = new StringBuilder();
 
-        long n = moduleDirectory.getAbsolutePath().replace('\\', '/').split("/").length;
+        long n = absolutePathWithoutLeadingPathSeparator(moduleDirectory).split("/").length;
         for (int i = 0; i < n; i++) {
             pathBackToRoot.append("../");
         }
+
+        return pathBackToRoot + absolutePathWithoutLeadingPathSeparator(target);
+    }
+
+    // Account for *nix absolute path starting with a forward slash
+    private static String absolutePathWithoutLeadingPathSeparator(File target) {
         String pathToTarget = target.getAbsolutePath().replace('\\', '/');
         if (pathToTarget.startsWith("/")) {
             pathToTarget = pathToTarget.substring(1);
         }
-        return pathBackToRoot + pathToTarget;
+        return pathToTarget;
     }
 
     private static String group(NativeLibraryComponent library) {
