@@ -4,6 +4,145 @@
 // Settings and methods for visual studio.
 
 ////////////////////////////////////////////////////////////////
+// Set up the default compiler options for a C++ project
+def addDefaultCPPOptions(Project prj, Boolean suppressConsoleDef=false) {
+    prj.tasks.withType(CppCompile).configureEach { task ->
+        // TODO - make this depend upon the target
+        //task.macros.put("NDEBUG", null)
+
+        task.compilerArgs.addAll toolChain.map { toolChain ->
+            if (toolChain in VisualCpp) {
+                return [
+                    '/D_CRT_SECURE_NO_WARNINGS', '/wd4996',
+                    '/nologo', 
+
+                    // TODO for non-debug use:
+                    //'/MT',
+                    // for debug, use:
+                    '/MTd',
+                    
+                    '/EHsc',
+                    '/DWIN32',
+                    '/D_WIN32_WINNT=0x0601',
+
+                    '/W3', '/WX',
+
+                    // We'd like to be able to do a build time analysis, intellisense will work,
+                    // but you have to open every source file in the IDE to get that to scan it all, which is impractical.
+                    // Since Gradle only sends compilation errors to stdout, not warnings, we either need to someone get the entire
+                    // compiler output to stdout, or cause all warnings to be errors.
+                    
+                    // Comment this line back in to get all analysis warnings in the VS error list panel, but turning this on for an
+                    // existing codebase will cause a lot of issues that need to be fixed (unless you turn it on
+                    // only on demand) and may prevent other projects from being built (based on dependencies), so leave it off normally.
+                    // Ideally turn this on by some command line switch, VS doesn't seem to let us control the analyze command as it does
+                    // for debug or release.
+                    //'/analyze',
+
+                    // TODO: There is also this solution at https://stackoverflow.com/questions/44126969/gradle-compiler-output-when-building-c-c-code/44691786#44691786.
+                    // It sends the compiler output from the build\tmp directory to gradle stdout.
+
+
+                    // TODO - make this depend upon the target, debug or release
+                    //'/DNDEBUG',
+                    '/DEBUG', '/D_DEBUG',
+                    
+                    // Tell some of the modules in SourceT to use a relative include path for siglib.
+                    '/DUSE_REL_SIGLIB_PATH',
+
+                ]
+            }
+            return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
+        }
+
+        if(suppressConsoleDef == false) {
+            task.compilerArgs.addAll toolChain.map { toolChain ->
+                if (toolChain in VisualCpp) {
+                    return ['/D_CONSOLE']
+                }
+                return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
+            }
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////
+def addVSCompilerOption(Project prj, String newOption) {
+    prj.tasks.withType(CppCompile).configureEach { task ->
+        // There must be a simpler way to do this than using map.
+        task.compilerArgs.addAll toolChain.map { toolChain ->
+            if (toolChain in VisualCpp) {
+                return [ newOption ]
+            }
+            return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////
+def AddVSExeLinkOption(Project prj, String newOption) {
+    prj.tasks.withType(LinkExecutable).configureEach{ task->
+        task.linkerArgs.addAll toolChain.map { tc ->
+            if (tc in VisualCpp) {
+                return [
+                    newOption
+                ]
+            }
+            return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////
+def AddVSDllLinkOption(Project prj, String newOption) {
+    prj.tasks.withType(LinkSharedLibrary).configureEach{ task->
+        task.linkerArgs.addAll toolChain.map { tc ->
+            if (tc in VisualCpp) {
+                return [
+                    newOption
+                ]
+            }
+            return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////
+def addDefaultCPPLibraryOptions(Project prj, CppLibrary lib, Boolean suppressConsoleDef=false) {
+
+    lib.targetMachines = [prj.machines.windows.x86, prj.machines.linux.x86_64]
+    addDefaultCPPOptions(prj, suppressConsoleDef)
+}
+
+////////////////////////////////////////////////////////////////
+def addDefaultCPPApplicationOptions(Project prj, CppApplication app, Boolean suppressConsoleDef=false) {
+    app.targetMachines = [prj.machines.windows.x86, prj.machines.linux.x86_64]
+    addDefaultCPPOptions(prj, suppressConsoleDef)
+
+    // Add Windows specific linker options
+    app.binaries.configureEach {
+        if (toolChain instanceof VisualCpp) {
+            linkTask.get().linkerArgs.addAll( [
+                "iphlpapi.lib",
+                "kernel32.lib",
+                "user32.lib",
+                "gdi32.lib",
+                "winspool.lib",
+                "comdlg32.lib",
+                "advapi32.lib",
+                "shell32.lib",
+                "ole32.lib",
+                "oleaut32.lib",
+                "odbc32.lib",
+                "odbccp32.lib",
+                "ws2_32.lib",
+                "wsock32.lib"
+            ])
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////
 def addWindowsResourceFile(Project prj, CppApplication app, String dir=".") {
     app.binaries.whenElementFinalized { bin ->
         def compileResources = prj.tasks.register("compileResources${bin.name.capitalize()}", WindowsResourceCompile) {
@@ -17,7 +156,7 @@ def addWindowsResourceFile(Project prj, CppApplication app, String dir=".") {
                 if (toolChain instanceof VisualCpp) {
                     return [ "/v", "/l", "0x409" ]
                 }
-                return []
+                return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
             }).get()
             it.outputDir = prj.layout.buildDirectory.dir("windows-resources/${bin.name}").get().asFile
         }
@@ -29,7 +168,7 @@ def addWindowsResourceFile(Project prj, CppApplication app, String dir=".") {
                 if (toolChain instanceof VisualCpp) {
                     return ["user32.lib"]
                 }
-                return []
+                return [] // Always return at least an empty array, otherwise all the previous settings will be wiped out.
             }
         }
     }

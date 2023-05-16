@@ -1,15 +1,241 @@
+import glm.installer.pkgzip.PkgZipInstallerPackage
+
+import static PrebuiltLibraryUtils.*
+
 plugins {
     // https://github.com/dorongold/gradle-task-tree
     id "com.dorongold.task-tree" version "1.5"
     id 'usage'
+
+    id 'glm.installation-manifest-base'
+    id 'glm.prebuilt-library-management-base'
+    id 'glm.prebuilt-repositories'
+}
+
+ext {
+    // Code signing info
+    codeSignCert = file("MySPC.pfx")
+    codeSignPassword = "passwordx"
+
+    isWindows = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
+        .currentOperatingSystem.isWindows()
+
+
+    // TODO:CLEANUP
+    //codeSignCert = "${rootDir}/MySPC.pfx"
+    //codeSignPassword = "passwordx"
+    //
+    // TopProjDir = "${projectDir}/"
+    //
+    // // Names for our task groups
+    // debugGroup = "Legacy Native Migration Example Debug"
+    // releaseGroup = "Legacy Native Migration Example Release"
+    // releaseString = "1.1.00"
+    // versionTextInputFilename = 'VERSION.txt.in'
+    // versionTextInputPath = "${rootDir}/${versionTextInputFilename}"
+
+}
+
+// These tasks collect all the various installers into a known location.
+def collectDebugInstallers = tasks.register('collectDebugInstallers', Sync).configure {
+    destinationDir = file(rootProject.projectDir.path + '/installers/debug')
+    doLast {
+        println "Debug installers collected to ${destinationDir}."
+    }
+}
+
+def collectReleaseInstallers = tasks.register('collectReleaseInstallers', Sync).configure {
+    destinationDir = file(rootProject.projectDir.path + '/installers/release')
+    doLast {
+        println "Release installers collected to ${destinationDir}."
+    }
+}
+
+// TODO:GLM
+// TODO:Confluence
+// Create an 'all' task that builds everything, debug and release, including building and collecting the installers.
+def allTask = tasks.register('all').configure{ allT ->
+    subprojects.each { sp ->
+        def tsk
+        tsk = sp.tasks.findByName('debug')
+        if(tsk) { allT.dependsOn(tsk) }
+
+        tsk = sp.tasks.findByName('debugInstaller')
+        if(tsk) {
+            allT.dependsOn(tsk)
+            rootProject.collectDebugInstallers.from(sp.installers.debug.packages*.installerFile)
+        }
+        
+        tsk = sp.tasks.findByName('release')
+        if(tsk) { allT.dependsOn(tsk) }
+
+        tsk = sp.tasks.findByName('releaseInstaller')
+        if(tsk) {
+            allT.dependsOn(tsk)
+            rootProject.collectReleaseInstallers.from(sp.installers.release.packages*.installerFile)
+        }
+    }
+
+    dependsOn(rootProject.collectDebugInstallers)
+    dependsOn(rootProject.collectReleaseInstallers)
+}
+// Create allDebug and allRelease tasks that do everything for that variant.
+def allDebugTask = tasks.register('allDebug').configure{
+    subprojects.each { sp ->
+        def tsk
+        tsk = sp.tasks.findByName('debug')
+        if(tsk) { it.dependsOn(tsk) }
+
+        tsk = sp.tasks.findByName('debugInstaller')
+        if(tsk) {
+            it.dependsOn(tsk)
+            rootProject.collectDebugInstallers.from(sp.installers.debug.packages*.installerFile)
+        }
+    }
+    dependsOn(rootProject.collectDebugInstallers)
+}
+def allReleaseTask = tasks.register('allRelease').configure{ 
+    subprojects.each { sp ->
+        def tsk
+        tsk = sp.tasks.findByName('release')
+        if(tsk) { it.dependsOn(tsk) }
+
+        tsk = sp.tasks.findByName('releaseInstaller')
+        if(tsk) {
+            it.dependsOn(tsk)
+            rootProject.collectReleaseInstallers.from(sp.installers.release.packages*.installerFile)
+        }
+    }
+    dependsOn(rootProject.collectReleaseInstallers)
 }
 
 allprojects {
-    apply plugin: 'lifecycle-debug'
-    apply plugin: 'lifecycle-release'
+    apply plugin: 'glm.debug-lifecycle'
+    apply plugin: 'glm.release-lifecycle'
+    apply plugin: 'default-import'
     apply plugin: 'dev.nokee.visual-studio-ide'
+    apply plugin: 'glm.isolated-file-tree'
 
-    pluginManager.withPlugin('code-sign') {
-        codeSign.certificateDirectory = rootProject.layout.buildDirectory.dir('Certs')
+    // Make sure that we know where to find unzipsfx.exe
+    project.pluginManager.withPlugin('glm.installer-base') {
+        installers.all {
+            packages.withType(PkgZipInstallerPackage).all {
+                // TODO: This doesn't seem to work properly, I get this error message:
+                // * What went wrong:
+                // Could not determine the dependencies of task ':zsfx_inst:zsfx_one:createPkgZipDebugInstaller'.
+                // > Failed to query the value of task ':zsfx_inst:zsfx_one:createPkgZipDebugInstaller' property 'ZSFX'.
+                //    > Failed to query the value of property 'ZSFX'.
+                //       > Cannot obtain value from provider of environment variable 'UNZIPSFX_LOCATION' at configuration time.
+                //         Use a provider returned by 'forUseAtConfigurationTime()' instead.
+                // ZSFX = providers.environmentVariable('UNZIPSFX_LOCATION').map { new File(it) }
+                //     .orElse(provider {
+                //             throw new GradleException(
+                //                 "Please download unzipsfx from <https://sourceforge.net/projects/infozip/files/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip/download>, unzip it, and set the environment variable 'UNZIPSFX_LOCATION'"
+                //             ) } )
+
+                // I changed the line to the one below, but then it always throws the exception saying that the env var needs to be set.
+                // ZSFX = providers.environmentVariable('UNZIPSFX_LOCATION').forUseAtConfigurationTime().map { new File(it) }
+                ZSFX.fileProvider providers.environmentVariable('UNZIPSFX_LOCATION').forUseAtConfigurationTime().map { new File(it) }.orElse(provider {
+                    throw new GradleException(
+                            "Please download unzipsfx with the command 'curl -o unzip.zip <https://managedway.dl.sourceforge.net/project/infozip/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip>', unzip it into a directory, and set the environment variable 'UNZIPSFX_LOCATION' to that location."
+                    )
+                })
+            }
+        }
+    }
+    // KHickel 02-10-2021 Change the build directory for each project to be underneath
+    // rootProject.directory/build.
+    // "ofs" means "Out oF Source" (e.g. not in the source tree).
+    // The prj.name is the subproject name, which makes it easier to find something like
+    // an outputs.txt/options.txt for a subproject when you want to.
+    // And the md5 sum is added to make sure that the directories are unique to a subproject.
+    // This avoids a problem when Gradle decides to include all the source directories in the include path.
+    // If the build directory is below the source directory, then you start to get spurious rebuilds of
+    // projects, this change avoids that.
+    layout.buildDirectory.set(rootProject.file("build/ofs" + it.path.replaceAll(/:/, '-') + "-" + it.path.md5()))
+}
+
+project(':zsfx_inst') {
+    subprojects {
+        ext.versionTextInputFilename = 'VERSION.txt.in'
+        ext.releaseString = '1.1.00'
+    }
+}
+
+installationManifests {
+    base {
+        from('LICENSE')
+        from('README.md')
+        from('VERSION.txt.in')
+    }
+}
+
+prebuiltLibraryManagement {
+    def openSSLRoot = objects.directoryProperty().fileProvider(openSslRoot(providers))
+    libraries {
+        'libcrypto' {
+            groupId = 'system.Crypto'
+            artifactId = 'libcrypto'
+            version = 'current'
+            variants {
+                // x86Shared(SharedLibraryVariant) {
+                //         includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                //         importLibraryFile = openSSLRoot.file('lib/libcrypto.lib').map(assertFileExists())
+                //         runtimeLibraryFile = openSSLRoot.file('libcrypto-1_1.dll').map(assertFileExists())
+                //         attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                // }
+                x86DebugStatic(StaticLibraryVariant) {
+                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                    libraryFile = openSSLRoot.file('debug/lib/libcrypto.lib').map(assertFileExists())
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
+                    attributes.put(Attribute.of('dev.nokee.buildType', String), 'debug')
+                }
+                x86ReleaseStatic(StaticLibraryVariant) {
+                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                    libraryFile = openSSLRoot.file('lib/libcrypto.lib').map(assertFileExists())
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
+                    attributes.put(Attribute.of('dev.nokee.buildType', String), 'release')
+                }
+            }
+        }
+        'libssl' {
+            groupId = 'system.OpenSSL'
+            artifactId = 'libssl'
+            version = 'current'
+            variants {
+                // x86Shared(SharedLibraryVariant) {
+                //         includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                //         importLibraryFile = openSSLRoot.file('lib/libssl.lib').map(assertFileExists())
+                //         runtimeLibraryFile = openSSLRoot.file('libssl-1_1.dll').map(assertFileExists())
+                //         attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                // }
+                 x86DebugStatic(StaticLibraryVariant) {
+                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                    libraryFile = openSSLRoot.file('debug/lib/libssl.lib').map(assertFileExists())
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
+                    attributes.put(Attribute.of('dev.nokee.buildType', String), 'debug')
+                }
+                 x86ReleaseStatic(StaticLibraryVariant) {
+                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                    libraryFile = openSSLRoot.file('lib/libssl.lib').map(assertFileExists())
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
+                    attributes.put(Attribute.of('dev.nokee.buildType', String), 'release')
+                }
+            }
+        }
+    }
+}
+
+allprojects {
+    pluginManager.withPlugin('glm.code-signing') {
+        codeSigning.signtool.fileValue(org.gradle.internal.os.OperatingSystem.current().findInPath('signtool.exe'))
+        codeSigning.signingCertificate = rootProject.file('MySPC.pfx')
+        codeSigning.signingCertificatePassword = 'passwordx'
+    }
+    pluginManager.withPlugin('glm.publishing') {
+        publishing.repositories.flatDir name: 'installers', dirs: "$rootDir/build/installers"
+        repositories {
+            mavenCentral() // because commons-codec for hashing
+        }
     }
 }

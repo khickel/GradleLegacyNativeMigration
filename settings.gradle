@@ -1,10 +1,22 @@
 rootProject.name = 'LegacyNativeExample'
 
+
 include 'static_lib'
-include 'subsystem_a:util_1', 'subsystem_a:util_1:c'
+include 'subsystem_a:util_1'
+if(org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem.isWindows()) {
+    include 'subsystem_a:win_mfc_a'
+}
 include 'subsystem_b:server_1'
 
+
 include 'legacy_installer'
+
+// YAIM - Yet Another Installer Mechanism
+include 'inst_three'
+
+// old style self extracting zip based installers.
+include 'zsfx_inst:zsfx_one'
+include 'zsfx_inst:zsfx_two'
 
 // To avoid every gradle file being named 'build.gradle', this bit of code
 // will tell gradle to look for PROJNAME.gradle.
@@ -17,3 +29,16 @@ void rename_build_file_to_module_name(project) {
 
 // Change the build.gradle filename for each subproject to use it's name instead of 'build.gradle'.
 rootProject.children.each { subproject -> rename_build_file_to_module_name(subproject) }
+
+plugins.withId('com.gradle.enterprise') {
+  gradleEnterprise {
+    buildScan {
+      termsOfServiceUrl = "https://gradle.com/terms-of-service"
+
+      if (System.getenv('CI')) {
+        tag 'CI'
+        termsOfServiceAgree = "yes"
+      }
+    }
+  }
+}

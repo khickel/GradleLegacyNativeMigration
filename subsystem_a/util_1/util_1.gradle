@@ -1,34 +1,35 @@
 import static ConfigurationUtils.*
 
 plugins {
-    id 'legacy-installable'
     id 'dev.nokee.native-application'
     id 'dev.nokee.cpp-language'
     id 'dev.nokee.c-language'
-    id 'code-sign'
-}
+    id 'glm.code-signing'
 
-repositories {
-    maven(RepositoryUtils.systemOpenSsl(project))
+    id 'glm.windows-subsystem'
+    id 'glm.installation-manifest-base'
 }
 
 import dev.nokee.language.c.CHeaderSet
 import dev.nokee.language.cpp.CppHeaderSet
 
+ext {
+    windowsSubsystem = 'console'
+}
+
 // Set the project standard C++ compiler/linker options
-application(withDefaultApplicationConfiguration())
+application(Configure.withDefaultApplicationConfiguration())
 application { app->
 
-    // TODO(nokeedev): Support base name on the extension
-//    // Set the executable filename
-//    baseName = 'util_1'
+    // Set the executable filename
+    baseName = 'util_1'
     
     // Add *.cpp/*.c to the project
     sources {
         cpp { from(fileTree(dir: '.', include: '*.cpp')) }
         c { from(fileTree(dir: '.', include: '*.c')) }
-        configureEach(CppHeaderSet) { from(projectDir) }
-        configureEach(CHeaderSet) { from(projectDir) }
+        configureEach(CppHeaderSet) { from(isolatedFileTree(dir: projectDir, include: '*.h')) }
+        configureEach(CHeaderSet) { from(isolatedFileTree(dir: projectDir, include: '*.h')) }
     }
 
     // Example of adding a project specific linker command line option.
@@ -42,5 +43,19 @@ application { app->
 
     dependencies {
         implementation project(':static_lib')
+    }
+}
+
+installationManifests {
+    create('debug')
+    create('release')
+}
+installationManifests.all {
+    def buildType = name
+    from(application.variants
+            .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
+            .map { it.find { it.developmentBinary.get().buildable } }
+            .flatMap(Binaries.selectDevelopmentBinaryFile())) {
+        into('bin')
     }
 }

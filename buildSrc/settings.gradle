@@ -1,0 +1,11 @@
+plugins {
+    id 'dev.gradleplugins.gradle-plugin-development' version '1.1.35'
+}
+
+include 'installer-gradle-plugins'
+include 'installer-package-pkgzip'
+include 'installer-package-zip'
+include 'lifecycle-gradle-plugins'
+include 'prebuilt-library-management'
+include 'code-signing'
+include 'publishing-glm'

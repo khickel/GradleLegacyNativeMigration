@@ -1,21 +1,16 @@
-import static ConfigurationUtils.withDefaultApplicationConfiguration
-
 plugins {
     id 'dev.nokee.cpp-application'
-    id 'legacy-installable'
-    id 'code-sign'
+    id 'glm.code-signing'
+
+    id 'glm.installation-manifest-base'
 }
 
-repositories {
-    maven(RepositoryUtils.systemOpenSsl(project))
-}
-
-application(withDefaultApplicationConfiguration())
+application(Configure.withDefaultApplicationConfiguration())
 application { app->
 
     // TODO(nokeedev): Support base name on the extension
     // Set the executable filename
-//    baseName = 'server_1'
+    baseName = 'server_1'
 
     // Add *.cpp to the project
     cppSources.from(fileTree(dir: projectDir, include: '*.cpp'))
@@ -25,3 +20,16 @@ application { app->
     }
 }
 
+installationManifests {
+    create('debug')
+    create('release')
+}
+installationManifests.all {
+    def buildType = name
+    from(application.variants
+            .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
+            .map { it.find { it.developmentBinary.get().buildable } }
+            .flatMap(Binaries.selectDevelopmentBinaryFile())) {
+        into('bin')
+    }
+}

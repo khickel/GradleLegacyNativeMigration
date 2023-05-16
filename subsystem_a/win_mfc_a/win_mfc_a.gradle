@@ -1,0 +1,33 @@
+plugins {
+    id 'dev.nokee.cpp-application'
+    id 'glm.windows-resources'
+    id 'glm.afx-runtime'
+
+    id 'glm.installation-manifest-base'
+}
+
+windowsResources.from(fileTree(dir: projectDir, includes: ['**/*.rc']))
+
+application(Configure.withDefaultApplicationConfiguration({ it.consoleDef = ConsoleDef.SUPPRESS }))
+application { app ->
+    targetMachines = [machines.windows.x86]
+    // Set the executable filename
+    baseName = 'win_mfc_a'
+
+    cppSources.from(fileTree(dir: projectDir, include: '*.cpp'))
+    privateHeaders.from(isolatedFileTree(dir: projectDir, include: '*.h'))
+}
+
+installationManifests {
+    create('debug')
+    create('release')
+}
+installationManifests.all {
+    def buildType = name
+    from(application.variants
+            .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
+            .map { it.find { it.developmentBinary.get().buildable } }
+            .flatMap(Binaries.selectDevelopmentBinaryFile())) {
+        into('bin')
+    }
+}

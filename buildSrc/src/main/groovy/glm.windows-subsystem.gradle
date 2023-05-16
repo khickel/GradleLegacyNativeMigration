@@ -1,0 +1,5 @@
+project.ext.windowsSubsystem = "windows"
+
+tasks.withType(AbstractLinkTask).configureEach { task ->
+    task.linkerArgs.addAll(project.provider { ["/subsystem:${project.ext.windowsSubsystem}".toString()] }.orElse([]))
+}

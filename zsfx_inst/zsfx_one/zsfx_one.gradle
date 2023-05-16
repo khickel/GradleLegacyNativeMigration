@@ -1,0 +1,121 @@
+import glm.installer.Installer
+import glm.installer.pkgzip.PkgZipInstallerPackage
+
+import java.text.SimpleDateFormat
+import org.apache.tools.ant.filters.ReplaceTokens
+
+plugins {
+    id 'dev.nokee.cpp-application'
+    id 'glm.windows-resources'
+    id 'glm.afx-runtime'
+
+    id 'glm.installation-manifest-base'
+    id 'glm.pkgzip-installer-package'
+    id 'glm.publishing'
+}
+
+ext {
+    installerFiles = [ (file("${buildDir}")):'zsfx_one' ]
+
+    productName = 'SelfExtractingZipBasedInstaller_One'
+    productDescription = 'GLM sample.'
+
+    ZPKG = file("${buildDir}/pkg.zip").path
+
+    targetPath = buildDir.path + '/install'
+
+    installerFileName = "zsfx_one.exe"
+    installerFilePath = file("${projectDir}/${installerFileName}").path
+}
+
+application(Configure.withDefaultApplicationConfiguration())
+application(Configure.addParamH(tasks))
+application { app ->
+    targetMachines = [machines.windows.x86]
+    baseName = 'ZipInst'
+
+    cppSources.from fileTree(dir: '../zsfx_base', include: '*.cpp')
+    windowsResources.from(fileTree(dir: '../zsfx_base', include: '*.rc'))
+
+    parmsH {
+        programDescription = "ZSFX_One - Installer"
+        defaultPath = "C:\\\\Program Files\\\\ZSFX_One"
+        serviceName = "GLM zsfx one"
+        runProgram = "dummy\\\\dummy.exe"
+    }
+}
+
+installationManifests {
+    create('debug')
+    create('release')
+}
+installationManifests.all {
+    def buildType = name
+    from(application.variants
+            .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(buildType)) }
+            .map { it.find { it.developmentBinary.get().buildable } }
+            .flatMap(Binaries.selectDevelopmentBinaryFile())) {
+        into('bin')
+    }
+}
+
+installers {
+    create('debug')
+    create('release')
+}
+installers.all { Installer installer ->
+    manifest(project(':'), 'base') {
+        into('wintools') {
+            from('LICENSE') { rename('LICENSE', 'ZSFX_ONE_LICENSE.txt') }
+            from(versionTextInputFilename) {
+                rename(versionTextInputFilename, 'VERSION.txt')
+                def date = new Date()
+                def day_date_format = new SimpleDateFormat("EEE MM/dd/yyyy")
+                def year_format = new SimpleDateFormat("yyyy")
+                String dateStr = day_date_format.format(date)
+                String yearStr = year_format.format(date)
+                String relStr = "${releaseString}"
+                filter(ReplaceTokens, beginToken: '@', endToken: '@', tokens: [
+                    'DATE_WITH_DAY' : dateStr,
+                    'CURRENT_YEAR' : yearStr,
+                    'RELEASE_STRING': relStr,
+                    'PRODUCT_NAME': productName,
+                    'PRODUCT_DESCRIPTION': productDescription,
+                    'UNICODE_INFO' : '',
+                    'PLATFORM' : '32-Bit Windows Version\nX32 '
+                ])
+                filteringCharset = 'UTF-8'
+            }
+        }
+    }
+    manifest(project(':subsystem_a:util_1')) {
+        from('bin') { into('wintools') }
+    }
+
+    packages.pkgZip(PkgZipInstallerPackage) { PkgZipInstallerPackage pkg ->
+        pkg.BDRY = file('../zsfx_base/boundary.txt')
+        // This is now set in build.gradle.
+        //pkg.ZSFX = file('../zsfx_base/unzipsfx.exe')
+        pkg.CSETUP = installer.destinationDirectory.file('wintools/CSetup.exe')
+        pkg.ZNST = application.variants
+                .filter { it.buildVariant.hasAxisOf(application.buildTypes.named(installer.name)) }
+                .map { it.find { it.developmentBinary.get().buildable } }
+                .flatMap(Binaries.selectDevelopmentBinaryFile())
+        pkg.installerBaseName = project.name
+        pkg.codeSignCert.fileProvider(provider { rootProject.property('codeSignCert') })
+        pkg.codeSignPassword = provider { rootProject.property('codeSignPassword') }
+        pkg.zipInputSpec = 'wintools/*'
+    }
+}
+
+rootProject.collectDebugInstallers.from(installers.debug.packages*.installerFile)
+rootProject.collectReleaseInstallers.from(installers.release.packages*.installerFile)
+
+tasks.named('debug') { dependsOn(installers.debug.destinationDirectory)}
+tasks.named('release') { dependsOn(installers.release.destinationDirectory) }
+
+publishing {
+    publications.create('installer', GlmPublication) {
+        artifact(installers.release.packages*.installerFile)
+    }
+}

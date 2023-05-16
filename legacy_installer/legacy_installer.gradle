@@ -1,12 +1,42 @@
 plugins {
-    id 'legacy-installer'
+    id 'glm.installer-base'
+    id 'glm.installation-manifest-base'
+    id 'glm.zip-installer-package'
+    id 'glm.publishing'
 }
 
-dependencies {
-    installer project(':subsystem_a:util_1')
-    installer project(':subsystem_b:server_1')
+installers {
+    create('debug')
+    create('release')
 }
 
-legacyInstaller {
-    targetBuildTypes = ['debug', 'release']
+installers.all {
+    manifest(project(':subsystem_a:util_1')) {
+        from('bin')
+    }
+    manifest(project(':subsystem_b:server_1')) {
+        from('bin')
+    }
+    manifest(project(':subsystem_a:win_mfc_a')) {
+        from('bin')
+    }
+}
+
+installers.all { installer ->
+    installer.packages.zip {
+        installerBaseName = "legacyInstaller"
+    }
+    installationManifests.maybeCreate(installer.name).from(installer.packages.zip.installerFile)
+}
+
+rootProject.collectDebugInstallers.from(installers.debug.packages*.installerFile)
+rootProject.collectReleaseInstallers.from(installers.release.packages*.installerFile)
+
+tasks.named('debug') { dependsOn(installers.debug.destinationDirectory)}
+tasks.named('release') { dependsOn(installers.release.destinationDirectory) }
+
+publishing {
+    publications.create('installer', GlmPublication) {
+        artifact(installers.release.packages*.installerFile)
+    }
 }

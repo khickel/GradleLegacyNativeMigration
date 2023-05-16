@@ -1,10 +1,16 @@
+#ifdef WIN32
 #include <windows.h>
-#include <stdio.h>
 #include <direct.h>
 #include <io.h>
+#else
+typedef unsigned long HRESULT;
+#define S_OK 0
+#endif
+
+#include <stdio.h>
 #include <time.h>
 
-#include "lib_One.h"
+#include "lib_one.h"
 #include "CamelCase.h"
 
 #ifdef __cplusplus

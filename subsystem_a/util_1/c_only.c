@@ -1,6 +1,6 @@
 #include "lib_one.h"
 
-#include "Camelcase.h"
+#include "CamelCase.h"
 
 int c_only(int i) {
 
