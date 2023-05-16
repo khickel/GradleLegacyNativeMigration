@@ -10,6 +10,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Usage
+import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.reflect.TypeOf
 import org.gradle.api.tasks.Sync
@@ -49,6 +50,9 @@ class InstallationManifestBasePlugin implements Plugin<Project> {
             def stageTask = project.tasks.register("stage${manifest.name.capitalize()}InstallationManifest".toString(), Sync, { Sync task ->
                 // Use the content spec from the manifest to determine which files needs to be copied
                 task.with(manifest.contentSpec)
+
+                // Ensure that we fail when files overwrite each other
+                task.setDuplicatesStrategy(DuplicatesStrategy.FAIL)
 
                 // Stage all files in the task's temporary directory
                 task.destinationDir = project.layout.buildDirectory.dir("tmp/${task.name}".toString()).get().asFile

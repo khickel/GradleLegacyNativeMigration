@@ -1,0 +1,21 @@
+plugins {
+    id 'dev.gradleplugins.groovy-gradle-plugin'
+}
+
+gradlePlugin {
+    plugins {
+        codeSigningBase {
+            id = 'glm.code-signing-base'
+            implementationClass = 'glm.codesigning.plugins.CodeSigningBasePlugin'
+        }
+        codeSiging {
+            id = 'glm.code-signing'
+            implementationClass = 'glm.codesigning.plugins.CodeSigningPlugin'
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.google.guava:guava:28.2-jre'
+    implementation platform("dev.nokee:nokee-gradle-plugins:${nokeeVersion}")
+}

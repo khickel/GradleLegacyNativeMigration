@@ -1,5 +1,7 @@
 import glm.installer.pkgzip.PkgZipInstallerPackage
 
+import static PrebuiltLibraryUtils.*
+
 plugins {
     // https://github.com/dorongold/gradle-task-tree
     id "com.dorongold.task-tree" version "1.5"
@@ -144,10 +146,6 @@ allprojects {
     apply plugin: 'dev.nokee.visual-studio-ide'
     apply plugin: 'glm.isolated-file-tree'
 
-    pluginManager.withPlugin('code-sign') {
-        codeSign.certificateDirectory = rootProject.layout.buildDirectory.dir('Certs')
-    }
-
     // Make sure that we know where to find unzipsfx.exe
     project.pluginManager.withPlugin('glm.installer-base') {
         installers.all {
@@ -179,7 +177,7 @@ allprojects {
                 }
                 if(tmpFile == null) {
                     throw new GradleException(
-                        "Please download unzipsfx with the command 'curl -o unzip.zip <https://managedway.dl.sourceforge.net/project/infozip/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip>', unzip it into a directory, and set the environment variable 'UNZIPSFX_LOCATION' to that location."
+                            "Please download unzipsfx with the command 'curl -o unzip.zip <https://managedway.dl.sourceforge.net/project/infozip/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip>', unzip it into a directory, and set the environment variable 'UNZIPSFX_LOCATION' to that location."
                     )
                 }
                 ZSFX = tmpFile
@@ -187,6 +185,16 @@ allprojects {
             }
         }
     }
+    // KHickel 02-10-2021 Change the build directory for each project to be underneath
+    // rootProject.directory/build.
+    // "ofs" means "Out oF Source" (e.g. not in the source tree).
+    // The prj.name is the subproject name, which makes it easier to find something like
+    // an outputs.txt/options.txt for a subproject when you want to.
+    // And the md5 sum is added to make sure that the directories are unique to a subproject.
+    // This avoids a problem when Gradle decides to include all the source directories in the include path.
+    // If the build directory is below the source directory, then you start to get spurious rebuilds of
+    // projects, this change avoids that.
+    layout.buildDirectory.set(rootProject.file("build/ofs" + it.path.replaceAll(/:/, '-') + "-" + it.path.md5()))
 }
 
 if(isWindows) {
@@ -253,30 +261,66 @@ prebuiltLibraryManagement {
     }
     libraries {
         'libcrypto' {
-            groupId = 'system.OpenSSL'
+            groupId = 'system.Crypto'
             artifactId = 'libcrypto'
-            version = '1.1.1h'
+            version = 'current'
             variants {
-                x86Shared(SharedLibraryVariant) {
-                    includeRoot = new File(openSSLRoot, 'include')
-                    importLibraryFile = openSSLLibCryptoFile
-                    runtimeLibraryFile = new File(openSSLRoot, dll('libcrypto-1_1'))
-                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                // x86Shared(SharedLibraryVariant) {
+                //     includeRoot = new File(openSSLRoot, 'include')
+                //     importLibraryFile = openSSLLibCryptoFile
+                //     runtimeLibraryFile = new File(openSSLRoot, dll('libcrypto-1_1'))
+                //     attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                x86DebugStatic(StaticLibraryVariant) {
+                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                    libraryFile = openSSLRoot.file('debug/lib/libcrypto.lib').map(assertFileExists())
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
+                    attributes.put(Attribute.of('dev.nokee.buildType', String), 'debug')
+                }
+                x86ReleaseStatic(StaticLibraryVariant) {
+                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                    libraryFile = openSSLRoot.file('lib/libcrypto.lib').map(assertFileExists())
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
+                    attributes.put(Attribute.of('dev.nokee.buildType', String), 'release')
                 }
             }
         }
         'libssl' {
             groupId = 'system.OpenSSL'
             artifactId = 'libssl'
-            version = '1.1.1h'
+            version = 'current'
             variants {
-                x86Shared(SharedLibraryVariant) {
-                    includeRoot = new File(openSSLRoot, 'include')
-                    importLibraryFile = openSSLLibFile
-                    runtimeLibraryFile = new File(openSSLRoot, dll('libssl-1_1'))
-                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                // x86Shared(SharedLibraryVariant) {
+                //     includeRoot = new File(openSSLRoot, 'include')
+                //     importLibraryFile = openSSLLibFile
+                //     runtimeLibraryFile = new File(openSSLRoot, dll('libssl-1_1'))
+                //     attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
+                 x86DebugStatic(StaticLibraryVariant) {
+                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                    libraryFile = openSSLRoot.file('debug/lib/libssl.lib').map(assertFileExists())
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
+                    attributes.put(Attribute.of('dev.nokee.buildType', String), 'debug')
+                }
+                 x86ReleaseStatic(StaticLibraryVariant) {
+                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
+                    libraryFile = openSSLRoot.file('lib/libssl.lib').map(assertFileExists())
+                    attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
+                    attributes.put(Attribute.of('dev.nokee.buildType', String), 'release')
                 }
             }
+        }
+    }
+}
+
+allprojects {
+    pluginManager.withPlugin('glm.code-signing') {
+        codeSigning.signtool.fileValue(org.gradle.internal.os.OperatingSystem.current().findInPath('signtool.exe'))
+        codeSigning.signingCertificate = rootProject.file('MySPC.pfx')
+        codeSigning.signingCertificatePassword = 'passwordx'
+    }
+    pluginManager.withPlugin('glm.publishing') {
+        publishing.repositories.flatDir name: 'installers', dirs: "$rootDir/build/installers"
+        repositories {
+            mavenCentral() // because commons-codec for hashing
         }
     }
 }
