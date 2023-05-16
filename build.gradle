@@ -208,12 +208,24 @@ installationManifests {
 
 prebuiltLibraryManagement {
 
-    def openSSLRoot = providers.environmentVariable('GLM_OPENSSL_ROOT').forUseAtConfigurationTime().map { new File(it) }
-        .orElse(provider {
-                throw new GradleException(
-                    "Please set the environment variable 'GLM_OPENSSL_ROOT' to the top of an OpenSSL installation."
-                ) } )
-        .get()
+    // def openSSLRoot = providers.environmentVariable('GLM_OPENSSL_ROOT').forUseAtConfigurationTime().map { new File(it) }
+    //     .orElse(provider {
+    //             throw new GradleException(
+    //                 "Please set the environment variable 'GLM_OPENSSL_ROOT' to the top of an OpenSSL installation."
+    //             ) } )
+    //     .get()
+    def openSSLRoot = System.getenv('GLM_OPENSSL_ROOT')
+    if(!openSSLRoot) {
+        if(!isWindows) {
+            println("The environment variable GLM_OPENSSL_ROOT is not set, looking under ${openSSLRoot}")
+            openSSLRoot = '/usr'
+        }
+        if(!openSSLRoot) {
+            throw new GradleException(
+                "Please set the environment variable 'GLM_OPENSSL_ROOT' to the top of an OpenSSL installation."
+            )
+        }
+    }
 
     def openSSLLibFile = new File(openSSLRoot, lib('lib/libssl'))
     if(!openSSLLibFile.exists()) {
