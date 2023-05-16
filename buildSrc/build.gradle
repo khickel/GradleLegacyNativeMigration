@@ -23,7 +23,7 @@ allprojects {
         maven { url = 'https://oss.sonatype.org/content/repositories/snapshots/' }
 
         // For Nokee snapshots
-        maven { url = 'https://dl.bintray.com/nokeedev/distributions-snapshots' }
+        maven { url = 'https://repo.nokee.dev/snapshot' }
     }
 
     // Configure Spock testing
