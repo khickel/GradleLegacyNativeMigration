@@ -1,5 +1,3 @@
-import static ConfigurationUtils.*
-
 plugins {
     id 'dev.nokee.native-application'
     id 'dev.nokee.cpp-language'
