@@ -171,21 +171,30 @@ allprojects {
                 if(System.getenv('UNZIPSFX_LOCATION')) { 
                     tmpFile = new File(System.getenv('UNZIPSFX_LOCATION'))
                 }
+                if(!isWindows) {
+                    def binFile = new File('/bin/unzipsfx')
+                    if(binFile.exists()) {
+                        tmpFile = binFile
+                    }
+                }
                 if(tmpFile == null) {
                     throw new GradleException(
                         "Please download unzipsfx with the command 'curl -o unzip.zip <https://managedway.dl.sourceforge.net/project/infozip/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.zip>', unzip it into a directory, and set the environment variable 'UNZIPSFX_LOCATION' to that location."
                     )
                 }
                 ZSFX = tmpFile
+                println "Using unzipsfx from ${ZSFX}"
             }
         }
     }
 }
 
-project(':zsfx_inst') {
-    subprojects {
-        ext.versionTextInputFilename = 'VERSION.txt.in'
-        ext.releaseString = '1.1.00'
+if(isWindows) {
+    project(':zsfx_inst') {
+        subprojects {
+            ext.versionTextInputFilename = 'VERSION.txt.in'
+            ext.releaseString = '1.1.00'
+        }
     }
 }
 
@@ -206,9 +215,29 @@ prebuiltLibraryManagement {
                 ) } )
         .get()
 
-    def openSSLLibFile = new File(openSSLRoot, lib('lib/libcrypto'))
+    def openSSLLibFile = new File(openSSLRoot, lib('lib/libssl'))
     if(!openSSLLibFile.exists()) {
-        throw new GradleException( "The environment variable GLM_OPENSSL_ROOT does not seem to specify a valid location, ${openSSLLibFile} does not exist." )
+        if(!isWindows){
+            // Try the linux x64 specific location
+            openSSLLibFile = new File(openSSLRoot, lib('lib/x86_64-linux-gnu/libssl'))
+        }
+        if(!openSSLLibFile.exists()) {
+            throw new GradleException( "The environment variable GLM_OPENSSL_ROOT does not seem to specify a valid location, ${openSSLLibFile} does not exist." )
+        } else {
+            println "Found libssl here: ${openSSLLibFile}"
+        }
+    }
+    def openSSLLibCryptoFile = new File(openSSLRoot, lib('lib/libcrypto'))
+    if(!openSSLLibCryptoFile.exists()) {
+        if(!isWindows){
+            // Try the linux x64 specific location
+            openSSLLibCryptoFile = new File(openSSLRoot, lib('lib/x86_64-linux-gnu/libcrypto'))
+        }
+        if(!openSSLLibCryptoFile.exists()) {
+            throw new GradleException( "The environment variable GLM_OPENSSL_ROOT does not seem to specify a valid location, ${openSSLLibCryptoFile} does not exist." )
+        } else {
+            println "Found libcrypto here: ${openSSLLibCryptoFile}"
+        }
     }
     libraries {
         'libcrypto' {
@@ -218,7 +247,7 @@ prebuiltLibraryManagement {
             variants {
                 x86Shared(SharedLibraryVariant) {
                     includeRoot = new File(openSSLRoot, 'include')
-                    importLibraryFile = new File(openSSLRoot, lib('lib/libcrypto'))
+                    importLibraryFile = openSSLLibCryptoFile
                     runtimeLibraryFile = new File(openSSLRoot, dll('libcrypto-1_1'))
                     attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
                 }
@@ -231,7 +260,7 @@ prebuiltLibraryManagement {
             variants {
                 x86Shared(SharedLibraryVariant) {
                     includeRoot = new File(openSSLRoot, 'include')
-                    importLibraryFile = new File(openSSLRoot, lib('lib/libssl'))
+                    importLibraryFile = openSSLLibFile
                     runtimeLibraryFile = new File(openSSLRoot, dll('libssl-1_1'))
                     attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
                 }
