@@ -33,14 +33,14 @@ allprojects {
 
     pluginManager.withPlugin('dev.gradleplugins.groovy-gradle-plugin') {
         dependencies {
-            testImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5-SNAPSHOT')
+            testImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5')
             testImplementation 'org.spockframework:spock-core'
         }
     }
 
     pluginManager.withPlugin('dev.gradleplugins.gradle-plugin-functional-test') {
         dependencies {
-            functionalTestImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5-SNAPSHOT')
+            functionalTestImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5')
             functionalTestImplementation 'org.spockframework:spock-core'
         }
     }

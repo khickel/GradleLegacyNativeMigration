@@ -20,7 +20,7 @@ gradlePlugin {
 dependencies {
     implementation 'com.google.guava:guava:28.2-jre'
 
-    testFixturesImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5-SNAPSHOT')
+    testFixturesImplementation platform('org.spockframework:spock-bom:2.0-groovy-2.5')
     testFixturesImplementation 'org.spockframework:spock-core'
     testFixturesCompileOnly gradleApi()
 }
