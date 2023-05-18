@@ -1,5 +1,11 @@
 project.ext.windowsSubsystem = "windows"
 
 tasks.withType(AbstractLinkTask).configureEach { task ->
-    task.linkerArgs.addAll(project.provider { ["/subsystem:${project.ext.windowsSubsystem}".toString()] }.orElse([]))
+    task.linkerArgs.addAll toolChain.map { tc ->
+        if (tc in VisualCpp) {
+            return [ "/subsystem:${project.ext.windowsSubsystem}" ]
+        } else {
+            return []
+        }
+    }
 }

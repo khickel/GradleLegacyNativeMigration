@@ -1,6 +1,5 @@
 ext {
     addVSLinkerOption = Configure.&addVSLinkerOption
-    addGccLinkerOption = Configure.&addGccLinkerOption
     addVSCompilerOption = Configure.&addVSCompilerOption
     withDefaultLibraryConfiguration = Configure.&withDefaultLibraryConfiguration
     withDefaultApplicationConfiguration = Configure.&withDefaultApplicationConfiguration

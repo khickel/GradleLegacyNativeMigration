@@ -7,6 +7,9 @@ interface ParmsHExtension {
     Property<String> getDefaultPath()
     Property<String> getServiceName()
     Property<String> getRunProgram()
+    Property<String> getProductName()
+    Property<String> getProductVersion()
+    Property<String> getIsOem()
 
     RegularFileProperty getParmsHeaderFile()
 }
