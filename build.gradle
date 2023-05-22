@@ -170,29 +170,115 @@ installationManifests {
     }
 }
 
+////////////////////////////////////////////////////////////////
+// Utility function to take a string, add the .lib on the end for windows, .a for linux, and return the string.
+def lib(String fname) {
+    if(isWindows) {
+        return fname + '.lib'
+    } else {
+        return fname + '.a'
+    }
+}
+
+////////////////////////////////////////////////////////////////
+// Find the files needed to build with Open SSL, I couldn't figure out how to do
+// this with just providers without running into the 'no matching signature' error.
+def OpenSslRootPath = System.getenv('GLM_OPENSSL_ROOT')
+if(!OpenSslRootPath) {
+    if(!isWindows) {
+        println "The environment variable GLM_OPENSSL_ROOT is not defined, attempting to use system files from /usr."
+        OpenSslRootPath = '/usr'
+    }
+}
+if(!OpenSslRootPath) {
+    throw new GradleException('The environment variable GLM_OPENSSL_ROOT is not define, please set it and try again.')
+}
+def libOpenSSLIncludePath = new File(OpenSslRootPath, 'include')
+def libOpenSSLLibPathRelease = new File(OpenSslRootPath, 'lib')
+def libOpenSSLLibPathDebug = new File(OpenSslRootPath, 'debug/lib')
+def libOpenSSLLibNameDebug = lib('libssl')
+def libOpenSSLLibNameRelease = lib('libssl')
+def libCryptoLibNameDebug = lib('libcrypto')
+def libCryptoLibNameRelease = lib('libcrypto')
+if(!libOpenSSLLibPathDebug.exists()) {
+    // Use the non-debug version
+    libOpenSSLLibPathDebug = libOpenSSLLibPathRelease
+}
+
+def libOpenSSLLibCryptoReleaseFile = new File(libOpenSSLLibPathRelease, libCryptoLibNameRelease)
+if(!isWindows) {
+    if(!libOpenSSLLibCryptoReleaseFile.exists()) {
+        // Try the linux x64 specific location
+        libOpenSSLLibCryptoReleaseFile = new File(new File(libOpenSSLLibPathRelease, '/x86_64-linux-gnu/'), libCryptoLibNameRelease)
+    }
+}
+if(!libOpenSSLLibCryptoReleaseFile.exists()) {
+    throw new GradleException("The environment variable GLM_OPENSSL_ROOT does not seem to specify a valid location, " +
+                              "the file ${libOpenSSLLibCryptoReleaseFile} does not exist." )
+}
+
+def libOpenSSLLibCryptoDebugFile = new File(libOpenSSLLibPathDebug, libCryptoLibNameDebug)
+if(!isWindows) {
+    if(!libOpenSSLLibCryptoDebugFile.exists()) {
+        // Try the linux x64 specific location
+        libOpenSSLLibCryptoDebugFile = new File(new File(libOpenSSLLibPathRelease, '/x86_64-linux-gnu/'), libCryptoLibNameDebug)
+    }
+}
+if(!libOpenSSLLibCryptoDebugFile.exists()) {
+    throw new GradleException("The environment variable GLM_OPENSSL_ROOT does not seem to specify a valid location, " +
+                              "the file ${libOpenSSLLibCryptoDebugFile} does not exist." )
+}
+
+
+
+def libOpenSSLReleaseFile = new File(libOpenSSLLibPathRelease, libOpenSSLLibNameRelease)
+if(!isWindows) {
+    if(!libOpenSSLReleaseFile.exists()) {
+        // Try the linux x64 specific location
+        libOpenSSLReleaseFile = new File(new File(libOpenSSLLibPathRelease, '/x86_64-linux-gnu/'), libOpenSSLLibNameRelease)
+    }
+}
+if(!libOpenSSLReleaseFile.exists()) {
+    throw new GradleException("The environment variable GLM_OPENSSL_ROOT does not seem to specify a valid location, " +
+                              "the file ${libOpenSSLReleaseFile} does not exist." )
+}
+
+def libOpenSSLDebugFile = new File(libOpenSSLLibPathDebug, libOpenSSLLibNameDebug)
+if(!isWindows) {
+    if(!libOpenSSLDebugFile.exists()) {
+        // Try the linux x64 specific location
+        libOpenSSLDebugFile = new File(new File(libOpenSSLLibPathRelease, '/x86_64-linux-gnu/'), libOpenSSLLibNameDebug)
+    }
+}
+if(!libOpenSSLDebugFile.exists()) {
+    throw new GradleException("The environment variable GLM_OPENSSL_ROOT does not seem to specify a valid location, " +
+                              "the file ${libOpenSSLDebugFile} does not exist." )
+
+}
+
+
 prebuiltLibraryManagement {
-    def openSSLRoot = objects.directoryProperty().fileProvider(openSslRoot(providers))
     libraries {
         'libcrypto' {
             groupId = 'system.Crypto'
             artifactId = 'libcrypto'
             version = 'current'
             variants {
-                // x86Shared(SharedLibraryVariant) {
-                //         includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
-                //         importLibraryFile = openSSLRoot.file('lib/libcrypto.lib').map(assertFileExists())
-                //         runtimeLibraryFile = openSSLRoot.file('libcrypto-1_1.dll').map(assertFileExists())
-                //         attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
-                // }
                 x86DebugStatic(StaticLibraryVariant) {
-                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
-                    libraryFile = openSSLRoot.file('debug/lib/libcrypto.lib').map(assertFileExists())
+                    // includeRoot = openSslRootDir.dir('include').map(assertDirectoryExists())
+                    // libraryFile = openSslRootDir.file('debug/lib/libcrypto.lib').map(assertFileExists())
+                    includeRoot = libOpenSSLIncludePath;
+                    libraryFile = libOpenSSLLibCryptoDebugFile;
+
                     attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
                     attributes.put(Attribute.of('dev.nokee.buildType', String), 'debug')
                 }
                 x86ReleaseStatic(StaticLibraryVariant) {
-                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
-                    libraryFile = openSSLRoot.file('lib/libcrypto.lib').map(assertFileExists())
+                    // includeRoot = openSslRootDir.dir('include').map(assertDirectoryExists())
+                    // libraryFile = openSslRootDir.file('lib/libcrypto.lib').map(assertFileExists())
+                    includeRoot = libOpenSSLIncludePath;
+                    libraryFile = libOpenSSLLibCryptoReleaseFile;
+
                     attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
                     attributes.put(Attribute.of('dev.nokee.buildType', String), 'release')
                 }
@@ -203,21 +289,21 @@ prebuiltLibraryManagement {
             artifactId = 'libssl'
             version = 'current'
             variants {
-                // x86Shared(SharedLibraryVariant) {
-                //         includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
-                //         importLibraryFile = openSSLRoot.file('lib/libssl.lib').map(assertFileExists())
-                //         runtimeLibraryFile = openSSLRoot.file('libssl-1_1.dll').map(assertFileExists())
-                //         attributes.put(Attribute.of('dev.nokee.linkage', String), 'shared')
-                // }
                  x86DebugStatic(StaticLibraryVariant) {
-                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
-                    libraryFile = openSSLRoot.file('debug/lib/libssl.lib').map(assertFileExists())
+                    // includeRoot = openSslRootDir.dir('include').map(assertDirectoryExists())
+                    // libraryFile = openSslRootDir.file('debug/lib/libssl.lib').map(assertFileExists())
+                    includeRoot = libOpenSSLIncludePath
+                    libraryFile = libOpenSSLDebugFile
+
                     attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
                     attributes.put(Attribute.of('dev.nokee.buildType', String), 'debug')
                 }
                  x86ReleaseStatic(StaticLibraryVariant) {
-                    includeRoot = openSSLRoot.dir('include').map(assertDirectoryExists())
-                    libraryFile = openSSLRoot.file('lib/libssl.lib').map(assertFileExists())
+                    // includeRoot = openSslRootDir.dir('include').map(assertDirectoryExists())
+                    // libraryFile = openSslRootDir.file('lib/libssl.lib').map(assertFileExists())
+                    includeRoot = libOpenSSLIncludePath
+                    libraryFile = libOpenSSLReleaseFile
+
                     attributes.put(Attribute.of('dev.nokee.linkage', String), 'static')
                     attributes.put(Attribute.of('dev.nokee.buildType', String), 'release')
                 }
