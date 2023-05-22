@@ -37,22 +37,25 @@ abstract /*final*/ class SignCode extends DefaultTask {
 
     @TaskAction
     private void doCodeSigning() {
-        signedFile.get().asFile.parentFile.mkdirs()
-        Files.copy(unsignedFile.asFile.get().toPath(), signedFile.asFile.get().toPath(), StandardCopyOption.REPLACE_EXISTING)
+        if(org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem.isWindows()) {
 
-        def outputs = new File(temporaryDir, 'outputs.txt')
-        outputs.withOutputStream { outStream ->
-            execOperations.exec { ExecSpec spec ->
-                spec.commandLine(signtoolTool.get(), 'sign',
-                        '/debug',
-                        '/tr', 'http://timestamp.digicert.com',
-                        '/td', 'sha256',
-                        '/fd', 'sha256',
-                        '/f', signingCertificate.get().asFile,
-                        '/p', signingCertificatePassword.get(),
-                        signedFile.get().asFile)
-                spec.setStandardOutput(outStream)
-                spec.setErrorOutput(outStream)
+            signedFile.get().asFile.parentFile.mkdirs()
+            Files.copy(unsignedFile.asFile.get().toPath(), signedFile.asFile.get().toPath(), StandardCopyOption.REPLACE_EXISTING)
+
+            def outputs = new File(temporaryDir, 'outputs.txt')
+            outputs.withOutputStream { outStream ->
+                execOperations.exec { ExecSpec spec ->
+                    spec.commandLine(signtoolTool.get(), 'sign',
+                                     '/debug',
+                                     '/tr', 'http://timestamp.digicert.com',
+                                     '/td', 'sha256',
+                                     '/fd', 'sha256',
+                                     '/f', signingCertificate.get().asFile,
+                                     '/p', signingCertificatePassword.get(),
+                                     signedFile.get().asFile)
+                    spec.setStandardOutput(outStream)
+                    spec.setErrorOutput(outStream)
+                }
             }
         }
     }

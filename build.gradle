@@ -171,6 +171,16 @@ installationManifests {
 }
 
 ////////////////////////////////////////////////////////////////
+// Utility function to take a string, add the .exe on the end for windows, and return the string.
+def exe(String fname) {
+    if(isWindows) {
+        return fname + '.exe'
+    } else {
+        return fname
+    }
+}
+
+////////////////////////////////////////////////////////////////
 // Utility function to take a string, add the .lib on the end for windows, .a for linux, and return the string.
 def lib(String fname) {
     if(isWindows) {
@@ -314,7 +324,7 @@ prebuiltLibraryManagement {
 
 allprojects {
     pluginManager.withPlugin('glm.code-signing') {
-        codeSigning.signtool.fileValue(org.gradle.internal.os.OperatingSystem.current().findInPath('signtool.exe'))
+        codeSigning.signtool.fileValue(org.gradle.internal.os.OperatingSystem.current().findInPath(exe('signtool')))
         codeSigning.signingCertificate = rootProject.file('MySPC.pfx')
         codeSigning.signingCertificatePassword = 'passwordx'
     }
