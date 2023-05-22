@@ -483,7 +483,6 @@ final class Configure {
                 task.inputs.property('serviceName', extension.serviceName)
                 task.inputs.property('productName', extension.productName)
                 task.inputs.property('productVersion', extension.productVersion)
-                task.inputs.property('isOem', extension.isOem)
 
                 task.ext.parmsHeaderFile = new File(temporaryDir, 'parms.h')
                 task.outputs.file(parmsHeaderFile)
@@ -496,7 +495,6 @@ final class Configure {
                         |#define RUN_PROGRAM      "${extension.runProgram.get()}"
                         |#define PRODUCT_NAME    "${extension.productName.get()}"
                         |#define PRODUCT_VERSION "${extension.productVersion.get()}"
-                        |#define IS_OEM          "${extension.isOem.get()}"
                         |""".stripMargin()
                 }
             }
