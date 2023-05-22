@@ -155,11 +155,15 @@ allprojects {
     layout.buildDirectory.set(rootProject.file("build/ofs" + it.path.replaceAll(/:/, '-') + "-" + it.path.md5()))
 }
 
-project(':zsfx_inst') {
-    subprojects {
-        ext.versionTextInputFilename = 'VERSION.txt.in'
-        ext.releaseString = '1.1.00'
+if(isWindows) {
+    project(':zsfx_inst') {
+        subprojects {
+            ext.versionTextInputFilename = 'VERSION.txt.in'
+            ext.releaseString = '1.1.00'
+        }
     }
+} else {
+    println "NOTE: Not building the zsfx_inst projects, they are not yet ported to Linux"
 }
 
 installationManifests {
