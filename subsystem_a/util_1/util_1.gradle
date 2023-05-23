@@ -2,10 +2,16 @@ plugins {
     id 'dev.nokee.native-application'
     id 'dev.nokee.cpp-language'
     id 'dev.nokee.c-language'
-    id 'glm.code-signing'
-
     id 'glm.windows-subsystem'
     id 'glm.installation-manifest-base'
+}
+
+if(isWindows) {
+    plugins {
+        id 'glm.code-signing'
+    }
+} else {
+    println "Turning off code signing for ${project.getPath()}, not yet supported on Linux."
 }
 
 import dev.nokee.language.c.CHeaderSet

@@ -17,8 +17,9 @@ plugins {
 ext {
     installerFiles = [ (file("${buildDir}")):'zsfx_two' ]
 
-    productName = 'SelfExtractingZipBasedInstaller_Two'
-    productDescription = 'GLM sample.'
+    prodName = 'SelfExtractingZipBasedInstaller_Two'
+    prodVersion = '4.3.2'
+    prodDescription = 'GLM sample.'
 
     ZPKG = file("${buildDir}/pkg.zip").path
 
@@ -42,6 +43,8 @@ application { app ->
         defaultPath = "C:\\\\Program Files\\\\ZSFX_Two"
         serviceName = "GLM zsfx two"
         runProgram = "dummy\\\\dummy.exe"
+        productName = prodName
+        productVersion = prodVersion
     }
 }
 
@@ -80,8 +83,8 @@ installers.all { Installer installer ->
                         'DATE_WITH_DAY' : dateStr,
                         'CURRENT_YEAR' : yearStr,
                         'RELEASE_STRING': relStr,
-                        'PRODUCT_NAME': productName,
-                        'PRODUCT_DESCRIPTION': productDescription,
+                        'PRODUCT_NAME': prodName,
+                        'PRODUCT_DESCRIPTION': prodDescription,
                         'UNICODE_INFO' : '',
                         'PLATFORM' : '32-Bit Windows Version\nX32 '
                 ])

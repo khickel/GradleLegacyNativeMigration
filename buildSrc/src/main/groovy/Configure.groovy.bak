@@ -27,7 +27,6 @@ import org.gradle.language.rc.tasks.WindowsResourceCompile
 import org.gradle.nativeplatform.tasks.AbstractLinkTask
 import org.gradle.nativeplatform.toolchain.NativeToolChain
 import org.gradle.nativeplatform.toolchain.VisualCpp
-import org.gradle.nativeplatform.toolchain.Gcc
 import org.gradle.nativeplatform.toolchain.internal.ToolType
 
 import java.nio.file.Files
@@ -305,55 +304,6 @@ final class Configure {
         } as Transformer<List<T>, NativeToolChain>
     }
 
-
-    /**
-     * Returns the specified list if the mapping toolchain is Gcc, else returns an empty list.
-     *
-     * @param value the values to return if the mapping toolchain is Gcc
-     * @return a transformer to use in provider mapping, never null.
-     */
-    @CompileStatic
-    private static <T> Transformer<List<T>, NativeToolChain> whenGcc(List<T> values) {
-        return {
-            if (it in Gcc) {
-                return values
-            }
-            return []
-        } as Transformer<List<T>, NativeToolChain>
-    }
-
-    /**
-     * Returns the specified list if the mapping toolchain is Gcc, else returns an empty list.
-     *
-     * @param value the values to return if the mapping toolchain is Gcc
-     * @return a transformer to use in provider mapping, never null.
-     */
-    @CompileStatic
-    private static <T> Transformer<List<T>, NativeToolChain> whenGcc(T... values) {
-        return {
-            if (it in Gcc) {
-                return values as List<T>
-            }
-            return []
-        } as Transformer<List<T>, NativeToolChain>
-    }
-
-    /**
-     * Returns the computed list if the mapping toolchain is Gcc, else returns an empty list.
-     *
-     * @param value the values to return if the mapping toolchain is Gcc
-     * @return a transformer to use in provider mapping, never null.
-     */
-    @CompileStatic
-    private static <T> Transformer<List<T>, NativeToolChain> whenGcc(Transformer<List<T>, Gcc> generator) {
-        return {
-            if (it in Gcc) {
-                return generator.transform(it)
-            }
-            return []
-        } as Transformer<List<T>, NativeToolChain>
-    }
-
     /**
      * Adds VS compiler options for all languages.
      *
@@ -381,23 +331,6 @@ final class Configure {
             component.binaries.configureEach(sharedLibraryOrExecutable()) {
                 linkTask.configure {
                     linkerArgs.addAll(toolChain.map(whenVisualCpp(newOptions)))
-                }
-            }
-        }
-    }
-
-    /**
-     * Adds Gcc linker options.
-     *
-     * @param newOptions  the new options to add
-     * @return a configuration closure to execute in the application or library extension
-     */
-    static Closure addGccLinkerOption(String... newOptions) {
-        return { component ->
-            component.binaries.configureEach(sharedLibraryOrExecutable()) {
-                linkTask.configure {
-                    linkerArgs.addAll(toolChain.map(whenGcc(newOptions)))
-                    //linkerArgs.add(0, toolChain.map(whenGcc(newOptions)))
                 }
             }
         }
@@ -481,8 +414,6 @@ final class Configure {
                 task.inputs.property('programDescription', extension.programDescription)
                 task.inputs.property('runProgram', extension.runProgram)
                 task.inputs.property('serviceName', extension.serviceName)
-                task.inputs.property('productName', extension.productName)
-                task.inputs.property('productVersion', extension.productVersion)
 
                 task.ext.parmsHeaderFile = new File(temporaryDir, 'parms.h')
                 task.outputs.file(parmsHeaderFile)
@@ -493,8 +424,6 @@ final class Configure {
                         |#define DEFAULT_PATH     "${extension.defaultPath.get()}"
                         |#define SERVICE_NAME     "${extension.serviceName.get()}"
                         |#define RUN_PROGRAM      "${extension.runProgram.get()}"
-                        |#define PRODUCT_NAME    "${extension.productName.get()}"
-                        |#define PRODUCT_VERSION "${extension.productVersion.get()}"
                         |""".stripMargin()
                 }
             }
