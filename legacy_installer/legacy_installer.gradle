@@ -17,7 +17,7 @@ installers.all {
     manifest(project(':subsystem_b:server_1')) {
         from('bin')
     }
-    if(org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem.isWindows()) {
+    if(isWindows) {
         manifest(project(':subsystem_a:win_mfc_a')) {
             from('bin')
         }
