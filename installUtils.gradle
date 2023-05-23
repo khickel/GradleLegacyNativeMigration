@@ -306,7 +306,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                     }
                     if(shouldSign) {
                         if(debugOn) {println "Debug(${methodName}): ${it.name} in newDebugTask register call, should sign is on for file ${targetFilename} to ${targetPath.path}."}
-                        exec { commandLine 'signtool', 'sign', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
+                        exec { commandLine 'signtool', 'sign', '/fd', 'SHA256', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
                                 '/p', getRootProject().property('codeSignPassword'), "${targetPath.path}/${targetFilename}" }
                     }
                 }
@@ -370,7 +370,7 @@ def addProjOutputCopyFilesTask(Project prj, Project parent, String taskPrefix, S
                     }
                     if(shouldSign) {
                         if(debugOn) {println "Debug(${methodName}): ${it.name} in newReleaseTask register call, should sign is on for file ${targetFilename} to ${targetPath.path}."}
-                        exec { commandLine 'signtool', 'sign', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
+                        exec { commandLine 'signtool', 'sign', '/fd', 'SHA256', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
                                 '/p', getRootProject().property('codeSignPassword'), "${targetPath.path}/${targetFilename}" }
                     }
                 }
@@ -541,7 +541,7 @@ def createZipInstallerTasks(Project prj,
             }
             exec {
                 workingDir instFile.getParentFile()
-                commandLine 'signtool', 'sign', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
+                commandLine 'signtool', 'sign', '/fd', 'SHA256', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
                         '/p', getRootProject().property('codeSignPassword'), instFile.name
             }
         }
@@ -573,7 +573,7 @@ def createZipInstallerTasks(Project prj,
             }
             exec {
                 workingDir instFile.getParentFile()
-                commandLine 'signtool', 'sign', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
+                commandLine 'signtool', 'sign', '/fd', 'SHA256', '/a', '/v', '/f', getRootProject().property('codeSignCert'),
                         '/p', getRootProject().property('codeSignPassword'), instFile.name
             }
         }

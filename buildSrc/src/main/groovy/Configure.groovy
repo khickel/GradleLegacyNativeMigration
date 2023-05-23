@@ -11,6 +11,7 @@ import dev.nokee.platform.nativebase.SharedLibraryBinary
 import dev.nokee.platform.nativebase.StaticLibraryBinary
 import dev.nokee.platform.nativebase.TargetBuildTypeFactory
 import dev.nokee.platform.nativebase.tasks.LinkExecutable
+import dev.nokee.runtime.nativebase.internal.DefaultOperatingSystemFamily
 import dev.nokee.utils.ActionUtils
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
@@ -452,7 +453,7 @@ final class Configure {
 
     static Closure addWindowsResources(TaskContainer tasks, ObjectFactory objects, ProjectLayout layout, FileCollection sourceFiles) {
         return { component ->
-            component.variants.configureEach { variant ->
+            component.variants.configureEach({ it.buildVariant.hasAxisOf(DefaultOperatingSystemFamily.WINDOWS) }) { variant ->
                 variant.binaries.configureEach(sharedLibraryOrExecutable()) { binary ->
                     def resourceTask = tasks.register("compile${variant.identifier.name.capitalize()}WindowsResources", WindowsResourceCompile) { task ->
                         task.source.from(sourceFiles)

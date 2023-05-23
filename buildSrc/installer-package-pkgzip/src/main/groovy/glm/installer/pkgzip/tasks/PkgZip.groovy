@@ -80,7 +80,7 @@ abstract class PkgZip extends DefaultTask {
         execOperations.exec { ExecSpec spec ->
             spec.workingDir(temporaryDir)
             spec.standardOutput = new FileOutputStream(new File(temporaryDir, 'outputs_sign.txt'))
-            spec.commandLine('signtool', 'sign', '/a', '/v', '/f', codeSignCert.get().asFile,
+            spec.commandLine('signtool', 'sign', '/fd', 'SHA256', '/a', '/v', '/f', codeSignCert.get().asFile,
                     '/p', codeSignPassword.get(), instFile.name)
         }
     }
