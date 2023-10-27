@@ -35,7 +35,7 @@ application { app ->
     targetMachines = [machines.windows.x86]
     baseName = 'ZipInst'
 
-    cppSources.from fileTree(dir: '../zsfx_base', include: '*.cpp')
+    //cppSources.from fileTree(dir: '../zsfx_base', include: '*.cpp')
     windowsResources.from(fileTree(dir: '../zsfx_base', include: '*.rc'))
 
     parmsH {

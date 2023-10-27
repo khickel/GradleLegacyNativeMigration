@@ -3,6 +3,7 @@ package glm.codesigning
 import dev.nokee.language.base.tasks.SourceCompile
 import dev.nokee.platform.base.Binary
 import dev.nokee.platform.base.TaskView
+import org.gradle.api.provider.Property;
 import dev.nokee.platform.nativebase.ExecutableBinary
 import dev.nokee.platform.nativebase.NativeBinary
 import dev.nokee.platform.nativebase.SharedLibraryBinary
@@ -69,6 +70,15 @@ abstract class SignedBinary implements NativeBinary, Buildable, HasOutputFile, H
         TaskProvider<LinkExecutable> getLinkTask() {
             return ((ExecutableBinary) binary.get()).linkTask
         }
+
+		    @Override
+		    public String getName() {
+            return super.getName();
+		    }
+
+	      public Property<String> getBaseName() {
+            return ((ExecutableBinary) binary.get()).baseName;
+	      }
     }
 
     static final class SharedLibrary extends SignedBinary implements SharedLibraryBinary {
@@ -83,5 +93,14 @@ abstract class SignedBinary implements NativeBinary, Buildable, HasOutputFile, H
         TaskProvider<LinkSharedLibrary> getLinkTask() {
             return ((SharedLibraryBinary) binary.get()).linkTask
         }
+
+		    @Override
+		    public String getName() {
+            return super.getName();
+		    }
+
+	      public Property<String> getBaseName() {
+            return ((ExecutableBinary) binary.get()).baseName;
+	      }
     }
 }

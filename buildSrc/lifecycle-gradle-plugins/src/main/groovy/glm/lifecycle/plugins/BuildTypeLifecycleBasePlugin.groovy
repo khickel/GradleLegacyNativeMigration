@@ -1,7 +1,7 @@
 package glm.lifecycle.plugins
 
 import dev.nokee.platform.base.*
-import dev.nokee.platform.nativebase.internal.DefaultTargetBuildTypeFactory
+import dev.nokee.runtime.nativebase.internal.DefaultTargetBuildTypeFactory
 import dev.nokee.runtime.nativebase.TargetBuildType
 import dev.nokee.utils.TransformerUtils
 import glm.lifecycle.tasks.BuildTypeLifecycleTask

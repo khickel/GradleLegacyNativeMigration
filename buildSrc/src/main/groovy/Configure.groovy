@@ -11,7 +11,7 @@ import dev.nokee.platform.nativebase.SharedLibraryBinary
 import dev.nokee.platform.nativebase.StaticLibraryBinary
 import dev.nokee.platform.nativebase.TargetBuildTypeFactory
 import dev.nokee.platform.nativebase.tasks.LinkExecutable
-import dev.nokee.runtime.nativebase.internal.DefaultOperatingSystemFamily
+import dev.nokee.runtime.nativebase.DefaultOperatingSystemFamily
 import dev.nokee.utils.ActionUtils
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic

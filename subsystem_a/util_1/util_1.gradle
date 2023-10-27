@@ -12,8 +12,8 @@ if(isWindows) {
     println "Turning off code signing for ${project.getPath()}, not yet supported on Linux."
 }
 
-import dev.nokee.language.c.CHeaderSet
-import dev.nokee.language.cpp.CppHeaderSet
+//import dev.nokee.language.c.CHeaderSet
+//import dev.nokee.language.cpp.CppHeaderSet
 
 ext {
     windowsSubsystem = 'console'
@@ -28,10 +28,10 @@ application { app->
     
     // Add *.cpp/*.c to the project
     sources {
-        cpp { from(fileTree(dir: '.', include: '*.cpp')) }
-        c { from(fileTree(dir: '.', include: '*.c')) }
-        configureEach(CppHeaderSet) { from(isolatedFileTree(dir: projectDir, include: '*.h')) }
-        configureEach(CHeaderSet) { from(isolatedFileTree(dir: projectDir, include: '*.h')) }
+        //cpp { from(fileTree(dir: '.', include: '*.cpp')) }
+        //c { from(fileTree(dir: '.', include: '*.c')) }
+        //configureEach(CppHeaderSet) { from(isolatedFileTree(dir: projectDir, include: '*.h')) }
+        //configureEach(CHeaderSet) { from(isolatedFileTree(dir: projectDir, include: '*.h')) }
     }
 
     // Example of adding a project specific linker command line option.
