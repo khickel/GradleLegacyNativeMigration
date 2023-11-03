@@ -1,26 +1,16 @@
-//import dev.nokee.language.cpp.CppHeaderSet
-//import dev.nokee.language.c.CHeaderSet
-import dev.nokee.language.nativebase.NativeHeaderSet
-
 plugins {
-    id 'dev.nokee.native-library'
     id 'dev.nokee.cpp-language'
     id 'dev.nokee.c-language'
+    id 'dev.nokee.native-library'
 }
 
 library(Configure.withDefaultLibraryConfiguration())
 library { lib->
     targetLinkages = [linkages.static]
 
-    sources {
-        //cpp { from(fileTree(dir: '.', include: '*.cpp')) }
-        //c { from(fileTree(dir: '.', include: '*.c')) }
-        configureEach(CppSourceSet) { from(fileTree(dir: '.', include: '*.cpp')) }
-        //c { from(fileTree(dir: '.', include: '*.c')) }
-        //configureEach(CppHeaderSet) { from(isolatedFileTree(dir: projectDir, include: '*.h')) }
-        //configureEach(CHeaderSet) { from(isolatedFileTree(dir: projectDir, include: '*.h')) }
-        configureEach(NativeHeaderSet) { from(isolatedFileTree(dir: projectDir, include: '*.h')) }
-    }
+    cppSources.from(fileTree(dir: '.', include: '*.cpp'))
+    cSources.from(fileTree(dir: '.', include: '*.c'))
+    privateHeaders.from(isolatedFileTree(dir: projectDir, include: '*.h'))
 
      dependencies {
          implementation 'system.Crypto:libcrypto:current'
